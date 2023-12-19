@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- https://android.googlesource.com/platform/frameworks/base/+/53a3ed7c46c12c2e578d1b1df8b039c6db690eaa/core/res/res/values/attrs.xml -->
+    <declare-styleable name="DotLottieAnimation">
+        <attr name="assetFilePath" format="string" />
+        <!-- Defines how many times the animation should repeat. The default value is 0. -->
+        <attr name="repeatCount" format="integer">
+            <enum name="infinite" value="-1" />
+        </attr>
+        <!-- Defines the animation behavior when it reaches the end and the repeat count is
+             greater than 0 or infinite. The default value is restart. -->
+        <attr name="repeatMode">
+            <!-- The animation starts again from the beginning. -->
+            <enum name="restart" value="1" />
+            <!-- The animation plays backward. -->
+            <enum name="reverse" value="2" />
+        </attr>
+        <attr name="speed" format="float"/>
+        <attr name="autoPlay" format="boolean" />
+    </declare-styleable>
+</resources>
