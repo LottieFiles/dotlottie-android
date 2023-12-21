@@ -34,7 +34,7 @@ android {
 }
 
 dependencies {
-    api(project(":thorvg"))
+    api(project(":thorvg-android"))
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)

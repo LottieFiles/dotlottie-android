@@ -15,5 +15,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "sample"
 include(":app")
-include(":thorvg")
+include(":thorvg-android")
 include(":dotlottie-android")
