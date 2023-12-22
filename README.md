@@ -10,7 +10,7 @@ Dot Lottie Android is a new lottie player that relies on ThorVG for rendering
 
 ## Demo
 
-You can run the found the sample in the `app` directory
+You can run the found the sample in the `sample` directory
 <p align="center">
   <img src="/assets/preview-1.gif" width="32%"/>
 </p>
@@ -27,7 +27,7 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("com.github.lottiefiles:dotlottie-android:<version>")
+    implementation("com.github.LottieFiles:dotlottie-android:0.0.1")
 }
 
 ```
