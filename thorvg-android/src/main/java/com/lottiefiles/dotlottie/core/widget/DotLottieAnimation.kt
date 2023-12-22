@@ -45,6 +45,9 @@ class DotLottieAnimation @JvmOverloads constructor(
             mLottieDrawable?.mode = value
         }
 
+    val segments: Pair<Int, Int>
+        get() = mLottieDrawable?.segments ?: error("DotLottieDrawable is null")
+
     val duration: Long
         get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
 
@@ -58,6 +61,10 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun setFrame(frame: Int) {
         mLottieDrawable?.setCurrentFrame(frame)
         invalidate()
+    }
+
+    fun setSegments(firstFrame: Int, lastFrame: Int) {
+        mLottieDrawable?.setSegments(firstFrame, lastFrame)
     }
 
     fun setLoop(loop: Boolean) {
@@ -132,7 +139,7 @@ class DotLottieAnimation @JvmOverloads constructor(
             mContext = context,
             mNativePtr = LottieNative.nCreateLottie(contentStr, contentStr!!.length, outValues),
             mRepeatMode = MODE_RESTART,
-            mLoopCount = 3,
+            mLoopCount = if (config.loop) INFINITE_LOOP else 1,
             mAutoPlay = config.autoPlay,
             mSpeed = config.speed,
             mFirstFrame = 0,
@@ -149,7 +156,7 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable = DotLottieDrawable(
             mContext = context,
             mNativePtr = LottieNative.nCreateLottie(contentStr, contentStr!!.length, outValues),
-            mRepeatMode = getInt(R.styleable.DotLottieAnimation_repeatMode, MODE_RESTART),
+            mRepeatMode = getInt(R.styleable.DotLottieAnimation_mode, MODE_RESTART),
             mLoopCount = getInt(R.styleable.DotLottieAnimation_repeatCount, INFINITE_LOOP),
             mAutoPlay = getBoolean(R.styleable.DotLottieAnimation_autoPlay, true),
             mSpeed = getFloat(R.styleable.DotLottieAnimation_speed, 1f),

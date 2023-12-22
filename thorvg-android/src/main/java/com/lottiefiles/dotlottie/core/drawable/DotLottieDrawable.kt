@@ -16,21 +16,15 @@ import androidx.annotation.RestrictTo
 import com.lottiefiles.dotlottie.core.LottieNative.nDestroyLottie
 import com.lottiefiles.dotlottie.core.LottieNative.nDrawLottieFrame
 import com.lottiefiles.dotlottie.core.LottieNative.nSetLottieBufferSize
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.INFINITE
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.RESTART
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.REVERSE
+import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.INFINITE_LOOP
+import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.MODE_RESTART
+import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.MODE_REVERSE
+import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
 
-// https://android.googlesource.com/platform/frameworks/support/+/0402748/graphics/drawable/static/src/android/support/graphics/drawable/VectorDrawableCompat.java
-// https://android.googlesource.com/platform/frameworks/support/+/f185f10/compat/java/android/support/v4/graphics/drawable/DrawableCompat.java
-// https://android.googlesource.com/platform/frameworks/base/+/53a3ed7c46c12c2e578d1b1df8b039c6db690eaa/core/java/android/view/LayoutInflater.java
-// https://android.googlesource.com/platform/frameworks/base/+/HEAD/core/java/android/animation/ValueAnimator.java
 class DotLottieDrawable(
-    /**
-     * Internal variables
-     */
     private val mContext: Context,
     mDuration: Long,
-    private var mRepeatCount: Int = 0,
+    private var mLoopCount: Int = 0,
     private val mNativePtr: Long,
     private var mRepeatMode: Int = 0,
     private val mFirstFrame: Int,
@@ -61,11 +55,16 @@ class DotLottieDrawable(
     var duration: Long = mDuration
         private set
 
+    val segments: Pair<Int, Int>
+        get() = firstFrame to lastFrame
+
     private var mFrameInterval: Long = 0
 
     // The number of times the animation will repeat. The default is 0, which means the animation
     // will play only once
-    private var mRemainingRepeatCount = 0
+    private var mRemainingRepeatCount = mLoopCount
+
+    private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
     /**
      * The type of repetition that will occur when repeatMode is nonzero. RESTART means the
@@ -80,6 +79,7 @@ class DotLottieDrawable(
 
     var firstFrame = mFirstFrame
         private set
+
     var lastFrame = mLastFrame
         private set
 
@@ -88,7 +88,7 @@ class DotLottieDrawable(
      */
     private val mHandler = Handler(Looper.getMainLooper())
     private val mNextFrameRunnable = Runnable {
-        if (mRepeatCount == INFINITE || mRemainingRepeatCount > -1) {
+        if (mLoopCount == INFINITE_LOOP || mRemainingRepeatCount > -1) {
             invalidateSelf()
         }
     }
@@ -97,10 +97,8 @@ class DotLottieDrawable(
      * Public constants
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    @IntDef(*[RESTART, REVERSE])
-    @Retention(
-        AnnotationRetention.SOURCE
-    )
+    @IntDef(*[MODE_RESTART, MODE_REVERSE])
+    @Retention(AnnotationRetention.SOURCE)
     annotation class RepeatMode
 
     override fun setAlpha(alpha: Int) {}
@@ -117,14 +115,14 @@ class DotLottieDrawable(
         return mHeight
     }
 
-    var repeatCount: Int
+    var loopCount: Int
         /**
          * Defines how many times the animation should repeat. The default value
          * is 0.
          *
          * @return the number of times the animation should repeat, or [.INFINITE]
          */
-        get() = mRepeatCount
+        get() = mLoopCount
         /**
          * Sets how many times the animation should be repeated. If the repeat
          * count is 0, the animation is never repeated. If the repeat count is
@@ -134,12 +132,12 @@ class DotLottieDrawable(
          * @param value the number of times the animation should be repeated
          */
         set(value) {
-            mRepeatCount = value
+            mLoopCount = value
             mRemainingRepeatCount = value
         }
 
     @get:RepeatMode
-    var repeatMode: Int
+    var mode: Int
         /**
          * Defines what this animation should do when it reaches the end.
          *
@@ -155,11 +153,17 @@ class DotLottieDrawable(
          */
         set(value) {
             mRepeatMode = value
-            mFramesPerUpdate = if (mRepeatMode == RESTART) 1 else -1
+            mFramesPerUpdate = if (mRepeatMode == MODE_RESTART) 1 else -1
         }
 
     val totalFrame: Int
         get() = lastFrame - firstFrame
+
+    val autoPlay: Boolean
+        get() = mAutoPlay
+
+    val currentFrame: Int
+        get() = mFrame
 
     @get:FloatRange(from = 0.0)
     var speed: Float
@@ -169,12 +173,17 @@ class DotLottieDrawable(
             updateFrameInterval()
         }
 
+    init {
+        updateFrameInterval()
+    }
+
     private fun updateFrameInterval() {
         mFrameInterval = (duration / totalFrame / mSpeed).toLong()
     }
 
     fun release() {
         nDestroyLottie(mNativePtr)
+        mDotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
         if (mBuffer != null) {
             mBuffer!!.recycle()
             mBuffer = null
@@ -194,43 +203,87 @@ class DotLottieDrawable(
 
     override fun start() {
         mRunning = true
-        mFrame = firstFrame
-        mRemainingRepeatCount = mRepeatCount
+        mPaused = false
+        // Resume the frame from where we left of
+        mFrame = if (mFrame == 0) firstFrame else mFrame
+        mRemainingRepeatCount = mLoopCount
+        mDotLottieEventListener.forEach(DotLottieEventListener::onPlay)
         invalidateSelf()
     }
 
     override fun stop() {
         mRunning = false
+        mFrame = firstFrame
+        mDotLottieEventListener.forEach(DotLottieEventListener::onStop)
         mHandler.removeCallbacks(mNextFrameRunnable)
+    }
+
+    fun isPaused(): Boolean {
+        return mPaused
+    }
+
+    fun isStopped(): Boolean {
+        return !isRunning
+    }
+
+    fun setCurrentFrame(frame: Int) {
+        if (isPaused()) mFrame = frame
+    }
+
+    fun setSegments(first: Int, last: Int) {
+        firstFrame = first
+        lastFrame = last
     }
 
     fun pause() {
         mPaused = true
+        mDotLottieEventListener.forEach(DotLottieEventListener::onPause)
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
-    fun resume() {
-        mPaused = false
-        invalidateSelf()
+    fun addEventListener(eventListener: DotLottieEventListener) {
+        mDotLottieEventListener.add(eventListener)
+    }
+
+    fun removeEventListener(eventListener: DotLottieEventListener) {
+        mDotLottieEventListener.remove(eventListener)
     }
 
     override fun draw(canvas: Canvas) {
         if (mNativePtr == 0L) {
             return
         }
+
         if (mAutoPlay || mRunning) {
             val startTime = System.nanoTime()
             nDrawLottieFrame(mNativePtr, mBuffer, mFrame)
             canvas.drawBitmap(mBuffer!!, 0f, 0f, Paint())
+            mDotLottieEventListener.forEach { it.onFrame(mFrame) }
 
             // Increase frame count.
             mFrame += mFramesPerUpdate
             if (mFrame > lastFrame) {
                 mFrame = firstFrame
                 mRemainingRepeatCount--
+                if (loopCount == INFINITE_LOOP) {
+                    mDotLottieEventListener.forEach(DotLottieEventListener::onLoop)
+                }
+                if (loopCount != INFINITE_LOOP && mRemainingRepeatCount == -1) {
+                    mPaused = true
+                    mDotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+                }
+                //Log.d("MainActivity", "Remaining loop $mRemainingRepeatCount")
             } else if (mFrame < firstFrame) {
                 mFrame = lastFrame
                 mRemainingRepeatCount--
+                if (loopCount == INFINITE_LOOP) {
+                    mDotLottieEventListener.forEach(DotLottieEventListener::onLoop)
+                }
+                if (loopCount != INFINITE_LOOP && mRemainingRepeatCount == -1) {
+                    mPaused = true
+                    mDotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+                }
+                //Log.d(TAG", "Remaining loop $mRemainingRepeatCount")
             }
             val endTime = System.nanoTime()
             if (mPaused) {

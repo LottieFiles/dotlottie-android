@@ -30,8 +30,6 @@ First put your animation in the assets folder in your android and add `DotLottie
     <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
         android:id="@+id/lottie_view"
         android:layout_width="200dp"
-        app:mode="reverse"
-        app:repeatCount="1"
         app:speed="3"
         app:src="swinging.json"
         android:layout_height="200dp" />
