@@ -6,9 +6,9 @@ interface DotLottieEventListener {
     fun onPause() {}
     fun onPlay() {}
     fun onDestroy() {}
-
     fun onLoop() {}
     fun onComplete() {}
+
     fun onLoad() {}
     fun onFreeze() {}
     fun onUnFreeze() {}
