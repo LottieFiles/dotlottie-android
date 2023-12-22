@@ -61,8 +61,9 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.pause()
     }
 
-    fun resume() {
-        mLottieDrawable?.resume()
+    fun load(config: Config) {
+        mConfig = config
+        setupConfig()
     }
 
     init {
