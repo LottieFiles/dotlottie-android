@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-#include "tvgLoader.h"
 #include "tvgLottieLoader.h"
 #include "tvgLottieModel.h"
 #include "tvgLottieParser.h"
@@ -48,17 +47,6 @@ static float _str2float(const char* str, int len)
 }
 
 
-void LottieLoader::clear()
-{
-    if (copy) free((char*)content);
-    free(dirName);
-    dirName = nullptr;
-    size = 0;
-    content = nullptr;
-    copy = false;
-}
-
-
 void LottieLoader::run(unsigned tid)
 {
     //update frame
@@ -66,14 +54,16 @@ void LottieLoader::run(unsigned tid)
         builder->update(comp, frameNo);
     //initial loading
     } else {
-        LottieParser parser(content, dirName);
-        if (!parser.parse()) return;
-        comp = parser.comp;
-        if (!comp) return;
+        if (!comp) {
+            LottieParser parser(content, dirName);
+            if (!parser.parse()) return;
+            comp = parser.comp;
+        }
         builder->build(comp);
         w = static_cast<float>(comp->w);
         h = static_cast<float>(comp->h);
         frameDuration = comp->duration();
+        frameCnt = comp->frameCnt();
     }
 }
 
@@ -82,21 +72,21 @@ void LottieLoader::run(unsigned tid)
 /* External Class Implementation                                        */
 /************************************************************************/
 
-LottieLoader::LottieLoader() : builder(new LottieBuilder)
+LottieLoader::LottieLoader() : FrameModule(FileType::Lottie), builder(new LottieBuilder)
 {
+
 }
 
 
 LottieLoader::~LottieLoader()
 {
-    close();
+    this->done();
+
+    if (copy) free((char*)content);
+    free(dirName);
 
     //TODO: correct position?
-    if (comp) {
-        delete(comp);
-        comp = nullptr;
-    }
-
+    delete(comp);
     delete(builder);
 }
 
@@ -104,7 +94,11 @@ LottieLoader::~LottieLoader()
 bool LottieLoader::header()
 {
     //A single thread doesn't need to perform intensive tasks.
-    if (TaskScheduler::threads() == 0) return true;
+    if (TaskScheduler::threads() == 0) {
+        run(0);
+        if (comp) return true;
+        else return false;
+    }
 
     //Quickly validate the given Lottie file without parsing in order to get the animation info.
     auto startFrame = 0.0f;
@@ -191,7 +185,8 @@ bool LottieLoader::header()
         return false;
     }
 
-    frameDuration = (endFrame - startFrame) / frameRate;
+    frameCnt = (endFrame - startFrame);
+    frameDuration = frameCnt / frameRate;
 
     TVGLOG("LOTTIE", "info: frame rate = %f, duration = %f size = %d x %d", frameRate, frameDuration, (int)w, (int)h);
 
@@ -199,10 +194,8 @@ bool LottieLoader::header()
 }
 
 
-bool LottieLoader::open(const char* data, uint32_t size, bool copy)
+bool LottieLoader::open(const char* data, uint32_t size, const std::string& rpath, bool copy)
 {
-    clear();
-
     //If the format is dotLottie
     auto dotLottie = _checkDotLottie(data);
     if (dotLottie) {
@@ -219,14 +212,16 @@ bool LottieLoader::open(const char* data, uint32_t size, bool copy)
     this->size = size;
     this->copy = copy;
 
+    if (!rpath.empty()) {
+        this->dirName = strdup(rpath.c_str());
+    }
+
     return header();
 }
 
 
 bool LottieLoader::open(const string& path)
 {
-    clear();
-
     auto f = fopen(path.c_str(), "r");
     if (!f) return false;
 
@@ -273,6 +268,11 @@ bool LottieLoader::resize(Paint* paint, float w, float h)
     Matrix m = {sx, 0, 0, 0, sy, 0, 0, 0, 1};
     paint->transform(m);
 
+    //apply the scale to the base clipper
+    const Paint* clipper;
+    paint->composite(&clipper);
+    if (clipper) const_cast<Paint*>(clipper)->transform(m);
+
     return true;
 }
 
@@ -280,6 +280,8 @@ bool LottieLoader::resize(Paint* paint, float w, float h)
 bool LottieLoader::read()
 {
     if (!content || size == 0) return false;
+
+    if (!LoadModule::read()) return true;
 
     //the loading has been already completed in header()
     if (comp) return true;
@@ -290,33 +292,23 @@ bool LottieLoader::read()
 }
 
 
-bool LottieLoader::close()
-{
-    this->done();
-
-    clear();
-
-    return true;
-}
-
-
-unique_ptr<Paint> LottieLoader::paint()
+Paint* LottieLoader::paint()
 {
     this->done();
     if (!comp) return nullptr;
-    return cast<Paint>(comp->scene);
+    comp->initiated = true;
+    return comp->scene;
 }
 
 
-bool LottieLoader::frame(uint32_t frameNo)
+bool LottieLoader::frame(float no)
 {
-    if (this->frameNo == frameNo) return true;
+    //no meaing to update if frame diff is less then 1ms
+    if (fabsf(this->frameNo - no) < 0.001f) return false;
 
     this->done();
 
-    if (!comp || frameNo >= comp->frameCnt()) return false;
-
-    this->frameNo = frameNo;
+    this->frameNo = no;
 
     TaskScheduler::request(this);
 
@@ -324,16 +316,13 @@ bool LottieLoader::frame(uint32_t frameNo)
 }
 
 
-uint32_t LottieLoader::totalFrame()
+float LottieLoader::totalFrame()
 {
-    this->done();
-
-    if (!comp) return 0;
-    return comp->frameCnt();
+    return frameCnt;
 }
 
 
-uint32_t LottieLoader::curFrame()
+float LottieLoader::curFrame()
 {
     return frameNo;
 }

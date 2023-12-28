@@ -14,6 +14,7 @@ target_sources(${CMAKE_PROJECT_NAME}
         "${CMAKE_CURRENT_LIST_DIR}/tvgShape.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/tvgSwCanvas.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/tvgTaskScheduler.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/tvgText.cpp"
         )
 
 target_include_directories(${CMAKE_PROJECT_NAME}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -1090,6 +1090,11 @@ static bool _apply(SwSurface* surface, AASpans* aaSpans)
 */
 static bool _rasterTexmapPolygon(SwSurface* surface, const SwImage* image, const Matrix* transform, const SwBBox* region, uint8_t opacity)
 {
+    if (surface->channelSize == sizeof(uint8_t)) {
+        TVGERR("SW_ENGINE", "Not supported grayscale Textmap polygon!");
+        return false;
+    }
+
     //Exceptions: No dedicated drawing area?
     if ((!image->rle && !region) || (image->rle && image->rle->size == 0)) return false;
 
@@ -1152,6 +1157,11 @@ static bool _rasterTexmapPolygon(SwSurface* surface, const SwImage* image, const
 */
 static bool _rasterTexmapPolygonMesh(SwSurface* surface, const SwImage* image, const RenderMesh* mesh, const Matrix* transform, const SwBBox* region, uint8_t opacity)
 {
+    if (surface->channelSize == sizeof(uint8_t)) {
+        TVGERR("SW_ENGINE", "Not supported grayscale Textmap polygon mesh!");
+        return false;
+    }
+
     //Exceptions: No dedicated drawing area?
     if ((!image->rle && !region) || (image->rle && image->rle->size == 0)) return false;
 

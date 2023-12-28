@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 Scene::Scene() : pImpl(new Impl(this))
 {
     Paint::pImpl->id = TVG_CLASS_ID_SCENE;
-    Paint::pImpl->method(new PaintMethod<Scene::Impl>(pImpl));
 }
 
 
@@ -55,15 +54,10 @@ Result Scene::push(unique_ptr<Paint> paint) noexcept
 {
     auto p = paint.release();
     if (!p) return Result::MemoryCorruption;
+    PP(p)->ref();
     pImpl->paints.push_back(p);
 
     return Result::Success;
-}
-
-
-Result Scene::reserve(TVG_UNUSED uint32_t size) noexcept
-{
-    return Result::NonSupport;
 }
 
 

@@ -11,7 +11,7 @@ LottieDrawable::Data::Data(const char *content, uint32_t length) {
     mAnimation = tvg::Animation::gen();
     // Acquire a picture which associated with the animation.
     auto picture = mAnimation->picture();
-    if (picture->load(mContent, mContentLength, "", false) != tvg::Result::Success) {
+    if (picture->load(mContent, mContentLength, "", "", false) != tvg::Result::Success) {
         LOGE("Error: Lottie is not supported. Did you enable Lottie Loader?");
         return;
     }
@@ -30,7 +30,7 @@ void LottieDrawable::Data::setBufferSize(uint32_t *buffer, float width, float he
     mAnimation->picture()->size(width, height);
 }
 
-void LottieDrawable::Data::draw(uint32_t frame) {
+void LottieDrawable::Data::draw(float frame) {
     if (!mCanvas) return;
 //    LOGI("LottieDrawable::Data::draw mAnimation=%d", mAnimation->curFrame());
     mAnimation->frame(frame);

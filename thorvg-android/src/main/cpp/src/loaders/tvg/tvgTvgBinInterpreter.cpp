@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 
 #include "tvgTvgCommon.h"
 #include "tvgShape.h"
+#include "tvgFill.h"
 
 
 /************************************************************************/
@@ -109,16 +110,6 @@ static bool _parseScene(TvgBinBlock block, Paint *paint)
 {
     auto scene = static_cast<Scene*>(paint);
 
-    //TODO: Keep this for the compatibility, Remove in TVG 1.0 release
-    //Case1: scene reserve count
-    if (block.type == TVG_TAG_SCENE_RESERVEDCNT) {
-        if (block.length != SIZE(uint32_t)) return false;
-        uint32_t reservedCnt;
-        READ_UI32(&reservedCnt, block.data);
-        //scene->reserve(reservedCnt);
-        return true;
-    }
-
     //Case2: Base Paint Properties
     if (_parsePaintProperty(block, scene)) return true;
 
@@ -186,6 +177,25 @@ static unique_ptr<Fill> _parseShapeFill(const char *ptr, const char *end)
                 auto fillGradRadial = RadialGradient::gen();
                 fillGradRadial->radial(x, y, radius);
                 fillGrad = std::move(fillGradRadial);
+                break;
+            }
+            case TVG_TAG_FILL_RADIAL_GRADIENT_FOCAL: {
+                if (block.length != 3 * SIZE(float)) return nullptr;
+
+                auto ptr = block.data;
+                float x, y, radius;
+
+                READ_FLOAT(&x, ptr);
+                ptr += SIZE(float);
+                READ_FLOAT(&y, ptr);
+                ptr += SIZE(float);
+                READ_FLOAT(&radius, ptr);
+
+                if (auto fillGradRadial = static_cast<RadialGradient*>(fillGrad.get())) {
+                    P(fillGradRadial)->fx = x;
+                    P(fillGradRadial)->fy = y;
+                    P(fillGradRadial)->fr = radius;
+                }
                 break;
             }
             case TVG_TAG_FILL_LINEAR_GRADIENT: {
@@ -264,7 +274,7 @@ static bool _parseShapeStrokeDashPattern(const char *ptr, const char *end, Shape
             return false;
         }
 
-        shape->stroke(dashPattern, dashPatternCnt);
+        shape->strokeDash(dashPattern, dashPatternCnt);
         free(dashPattern);
     }
     return true;
@@ -280,12 +290,12 @@ static bool _parseShapeStroke(const char *ptr, const char *end, Shape *shape)
         switch (block.type) {
             case TVG_TAG_SHAPE_STROKE_CAP: {
                 if (block.length != SIZE(TvgBinFlag)) return false;
-                shape->stroke((StrokeCap) *block.data);
+                shape->strokeCap((StrokeCap) *block.data);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_JOIN: {
                 if (block.length != SIZE(TvgBinFlag)) return false;
-                shape->stroke((StrokeJoin) *block.data);
+                shape->strokeJoin((StrokeJoin) *block.data);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_ORDER: {
@@ -297,18 +307,18 @@ static bool _parseShapeStroke(const char *ptr, const char *end, Shape *shape)
                 if (block.length != SIZE(float)) return false;
                 float width;
                 READ_FLOAT(&width, block.data);
-                shape->stroke(width);
+                shape->strokeWidth(width);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_COLOR: {
                 if (block.length != 4) return false;
-                shape->stroke(block.data[0], block.data[1], block.data[2], block.data[3]);
+                shape->strokeFill(block.data[0], block.data[1], block.data[2], block.data[3]);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_FILL: {
                 auto fill = _parseShapeFill(block.data, block.end);
                 if (!fill) return false;
-                shape->stroke(std::move(fill));
+                shape->strokeFill(std::move(fill));
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_DASHPTRN: {
@@ -320,6 +330,13 @@ static bool _parseShapeStroke(const char *ptr, const char *end, Shape *shape)
                 float miterlimit;
                 READ_FLOAT(&miterlimit, block.data);
                 shape->strokeMiterlimit(miterlimit);
+                break;
+            }
+            case TVG_TAG_SHAPE_STROKE_DASH_OFFSET: {
+                if (block.length != SIZE(float)) return false;
+                float offset;
+                READ_FLOAT(&offset, block.data);
+                P(shape)->rs.stroke->dashOffset = offset;
                 break;
             }
             default: {
@@ -387,7 +404,7 @@ static bool _parsePicture(TvgBinBlock block, Paint* paint)
             auto size = w * h * SIZE(uint32_t);
             if (block.length != 2 * SIZE(uint32_t) + size) return false;
 
-            picture->load((uint32_t*) ptr, w, h, true);
+            picture->load((uint32_t*) ptr, w, h, true, true);
 
             return true;
         }
@@ -466,7 +483,7 @@ static Paint* _parsePaint(TvgBinBlock baseBlock)
 /* External Class Implementation                                        */
 /************************************************************************/
 
-unique_ptr<Scene> TvgBinInterpreter::run(const char *ptr, const char* end)
+Scene* TvgBinInterpreter::run(const char *ptr, const char* end)
 {
     auto scene = Scene::gen();
     if (!scene) return nullptr;
@@ -481,5 +498,5 @@ unique_ptr<Scene> TvgBinInterpreter::run(const char *ptr, const char* end)
         ptr = block.end;
     }
 
-    return scene;
+    return scene.release();
 }

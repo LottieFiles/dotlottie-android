@@ -7,8 +7,8 @@ using namespace std;
 extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(JNIEnv *env, jclass clazz,
-        jstring contentString, jint length, jintArray outValues) {
-    if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
+        jstring contentString, jint length, jdoubleArray outValues) {
+    if (tvg::Initializer::init(3, tvg::CanvasEngine::Sw) != tvg::Result::Success) {
         return 0;
     }
 
@@ -16,11 +16,11 @@ Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(JNIEnv *env, jcla
     auto* newData = new LottieDrawable::Data(inputStr, length);
     env->ReleaseStringUTFChars(contentString, inputStr);
 
-    jint* contentInfo = env->GetIntArrayElements(outValues, nullptr);
+    jdouble * contentInfo = env->GetDoubleArrayElements(outValues, nullptr);
     if (contentInfo != nullptr) {
         contentInfo[0] = (jint) newData->mAnimation->totalFrame();
-        contentInfo[1] = (jint) newData->mAnimation->duration();
-        env->ReleaseIntArrayElements(outValues, contentInfo, 0);
+        contentInfo[1] = (jdouble) newData->mAnimation->duration();
+        env->ReleaseDoubleArrayElements(outValues, contentInfo, 0);
     }
 
     return reinterpret_cast<jlong>(newData);
@@ -45,7 +45,7 @@ Java_com_lottiefiles_dotlottie_core_LottieNative_nSetLottieBufferSize(JNIEnv *en
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_lottiefiles_dotlottie_core_LottieNative_nDrawLottieFrame(JNIEnv *env, jclass clazz, jlong lottiePtr,
-        jobject bitmap, jint frame) {
+        jobject bitmap, jfloat frame) {
     if (lottiePtr == 0) {
         return;
     }

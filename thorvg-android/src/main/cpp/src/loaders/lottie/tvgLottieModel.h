@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,17 +49,17 @@ struct LottieStroke
         return dashattr->value[no];
     }
 
-    float dashOffset(int32_t frameNo)
+    float dashOffset(float frameNo)
     {
         return dash(0)(frameNo);
     }
 
-    float dashGap(int32_t frameNo)
+    float dashGap(float frameNo)
     {
         return dash(2)(frameNo);
     }
 
-    float dashSize(int32_t frameNo)
+    float dashSize(float frameNo)
     {
         auto d = dash(1)(frameNo);
         if (d == 0.0f) return 0.1f;
@@ -75,25 +75,112 @@ struct LottieStroke
     LottieFloat width = 0.0f;
     DashAttr* dashattr = nullptr;
     float miterLimit = 0;
-    StrokeCap cap = StrokeCap::Butt;
-    StrokeJoin join = StrokeJoin::Miter;
+    StrokeCap cap = StrokeCap::Round;
+    StrokeJoin join = StrokeJoin::Round;
 };
 
 
 struct LottieGradient
 {
-    bool dynamic()
+    uint32_t populate(ColorStop& color)
     {
-        if (start.frames || end.frames || height.frames || angle.frames || colorStops.frames) return true;
+        uint32_t alphaCnt = (color.input->count - (colorStops.count * 4)) / 2;
+        Array<Fill::ColorStop> output(colorStops.count + alphaCnt);
+        uint32_t cidx = 0;               //color count
+        uint32_t clast = colorStops.count * 4;
+        uint32_t aidx = clast;           //alpha count
+        Fill::ColorStop cs;
+
+        //merge color stops.
+        for (uint32_t i = 0; i < color.input->count; ++i) {
+            if (cidx == clast || aidx == color.input->count) break;
+            if ((*color.input)[cidx] == (*color.input)[aidx]) {
+                cs.offset = (*color.input)[cidx];
+                cs.r = lroundf((*color.input)[cidx + 1] * 255.0f);
+                cs.g = lroundf((*color.input)[cidx + 2] * 255.0f);
+                cs.b = lroundf((*color.input)[cidx + 3] * 255.0f);
+                cs.a = lroundf((*color.input)[aidx + 1] * 255.0f);
+                cidx += 4;
+                aidx += 2;
+            } else if ((*color.input)[cidx] < (*color.input)[aidx]) {
+                cs.offset = (*color.input)[cidx];
+                cs.r = lroundf((*color.input)[cidx + 1] * 255.0f);
+                cs.g = lroundf((*color.input)[cidx + 2] * 255.0f);
+                cs.b = lroundf((*color.input)[cidx + 3] * 255.0f);
+                //generate alpha value
+                if (output.count > 0) {
+                    auto p = ((*color.input)[cidx] - output.last().offset) / ((*color.input)[aidx] - output.last().offset);
+                    cs.a = mathLerp<uint8_t>(output.last().a, lroundf((*color.input)[aidx + 1] * 255.0f), p);
+                } else cs.a = 255;
+                cidx += 4;
+            } else {
+                cs.offset = (*color.input)[aidx];
+                cs.a = lroundf((*color.input)[aidx + 1] * 255.0f);
+                //generate color value
+                if (output.count > 0) {
+                    auto p = ((*color.input)[aidx] - output.last().offset) / ((*color.input)[cidx] - output.last().offset);
+                    cs.r = mathLerp<uint8_t>(output.last().r, lroundf((*color.input)[cidx + 1] * 255.0f), p);
+                    cs.g = mathLerp<uint8_t>(output.last().g, lroundf((*color.input)[cidx + 2] * 255.0f), p);
+                    cs.b = mathLerp<uint8_t>(output.last().b, lroundf((*color.input)[cidx + 3] * 255.0f), p);
+                } else cs.r = cs.g = cs.b = 255;
+                aidx += 2;
+            }
+            output.push(cs);
+        }
+
+        //color remains
+        while (cidx < clast) {
+            cs.offset = (*color.input)[cidx];
+            cs.r = lroundf((*color.input)[cidx + 1] * 255.0f);
+            cs.g = lroundf((*color.input)[cidx + 2] * 255.0f);
+            cs.b = lroundf((*color.input)[cidx + 3] * 255.0f);
+            cs.a = (output.count > 0) ? output.last().a : 255;
+            output.push(cs);
+            cidx += 4;
+        }
+
+        //alpha remains
+        while (aidx < color.input->count) {
+            cs.offset = (*color.input)[aidx];
+            cs.a = lroundf((*color.input)[aidx + 1] * 255.0f);
+            if (output.count > 0) {
+                cs.r = output.last().r;
+                cs.g = output.last().g;
+                cs.b = output.last().b;
+            } else cs.r = cs.g = cs.b = 255;
+            output.push(cs);
+            aidx += 2;
+        }
+
+        color.data = output.data;
+        output.data = nullptr;
+
+        color.input->reset();
+        delete(color.input);
+
+        return output.count;
+    }
+
+    bool prepare()
+    {
+        if (colorStops.frames) {
+            for (auto v = colorStops.frames->data; v < colorStops.frames->end(); ++v) {
+                colorStops.count = populate(v->value);
+            }
+        } else {
+            colorStops.count = populate(colorStops.value);
+        }
+        if (start.frames || end.frames || height.frames || angle.frames || opacity.frames || colorStops.frames) return true;
         return false;
     }
 
-    Fill* fill(int32_t frameNo);
+    Fill* fill(float frameNo);
 
     LottiePoint start = Point{0.0f, 0.0f};
     LottiePoint end = Point{0.0f, 0.0f};
     LottieFloat height = 0.0f;
     LottieFloat angle = 0.0f;
+    LottieOpacity opacity = 255;
     LottieColorStop colorStops;
     uint8_t id = 0;    //1: linear, 2: radial
 };
@@ -133,7 +220,7 @@ struct LottieObject
         Image,
         Trimpath,
         Repeater,
-        RoundedCorner,
+        RoundedCorner
     };
 
     virtual ~LottieObject()
@@ -144,13 +231,13 @@ struct LottieObject
     char* name = nullptr;
     Type type;
     bool statical = true;      //no keyframes
-    bool hidden = false;
+    bool hidden = false;       //remove?
 };
 
 
 struct LottieTrimpath : LottieObject
 {
-    enum Type : uint8_t { Simultaneous = 1, Individual = 2 };
+    enum Type : uint8_t { Individual = 1, Simultaneous = 2 };
 
     void prepare()
     {
@@ -158,7 +245,7 @@ struct LottieTrimpath : LottieObject
         if (start.frames || end.frames || offset.frames) statical = false;
     }
 
-    void segment(int32_t frameNo, float& start, float& end);
+    void segment(float frameNo, float& start, float& end);
 
     LottieFloat start = 0.0f;
     LottieFloat end = 0.0f;
@@ -268,9 +355,9 @@ struct LottieTransform : LottieObject
     void prepare()
     {
         LottieObject::type = LottieObject::Transform;
-        if (position.frames || rotation.frames || scale.frames || anchor.frames || opacity.frames) statical = false;
-        else if (coords && (coords->x.frames || coords->y.frames)) statical = false;
-        else if (rotationEx && (rotationEx->x.frames || rotationEx->y.frames)) statical = false;
+        if (position.frames || rotation.frames || scale.frames || anchor.frames || opacity.frames || (coords && (coords->x.frames || coords->y.frames)) || (rotationEx && (rotationEx->x.frames || rotationEx->y.frames))) {
+            statical = false;
+        }
     }
 
     LottiePosition position = Point{0.0f, 0.0f};
@@ -316,7 +403,7 @@ struct LottieGradientFill : LottieObject, LottieGradient
     void prepare()
     {
         LottieObject::type = LottieObject::GradientFill;
-        if (LottieGradient::dynamic()) statical = false;
+        if (LottieGradient::prepare()) statical = false;
     }
 
     FillRule rule = FillRule::Winding;
@@ -328,7 +415,7 @@ struct LottieGradientStroke : LottieObject, LottieStroke, LottieGradient
     void prepare()
     {
         LottieObject::type = LottieObject::GradientStroke;
-        if (LottieStroke::dynamic() || LottieGradient::dynamic()) statical = false;
+        if (LottieGradient::prepare() || LottieStroke::dynamic()) statical = false;
     }
 };
 
@@ -344,12 +431,7 @@ struct LottieImage : LottieObject
 
     Picture* picture = nullptr;   //tvg render data
 
-    ~LottieImage()
-    {
-        free(b64Data);
-        free(mimeType);
-        delete(picture);
-    }
+    ~LottieImage();
 
     void prepare()
     {
@@ -385,20 +467,14 @@ struct LottieGroup : LottieObject
     virtual ~LottieGroup()
     {
         for (auto p = children.data; p < children.end(); ++p) delete(*p);
-        delete(transform);
     }
 
     void prepare(LottieObject::Type type = LottieObject::Group);
 
-    virtual uint8_t opacity(int32_t frameNo)
-    {
-        return (transform ? transform->opacity(frameNo) : 255);
-    }
-
     Scene* scene = nullptr;               //tvg render data
-
     Array<LottieObject*> children;
-    LottieTransform* transform = nullptr;
+
+    bool reqFragment = false;   //requirment to fragment the render context
 };
 
 
@@ -406,34 +482,17 @@ struct LottieLayer : LottieGroup
 {
     enum Type : uint8_t {Precomp = 0, Solid, Image, Null, Shape, Text};
 
-    ~LottieLayer()
-    {
-        if (refId) {
-            //No need to free assets children because the Composition owns them.
-            children.clear();
-            free(refId);
-        }
+    ~LottieLayer();
 
-        for (auto m = masks.data; m < masks.end(); ++m) {
-            delete(*m);
-        }
-
-        delete(matte.target);
-    }
-
-    uint8_t opacity(int32_t frameNo) override
+    uint8_t opacity(float frameNo)
     {
         //return zero if the visibility is false.
-        if (frameNo < inFrame || frameNo > outFrame) return 0;
         if (type == Null) return 255;
-        return LottieGroup::opacity(frameNo);
+        return transform->opacity(frameNo);
     }
 
     void prepare();
-    int32_t remap(int32_t frameNo);
-
-    //Optimize: compact data??
-    RGB24 color;
+    float remap(float frameNo);
 
     struct {
         CompositeMethod type = CompositeMethod::None;
@@ -444,27 +503,28 @@ struct LottieLayer : LottieGroup
     LottieLayer* parent = nullptr;
     LottieFloat timeRemap = 0.0f;
     LottieComposition* comp = nullptr;
+    LottieTransform* transform = nullptr;
     Array<LottieMask*> masks;
+    RGB24 color;  //used by Solid layer
 
     float timeStretch = 1.0f;
-    uint32_t w, h;
-    int32_t inFrame = 0;
-    int32_t outFrame = 0;
-    uint32_t startFrame = 0;
+    uint32_t w = 0, h = 0;
+    float inFrame = 0.0f;
+    float outFrame = 0.0f;
+    float startFrame = 0.0f;
     char* refId = nullptr;      //pre-composition reference.
     int16_t pid = -1;           //id of the parent layer.
     int16_t id = -1;            //id of the current layer.
 
     //cached data
     struct {
-        int32_t frameNo = -1;
+        float frameNo = -1.0f;
         Matrix matrix;
         uint8_t opacity;
     } cache;
 
     Type type = Null;
     bool autoOrient = false;
-    bool roundedCorner = false;
     bool matteSrc = false;
 };
 
@@ -475,23 +535,18 @@ struct LottieComposition
 
     float duration() const
     {
-        return frameDuration() / frameRate;  // in second
+        return frameCnt() / frameRate;  // in second
     }
 
-    int32_t frameAtTime(float timeInSec) const
+    float frameAtTime(float timeInSec) const
     {
         auto p = timeInSec / duration();
         if (p < 0.0f) p = 0.0f;
         else if (p > 1.0f) p = 1.0f;
-        return (int32_t)lroundf(p * frameDuration());
+        return p * frameCnt();
     }
 
-    uint32_t frameCnt() const
-    {
-        return frameDuration() + 1;
-    }
-
-    uint32_t frameDuration() const
+    float frameCnt() const
     {
         return endFrame - startFrame;
     }
@@ -502,10 +557,11 @@ struct LottieComposition
     char* version = nullptr;
     char* name = nullptr;
     uint32_t w, h;
-    int32_t startFrame, endFrame;
+    float startFrame, endFrame;
     float frameRate;
     Array<LottieObject*> assets;
     Array<LottieInterpolator*> interpolators;
+    bool initiated = false;
 };
 
 #endif //_TVG_LOTTIE_MODEL_H_

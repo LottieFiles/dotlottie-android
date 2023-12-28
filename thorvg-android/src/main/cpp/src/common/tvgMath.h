@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,7 @@ static inline bool mathEqual(float a, float b)
     return (fabsf(a - b) < FLT_EPSILON);
 }
 
+
 static inline bool mathEqual(const Matrix& a, const Matrix& b)
 {
     if (!mathEqual(a.e11, b.e11) || !mathEqual(a.e12, b.e12) || !mathEqual(a.e13, b.e13) ||
@@ -63,6 +64,7 @@ static inline bool mathEqual(const Matrix& a, const Matrix& b)
     }
     return true;
 }
+
 
 static inline bool mathRightAngle(const Matrix* m)
 {
@@ -169,6 +171,18 @@ static inline Point operator+(const Point& lhs, const Point& rhs)
 static inline Point operator*(const Point& lhs, float rhs)
 {
     return {lhs.x * rhs, lhs.y * rhs};
+}
+
+
+static inline Point operator*(const float& lhs, const Point& rhs)
+{
+    return {lhs * rhs.x, lhs * rhs.y};
+}
+
+
+static inline Point operator/(const Point& lhs, const float rhs)
+{
+    return {lhs.x / rhs, lhs.y / rhs};
 }
 
 

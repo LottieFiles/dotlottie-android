@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,10 +39,8 @@ void TvgLoader::clear()
     size = 0;
     copy = false;
 
-    if (interpreter) {
-        delete(interpreter);
-        interpreter = nullptr;
-    }
+    delete(interpreter);
+    interpreter = nullptr;
 }
 
 
@@ -103,13 +101,35 @@ bool TvgLoader::readHeader()
 }
 
 
+void TvgLoader::run(unsigned tid)
+{
+    auto data = const_cast<char*>(ptr);
+
+    if (compressed) {
+        data = (char*) lzwDecode((uint8_t*) data, compressedSize, compressedSizeBits, uncompressedSize);
+        root = interpreter->run(data, data + uncompressedSize);
+        free(data);
+    } else {
+        root = interpreter->run(data, this->data + size);
+    }
+
+    clear();
+}
+
+
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
+TvgLoader::TvgLoader() : ImageLoader(FileType::Tvg)
+{
+}
+
+
 TvgLoader::~TvgLoader()
 {
-    close();
+    this->done();
+    clear();
 }
 
 
@@ -148,7 +168,7 @@ bool TvgLoader::open(const string &path)
 }
 
 
-bool TvgLoader::open(const char *data, uint32_t size, bool copy)
+bool TvgLoader::open(const char *data, uint32_t size, TVG_UNUSED const string& rpath, bool copy)
 {
     clear();
 
@@ -193,40 +213,16 @@ bool TvgLoader::read()
 {
     if (!ptr || size == 0) return false;
 
+    if (!LoadModule::read()) return true;
+
     TaskScheduler::request(this);
 
     return true;
 }
 
 
-bool TvgLoader::close()
+Paint* TvgLoader::paint()
 {
     this->done();
-    clear();
-    return true;
-}
-
-
-void TvgLoader::run(unsigned tid)
-{
-    if (root) root.reset();
-
-    auto data = const_cast<char*>(ptr);
-
-    if (compressed) {
-        data = (char*) lzwDecode((uint8_t*) data, compressedSize, compressedSizeBits, uncompressedSize);
-        root = interpreter->run(data, data + uncompressedSize);
-        free(data);
-    } else {
-        root = interpreter->run(data, this->data + size);
-    }
-
-    if (!root) clear();
-}
-
-
-unique_ptr<Paint> TvgLoader::paint()
-{
-    this->done();
-    return std::move(root);
+    return root;
 }

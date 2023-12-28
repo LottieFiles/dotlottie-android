@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -428,12 +428,6 @@ static void _lineTo(SwStroke& stroke, const SwPoint& to)
 
 static void _cubicTo(SwStroke& stroke, const SwPoint& ctrl1, const SwPoint& ctrl2, const SwPoint& to)
 {
-    //if all control points are coincident, this is a no-op; avoid creating a spurious corner
-    if ((stroke.center - ctrl1).small() && (ctrl1 - ctrl2).small() && (ctrl2 - to).small()) {
-        stroke.center = to;
-        return;
-    }
-
     SwPoint bezStack[37];   //TODO: static?
     auto limit = bezStack + 32;
     auto arc = bezStack;
@@ -695,7 +689,6 @@ static void _endSubPath(SwStroke& stroke)
 
         //No specific corner processing is required if the turn is 0
         if (turn != 0) {
-
             //when we turn to the right, the inside is 0
             int32_t inside = 0;
 

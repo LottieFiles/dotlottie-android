@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,10 +58,28 @@ CompositeMethod LottieParser::getMaskMethod(bool inversed)
 BlendMethod LottieParser::getBlendMethod()
 {
     switch (getInt()) {
+        case 0: return BlendMethod::Normal;
         case 1: return BlendMethod::Multiply;
         case 2: return BlendMethod::Screen;
         case 3: return BlendMethod::Overlay;
-        default: return BlendMethod::Normal;
+        case 4: return BlendMethod::Darken;
+        case 5: return BlendMethod::Lighten;
+        case 6: return BlendMethod::ColorDodge;
+        case 7: return BlendMethod::ColorBurn;
+        case 8: return BlendMethod::HardLight;
+        case 9: return BlendMethod::SoftLight;
+        case 10: return BlendMethod::Difference;
+        case 11: return BlendMethod::Exclusion;
+        //case 12: return BlendMethod::Hue:
+        //case 13: return BlendMethod::Saturation:
+        //case 14: return BlendMethod::Color:
+        //case 15: return BlendMethod::Luminosity:
+        case 16: return BlendMethod::Add;
+        //case 17: return BlendMethod::HardMix:
+        default: {
+            TVGERR("LOTTIE", "Non-Supported Blend Mode");
+            return BlendMethod::Normal;
+        }
     }
 }
 
@@ -219,33 +237,9 @@ void LottieParser::getValue(ColorStop& color)
 {
     if (peekType() == kArrayType) enterArray();
 
-    int idx = 0;
-    auto count = context->gradient->colorStops.count;
-    if (!color.data) color.data = static_cast<Fill::ColorStop*>(malloc(sizeof(Fill::ColorStop) * count));
+    color.input = new Array<float>(context->gradient->colorStops.count);
 
-    //rgb
-    while (nextArrayValue()) {
-        auto remains = (idx % 4);
-        if (remains == 0) {
-            color.data[idx / 4].offset = getFloat();
-            color.data[idx / 4].a = 255;        //in default
-        } else if (remains == 1) {
-            color.data[idx / 4].r = lroundf(getFloat() * 255.0f);
-        } else if (remains == 2) {
-            color.data[idx / 4].g = lroundf(getFloat() * 255.0f);
-        } else if (remains == 3) {
-            color.data[idx / 4].b = lroundf(getFloat() * 255.0f);
-        }
-        if ((++idx / 4) == count) break;
-    }
-
-    //alpha
-    idx = 0;
-    while (nextArrayValue()) {
-        auto offset = getFloat(); //not used for now.
-        if (!mathEqual(offset, color.data[idx].offset)) TVGERR("LOTTIE", "FIXME: Gradient alpha offset is ignored");
-        color.data[idx++].a = lroundf(getFloat() * 255.0f);
-    }
+    while (nextArrayValue()) color.input->push(getFloat());
 }
 
 
@@ -405,7 +399,7 @@ void LottieParser::parseKeyFrame(T& prop)
                 }
             }
         } else if (!strcmp(key, "t")) {
-            frame.no = lroundf(getFloat());
+            frame.no = getFloat();
         } else if (!strcmp(key, "s")) {
             getValue(frame.value);
         } else if (!strcmp(key, "e")) {
@@ -668,8 +662,6 @@ LottieRoundedCorner* LottieParser::parseRoundedCorner()
     auto corner = new LottieRoundedCorner;
     if (!corner) return nullptr;
 
-    context->layer->roundedCorner = true;
-
     while (auto key = nextObjectKey()) {
         if (!strcmp(key, "nm")) corner->name = getStringCopy();
         else if (!strcmp(key, "r")) parseProperty(corner->radius);
@@ -684,6 +676,7 @@ LottieRoundedCorner* LottieParser::parseRoundedCorner()
 void LottieParser::parseGradient(LottieGradient* gradient, const char* key)
 {
     if (!strcmp(key, "t")) gradient->id = getInt();
+    else if (!strcmp(key, "o")) parseProperty(gradient->opacity);
     else if (!strcmp(key, "g"))
     {
         enterObject();
@@ -873,9 +866,9 @@ LottieImage* LottieParser::parseImage(const char* key)
         image->size = b64Decode(b64Data, length, &image->b64Data);
     //external image resource
     } else {
-        auto len = strlen(dirName) + strlen(subPath) + strlen(data) + 1;
+        auto len = strlen(dirName) + strlen(subPath) + strlen(data) + 2;
         image->path = static_cast<char*>(malloc(len));
-        snprintf(image->path, len, "%s%s%s", dirName, subPath, data);
+        snprintf(image->path, len, "%s/%s%s", dirName, subPath, data);
     }
 
     image->prepare();
@@ -918,7 +911,9 @@ void LottieParser::parseAssets()
 {
     enterArray();
     while (nextArrayValue()) {
-        comp->assets.push(parseAsset());
+        auto asset = parseAsset();
+        if (asset) comp->assets.push(asset);
+        else TVGERR("LOTTIE", "Invalid Asset!");
     }
 }
 
@@ -956,8 +951,19 @@ void LottieParser::parseShapes(LottieLayer* layer)
 {
     enterArray();
     while (nextArrayValue()) {
-        parseObject(layer);
-    }
+        enterObject();
+        while (auto key = nextObjectKey()) {
+            if (!strcmp(key, "it")) {
+                enterArray();
+                while (nextArrayValue()) parseObject(layer);
+            } else if (!strcmp(key, "ty")) {
+                if (auto child = parseObject()) {
+                    if (child->hidden) delete(child);
+                    else layer->children.push(child);
+                }
+            } else skip(key);
+        }
+     }
 }
 
 
@@ -995,7 +1001,9 @@ void LottieParser::parseMasks(LottieLayer* layer)
 {
     enterArray();
     while (nextArrayValue()) {
-        layer->masks.push(parseMask());
+        auto mask = parseMask();
+        if (mask->dynamic()) layer->statical = false;
+        layer->masks.push(mask);
     }
 }
 
@@ -1025,9 +1033,9 @@ LottieLayer* LottieParser::parseLayer()
         }
         else if (!strcmp(key, "ao")) layer->autoOrient = getInt();
         else if (!strcmp(key, "shapes")) parseShapes(layer);
-        else if (!strcmp(key, "ip")) layer->inFrame = lroundf(getFloat());
-        else if (!strcmp(key, "op")) layer->outFrame = lroundf(getFloat());
-        else if (!strcmp(key, "st")) layer->startFrame = lroundf(getFloat());
+        else if (!strcmp(key, "ip")) layer->inFrame = getFloat();
+        else if (!strcmp(key, "op")) layer->outFrame = getFloat();
+        else if (!strcmp(key, "st")) layer->startFrame = getFloat();
         else if (!strcmp(key, "bm")) layer->blendMethod = getBlendMethod();
         else if (!strcmp(key, "parent")) layer->pid = getInt();
         else if (!strcmp(key, "tm")) parseTimeRemap(layer);
@@ -1074,11 +1082,14 @@ LottieLayer* LottieParser::parseLayers()
                 root->children.push(layer);
             } else {
                 //matte source must be located in the right previous.
-                layer->matte.target = static_cast<LottieLayer*>(root->children.last());
-                layer->statical &= layer->matte.target->statical;
+                auto matte = static_cast<LottieLayer*>(root->children.last());
+                if (matte->matteSrc) {
+                    layer->matte.target = matte;
+                } else {
+                    TVGLOG("LOTTIE", "Matte Source(%s) is not designated?", matte->name);
+                }
                 root->children.last() = layer;
             }
-            root->statical &= layer->statical;
         }
     }
     root->prepare();
@@ -1108,8 +1119,8 @@ bool LottieParser::parse()
     while (auto key = nextObjectKey()) {
         if (!strcmp(key, "v")) comp->version = getStringCopy();
         else if (!strcmp(key, "fr")) comp->frameRate = getFloat();
-        else if (!strcmp(key, "ip")) comp->startFrame = lroundf(getFloat());
-        else if (!strcmp(key, "op")) comp->endFrame = lroundf(getFloat());
+        else if (!strcmp(key, "ip")) comp->startFrame = getFloat();
+        else if (!strcmp(key, "op")) comp->endFrame = getFloat();
         else if (!strcmp(key, "w")) comp->w = getInt();
         else if (!strcmp(key, "h")) comp->h = getInt();
         else if (!strcmp(key, "nm")) comp->name = getStringCopy();

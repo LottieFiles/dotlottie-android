@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -121,28 +121,42 @@ static void _dashLineTo(SwDashStroke& dash, const Point* to, const Matrix* trans
     if (len < dash.curLen) {
         dash.curLen -= len;
         if (!dash.curOpGap) {
-            _outlineMoveTo(*dash.outline, &dash.ptCur, transform);
+            if (dash.move) {
+                _outlineMoveTo(*dash.outline, &dash.ptCur, transform);
+                dash.move = false;
+            }
             _outlineLineTo(*dash.outline, to, transform);
         }
     } else {
         while (len > dash.curLen) {
-            len -= dash.curLen;
             Line left, right;
-            _lineSplitAt(cur, dash.curLen, left, right);;
-            dash.curIdx = (dash.curIdx + 1) % dash.cnt;
-            if (!dash.curOpGap) {
-                _outlineMoveTo(*dash.outline, &left.pt1, transform);
-                _outlineLineTo(*dash.outline, &left.pt2, transform);
+            if (dash.curLen > 0) {
+                len -= dash.curLen;
+                _lineSplitAt(cur, dash.curLen, left, right);
+                if (!dash.curOpGap) {
+                    if (dash.move || dash.pattern[dash.curIdx] - dash.curLen < FLT_EPSILON) {
+                        _outlineMoveTo(*dash.outline, &left.pt1, transform);
+                        dash.move = false;
+                    }
+                    _outlineLineTo(*dash.outline, &left.pt2, transform);
+                }
+            } else {
+                right = cur;
             }
+            dash.curIdx = (dash.curIdx + 1) % dash.cnt;
             dash.curLen = dash.pattern[dash.curIdx];
             dash.curOpGap = !dash.curOpGap;
             cur = right;
             dash.ptCur = cur.pt1;
+            dash.move = true;
         }
         //leftovers
         dash.curLen -= len;
         if (!dash.curOpGap) {
-            _outlineMoveTo(*dash.outline, &cur.pt1, transform);
+            if (dash.move) {
+                _outlineMoveTo(*dash.outline, &cur.pt1, transform);
+                dash.move = false;
+            }
             _outlineLineTo(*dash.outline, &cur.pt2, transform);
         }
         if (dash.curLen < 1 && TO_SWCOORD(len) > 1) {
@@ -164,33 +178,42 @@ static void _dashCubicTo(SwDashStroke& dash, const Point* ctrl1, const Point* ct
     if (len < dash.curLen) {
         dash.curLen -= len;
         if (!dash.curOpGap) {
-            _outlineMoveTo(*dash.outline, &dash.ptCur, transform);
+            if (dash.move) {
+                _outlineMoveTo(*dash.outline, &dash.ptCur, transform);
+                dash.move = false;
+            }
             _outlineCubicTo(*dash.outline, ctrl1, ctrl2, to, transform);
         }
     } else {
-        bool begin = true;          //starting with move_to
         while (len > dash.curLen) {
             Bezier left, right;
-            len -= dash.curLen;
-            bezSplitAt(cur, dash.curLen, left, right);
-            if (!dash.curOpGap) {
-                // leftovers from a previous command don't require moveTo
-                if (begin || dash.pattern[dash.curIdx] - dash.curLen < FLT_EPSILON) {
-                    _outlineMoveTo(*dash.outline, &left.start, transform);
-                    begin = false;
+            if (dash.curLen > 0) {
+                len -= dash.curLen;
+                bezSplitAt(cur, dash.curLen, left, right);
+                if (!dash.curOpGap) {
+                    if (dash.move || dash.pattern[dash.curIdx] - dash.curLen < FLT_EPSILON) {
+                        _outlineMoveTo(*dash.outline, &left.start, transform);
+                        dash.move = false;
+                    }
+                    _outlineCubicTo(*dash.outline, &left.ctrl1, &left.ctrl2, &left.end, transform);
                 }
-                _outlineCubicTo(*dash.outline, &left.ctrl1, &left.ctrl2, &left.end, transform);
+            } else {
+                right = cur;
             }
             dash.curIdx = (dash.curIdx + 1) % dash.cnt;
             dash.curLen = dash.pattern[dash.curIdx];
             dash.curOpGap = !dash.curOpGap;
             cur = right;
             dash.ptCur = right.start;
+            dash.move = true;
         }
         //leftovers
         dash.curLen -= len;
         if (!dash.curOpGap) {
-            _outlineMoveTo(*dash.outline, &cur.start, transform);
+            if (dash.move) {
+                _outlineMoveTo(*dash.outline, &cur.start, transform);
+                dash.move = false;
+            }
             _outlineCubicTo(*dash.outline, &cur.ctrl1, &cur.ctrl2, &cur.end, transform);
         }
         if (dash.curLen < 1 && TO_SWCOORD(len) > 1) {
@@ -201,6 +224,22 @@ static void _dashCubicTo(SwDashStroke& dash, const Point* ctrl1, const Point* ct
         }
     }
     dash.ptCur = *to;
+}
+
+
+static void _dashClose(SwDashStroke& dash, const Matrix* transform)
+{
+    _dashLineTo(dash, &dash.ptStart, transform);
+}
+
+
+static void _dashMoveTo(SwDashStroke& dash, uint32_t offIdx, float offset, const Point* pts, const Matrix* transform)
+{
+    dash.curIdx = offIdx % dash.cnt;
+    dash.curLen = dash.pattern[dash.curIdx] - offset;
+    dash.curOpGap = offIdx % 2;
+    dash.ptStart = dash.ptCur = *pts;
+    dash.move = true;
 }
 
 
@@ -253,7 +292,6 @@ static SwOutline* _genDashOutline(const RenderShape* rshape, const Matrix* trans
         trimmed = true;
     //just a dasy style.
     } else {
-
         if (dash.cnt == 0) return nullptr;
     }
 
@@ -295,15 +333,11 @@ static SwOutline* _genDashOutline(const RenderShape* rshape, const Matrix* trans
     while (cmdCnt-- > 0) {
         switch (*cmds) {
             case PathCommand::Close: {
-                _dashLineTo(dash, &dash.ptStart, transform);
+                _dashClose(dash, transform);
                 break;
             }
             case PathCommand::MoveTo: {
-                //reset the dash
-                dash.curIdx = offIdx % dash.cnt;
-                dash.curLen = dash.pattern[dash.curIdx] - offset;
-                dash.curOpGap = offIdx % 2;
-                dash.ptStart = dash.ptCur = *pts;
+                _dashMoveTo(dash, offIdx, offset, pts, transform);
                 ++pts;
                 break;
             }
@@ -524,11 +558,15 @@ void shapeReset(SwShape* shape)
 void shapeFree(SwShape* shape)
 {
     rleFree(shape->rle);
+    shape->rle = nullptr;
+
     shapeDelFill(shape);
 
     if (shape->stroke) {
         rleFree(shape->strokeRle);
+        shape->strokeRle = nullptr;
         strokeFree(shape->stroke);
+        shape->stroke = nullptr;
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,11 +97,8 @@ struct SwShapeTask : SwTask
         if (!rshape->stroke->fill && (MULTIPLY(rshape->stroke->color[3], opacity) == 0)) return 0.0f;
         if (mathZero(rshape->stroke->trim.begin - rshape->stroke->trim.end)) return 0.0f;
 
-        if (transform) {
-            if (transform->e11 > transform->e22) width *= transform->e11;
-            else width *= transform->e22;
-        }
-        return fabsf(width);
+        if (transform) return (width * sqrt(transform->e11 * transform->e11 + transform->e12 * transform->e12));
+        else return width;
     }
 
 
@@ -142,7 +139,9 @@ struct SwShapeTask : SwTask
             visibleFill = (alpha > 0 || rshape->fill);
             if (visibleFill || clipper) {
                 shapeReset(&shape);
-                if (!shapePrepare(&shape, rshape, transform, clipRegion, bbox, mpool, tid, clips.count > 0 ? true : false)) goto err;
+                if (!shapePrepare(&shape, rshape, transform, clipRegion, bbox, mpool, tid, clips.count > 0 ? true : false)) {
+                    visibleFill = false;
+                }
             }
         }
         //Fill
@@ -353,7 +352,7 @@ static void _renderStroke(SwShapeTask* task, SwSurface* surface, uint8_t opacity
     if (auto strokeFill = task->rshape->strokeFill()) {
         rasterGradientStroke(surface, &task->shape, strokeFill->identifier());
     } else {
-        if (task->rshape->strokeColor(&r, &g, &b, &a)) {
+        if (task->rshape->strokeFill(&r, &g, &b, &a)) {
             a = MULTIPLY(opacity, a);
             if (a > 0) rasterStroke(surface, &task->shape, r, g, b, a);
         }
@@ -380,6 +379,13 @@ SwRenderer::~SwRenderer()
 
 bool SwRenderer::clear()
 {
+    if (surface) return rasterClear(surface, 0, 0, surface->w, surface->h);
+    return false;
+}
+
+
+bool SwRenderer::sync()
+{
     for (auto task = tasks.data; task < tasks.end(); ++task) {
         if ((*task)->disposed) {
             delete(*task);
@@ -392,18 +398,6 @@ bool SwRenderer::clear()
 
     if (!sharedMpool) mpoolClear(mpool);
 
-    if (surface) {
-        vport.x = vport.y = 0;
-        vport.w = surface->w;
-        vport.h = surface->h;
-    }
-
-    return true;
-}
-
-
-bool SwRenderer::sync()
-{
     return true;
 }
 
@@ -446,7 +440,13 @@ bool SwRenderer::target(pixel_t* data, uint32_t stride, uint32_t w, uint32_t h, 
 
 bool SwRenderer::preRender()
 {
-    return rasterClear(surface, 0, 0, surface->w, surface->h);
+    if (surface) {
+        vport.x = vport.y = 0;
+        vport.w = surface->w;
+        vport.h = surface->h;
+    }
+
+    return true;
 }
 
 
@@ -745,6 +745,12 @@ void* SwRenderer::prepareCommon(SwTask* task, const RenderTransform* transform, 
         task->transform = nullptr;
     }
 
+    //zero size?
+    if (task->transform) {
+        if (task->transform->e11 == 0.0f && task->transform->e12 == 0.0f) return task; //zero width
+        if (task->transform->e21 == 0.0f && task->transform->e22 == 0.0f) return task; //zero height
+    }
+
     task->opacity = opacity;
     task->surface = surface;
     task->mpool = mpool;
@@ -770,10 +776,8 @@ RenderData SwRenderer::prepare(Surface* surface, const RenderMesh* mesh, RenderD
     //prepare task
     auto task = static_cast<SwImageTask*>(data);
     if (!task) task = new SwImageTask;
-    if (flags & RenderUpdateFlag::Image) {
-        task->source = surface;
-        task->mesh = mesh;
-    }
+    task->source = surface;
+    task->mesh = mesh;
     return prepareCommon(task, transform, clips, opacity, flags);
 }
 

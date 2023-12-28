@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,10 +35,11 @@ class LottieLoader : public FrameModule, public Task
 public:
     const char* content = nullptr;      //lottie file data
     uint32_t size = 0;                  //lottie data size
-    uint32_t frameNo = 0;               //current frame number
-    float frameDuration;
+    float frameNo = 0.0f;               //current frame number
+    float frameCnt = 0.0f;
+    float frameDuration = 0.0f;
 
-    LottieBuilder* builder = nullptr;
+    LottieBuilder* builder;
     LottieComposition* comp = nullptr;
 
     char* dirName = nullptr;            //base resource directory
@@ -47,19 +48,16 @@ public:
     LottieLoader();
     ~LottieLoader();
 
-    //Lottie Loaders
-    using LoadModule::open;
     bool open(const string& path) override;
-    bool open(const char* data, uint32_t size, bool copy) override;
+    bool open(const char* data, uint32_t size, const std::string& rpath, bool copy) override;
     bool resize(Paint* paint, float w, float h) override;
     bool read() override;
-    bool close() override;
-    unique_ptr<Paint> paint() override;
+    Paint* paint() override;
 
     //Frame Controls
-    bool frame(uint32_t frameNo) override;
-    uint32_t totalFrame() override;
-    uint32_t curFrame() override;
+    bool frame(float no) override;
+    float totalFrame() override;
+    float curFrame() override;
     float duration() override;
     void sync() override;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #define _TVG_TVG_COMMON_H_
 
 #include "tvgCommon.h"
-#include "tvgBinaryDesc.h"
+#include "tvgFormat.h"
 
 #define SIZE(A) sizeof(A)
 #define READ_UI32(dst, src) memcpy(dst, (src), sizeof(uint32_t))
@@ -39,7 +39,7 @@ public:
 
     /* ptr: points the tvg binary body (after header)
        end: end of the tvg binary data */
-    virtual unique_ptr<Scene> run(const char* ptr, const char* end) = 0;
+    virtual Scene* run(const char* ptr, const char* end) = 0;
 };
 
 
@@ -47,7 +47,7 @@ public:
 class TvgBinInterpreter : public TvgBinInterpreterBase
 {
 public:
-    unique_ptr<Scene> run(const char* ptr, const char* end) override;
+    Scene* run(const char* ptr, const char* end) override;
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +27,14 @@
 #include "tvgTvgCommon.h"
 
 
-class TvgLoader : public LoadModule, public Task
+class TvgLoader : public ImageLoader, public Task
 {
 public:
     const char* data = nullptr;
     const char* ptr = nullptr;
     uint32_t size = 0;
     uint16_t version = 0;
-    unique_ptr<Scene> root = nullptr;
+    Scene* root = nullptr;
     TvgBinInterpreterBase* interpreter = nullptr;
     uint32_t uncompressedSize = 0;
     uint32_t compressedSize = 0;
@@ -42,16 +42,15 @@ public:
     bool copy = false;
     bool compressed = false;
 
+    TvgLoader();
     ~TvgLoader();
 
-    using LoadModule::open;
     bool open(const string &path) override;
-    bool open(const char *data, uint32_t size, bool copy) override;
+    bool open(const char *data, uint32_t size, const string& rpath, bool copy) override;
     bool read() override;
-    bool close() override;
     bool resize(Paint* paint, float w, float h) override;
 
-    unique_ptr<Paint> paint() override;
+    Paint* paint() override;
 
 private:
     bool readHeader();
