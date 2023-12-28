@@ -56,19 +56,22 @@ First put your animation in the assets folder in your android and add `DotLottie
 In your kotlin code, get access to the component just added in your layout
 and you can have access to set of method that allow you interact with the animation
 
-`val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
-`
+```kotlin
+val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
+```
 
 Set up the initial animation configuration
 
-`val config = DotLottieConfig.Builder()
+```kotlin
+val config = DotLottieConfig.Builder()
     .autoPlay(true)
     .speed(1f)
     .loop(true)
     .src("test.json") // asset from the asset folder
     .backgroundColor("#FFFFFF")
     .build()
-dotLottieAnimationView.load(config)`
+dotLottieAnimationView.load(config)
+```
 
 ### API
 
@@ -146,6 +149,8 @@ private val eventListener = object : DotLottieEventListener {
 
 Attache the listener to the component, you can add one or 
 
-`dotLottieAnimationView.addEventListener(eventListener)`
+```kotlin
+dotLottieAnimationView.addEventListener(eventListener)
+```
 
 
