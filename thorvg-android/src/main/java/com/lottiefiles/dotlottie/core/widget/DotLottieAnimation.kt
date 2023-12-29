@@ -54,6 +54,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     val loopCount: Int
         get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
 
+    val useFrameInterpolation: Boolean
+        get() = mLottieDrawable?.useFrameInterpolation ?: error("DotLottieDrawable is null")
+
 
     /***
      * Method
@@ -63,7 +66,11 @@ class DotLottieAnimation @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setSegments(firstFrame: Int, lastFrame: Int) {
+    fun setFrameInterpolation(enable: Boolean) {
+        mLottieDrawable?.setFrameInterpolation(enable)
+    }
+
+    fun setSegments(firstFrame: Double, lastFrame: Double) {
         mLottieDrawable?.setSegments(firstFrame, lastFrame)
     }
 
