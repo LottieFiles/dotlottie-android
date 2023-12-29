@@ -42,7 +42,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     val currentFrame: Int
         get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
 
-    var mode: Int
+    var mode: Mode
         get() = mLottieDrawable?.mode ?: error("DotLottieDrawable is null")
         set(value) {
             mLottieDrawable?.mode = value
@@ -146,9 +146,7 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
         val outValues = IntArray(LOTTIE_INFO_COUNT)
         mLottieDrawable = DotLottieDrawable(
-            mContext = context,
-            mNativePtr = LottieNative.nCreateLottie(contentStr, contentStr!!.length, outValues),
-            mRepeatMode = MODE_RESTART,
+            mRepeatMode = config.mode,
             mLoopCount = if (config.loop) INFINITE_LOOP else 1,
             mAutoPlay = config.autoPlay,
             mSpeed = config.speed,
@@ -159,20 +157,23 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.callback = this@DotLottieAnimation
     }
 
-    private fun TypedArray.setupDotLottieDrawable(context: Context) {
+    private fun getMode(mode: Int): Mode {
+        return when(mode) {
+            1 -> Mode.Forward
+            else -> Mode.Reverse
+        }
+    }
+
+    private fun TypedArray.setupDotLottieDrawable() {
         val assetFilePath = getString(R.styleable.DotLottieAnimation_src)
         val contentStr = loadJsonFromAsset(assetFilePath)
-        val outValues = IntArray(LOTTIE_INFO_COUNT)
+        val mode = getInt(R.styleable.DotLottieAnimation_mode, MODE_RESTART)
         mLottieDrawable = DotLottieDrawable(
-            mContext = context,
-            mNativePtr = LottieNative.nCreateLottie(contentStr, contentStr!!.length, outValues),
-            mRepeatMode = getInt(R.styleable.DotLottieAnimation_mode, MODE_RESTART),
+            mRepeatMode = getMode(mode),
             mLoopCount = getInt(R.styleable.DotLottieAnimation_repeatCount, INFINITE_LOOP),
             mAutoPlay = getBoolean(R.styleable.DotLottieAnimation_autoPlay, true),
             mSpeed = getFloat(R.styleable.DotLottieAnimation_speed, 1f),
-            mFirstFrame = 0,
-            mLastFrame = outValues[LOTTIE_INFO_FRAME_COUNT],
-            mDuration = outValues[LOTTIE_INFO_DURATION] * 1000L
+            contentStr = contentStr ?: error("Invalid content")
         )
         mLottieDrawable?.callback = this@DotLottieAnimation
     }
@@ -260,12 +261,6 @@ class DotLottieAnimation @JvmOverloads constructor(
          * or a positive value, the animation restarts from the beginning.
          */
         const val MODE_RESTART = 1
-
-        /**
-         * When the animation reaches the end and `repeatCount` is INFINITE
-         * or a positive value, the animation reverses direction on every iteration.
-         */
-        const val MODE_REVERSE = 2
 
         /**
          * This value used used with the [.setRepeatCount] property to repeat
