@@ -8,6 +8,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
+import com.lottiefiles.dotlottie.core.model.Mode
 import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
 
@@ -36,7 +37,7 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "onStop")
         }
 
-        override fun onFrame(frame: Int) {
+        override fun onFrame(frame: Double) {
             Log.d(TAG, "frame $frame")
         }
 
@@ -46,6 +47,14 @@ class MainActivity : ComponentActivity() {
 
         override fun onComplete() {
             Log.d(TAG, "On Completed")
+        }
+
+        override fun onLoad() {
+            Log.d(TAG, "onLoad")
+        }
+
+        override fun onLoadError(error: Throwable) {
+            Log.d(TAG, "onLoadError ${error.localizedMessage}")
         }
     }
 
@@ -57,12 +66,20 @@ class MainActivity : ComponentActivity() {
             .autoPlay(true)
             .speed(2f)
             .loop(true)
-            .src("swinging.json")
-            .backgroundColor("#FFFFFF")
+            .src("contact.json") // file name of json/.lottie
+//            .src("https://dfdfdf") // from url of json /
+//            .data("{dfdf dfdk fd}") // content of json or dotlottie by array
+            .mode(Mode.Forward)
+            .useFrameInterpolation(false)
+            //.backgroundColor("#000000")
             .build()
 
-        lottieView.load(config)
+        // Sample app
 
+
+        lottieView.load(config)
+//        lottieView.resize(700, 700)
+//        lottieView.setSegments(0.0, 30.0)
 
         findViewById<View>(R.id.anim_state).setOnClickListener { v: View ->
             val button = v as TextView
@@ -76,7 +93,7 @@ class MainActivity : ComponentActivity() {
         }
 
         btnFrame.setOnClickListener {
-            val frame = edFrame.text.toString().toInt()
+            val frame = edFrame.text.toString().toDouble()
             lottieView.setFrame(frame)
             edFrame.setText("")
         }

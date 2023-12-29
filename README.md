@@ -69,6 +69,8 @@ val config = DotLottieConfig.Builder()
     .loop(true)
     .src("test.json") // asset from the asset folder
     .backgroundColor("#FFFFFF")
+    .useInterpolation(true)
+    .mode(Mode.Forward)
     .build()
 dotLottieAnimationView.load(config)
 ```
@@ -117,7 +119,7 @@ private val eventListener = object : DotLottieEventListener {
         Log.d(TAG, "onStop")
     }
 
-    override fun onFrame(frame: Int) {
+    override fun onFrame(frame: Float) {
         Log.d(TAG, "frame $frame")
     }
 

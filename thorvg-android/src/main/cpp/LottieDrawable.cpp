@@ -11,9 +11,9 @@ LottieDrawable::Data::Data(const char *content, uint32_t length) {
     mAnimation = tvg::Animation::gen();
     // Acquire a picture which associated with the animation.
     auto picture = mAnimation->picture();
-    if (picture->load(mContent, mContentLength, "", "", false) != tvg::Result::Success) {
-        LOGE("Error: Lottie is not supported. Did you enable Lottie Loader?");
-        return;
+    if (picture->load(mContent, mContentLength, "lottie", "", false) != tvg::Result::Success) {
+        LOGE("Error: Lottie is not supported. Did you enable Lottie Loader ?");
+        throw std::runtime_error("Lottie is not supported");
     }
 
     // Create a canvas

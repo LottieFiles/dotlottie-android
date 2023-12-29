@@ -6,10 +6,14 @@ using namespace std;
 
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(JNIEnv *env, jclass clazz,
-        jstring contentString, jint length, jdoubleArray outValues) {
+Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(
+    JNIEnv *env, jclass clazz,
+    jstring contentString,
+    jint length,
+    jdoubleArray outValues
+) {
     if (tvg::Initializer::init(3, tvg::CanvasEngine::Sw) != tvg::Result::Success) {
-        return 0;
+        throw std::runtime_error( "Enable to initialize the engine" );
     }
 
     const char* inputStr = env->GetStringUTFChars(contentString, nullptr);
@@ -18,7 +22,7 @@ Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(JNIEnv *env, jcla
 
     jdouble * contentInfo = env->GetDoubleArrayElements(outValues, nullptr);
     if (contentInfo != nullptr) {
-        contentInfo[0] = (jint) newData->mAnimation->totalFrame();
+        contentInfo[0] = (jdouble) newData->mAnimation->totalFrame();
         contentInfo[1] = (jdouble) newData->mAnimation->duration();
         env->ReleaseDoubleArrayElements(outValues, contentInfo, 0);
     }
