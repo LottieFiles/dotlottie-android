@@ -2,6 +2,7 @@ package com.lottiefiles.dotlottie.core.model
 
 class Config private constructor(
     val autoPlay: Boolean,
+    val useFrameInterpolator: Boolean,
     val speed: Float,
     val asset: String,
     val mode: Mode,
@@ -14,6 +15,7 @@ class Config private constructor(
 
         private var autoPlay: Boolean = false
         private var loop: Boolean = false
+        private var useFrameInterpolator: Boolean = false
         private var speed: Float = 1f
         private var asset: String = ""
         private var backgroundColor: String = "#FFFFFF"
@@ -40,6 +42,10 @@ class Config private constructor(
             this.backgroundColor = color
         }
 
+        fun useFrameInterpolation(useFrameInterpolator: Boolean) = apply {
+            this.useFrameInterpolator = useFrameInterpolator
+        }
+
         fun data(data: Any) = apply {
             this.data = data
         }
@@ -55,6 +61,7 @@ class Config private constructor(
                 mode = this.mode,
                 data = this.data,
                 asset = this.asset,
+                useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
                 backgroundColor = this.backgroundColor
             )
