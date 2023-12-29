@@ -22,6 +22,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
 
+    private var mWidth: Int? = 0
+    private var mHeight: Int? = 0
+
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val mAssetManager: AssetManager = context.assets
@@ -197,13 +200,19 @@ class DotLottieAnimation @JvmOverloads constructor(
         return json
     }
 
+    fun resize(width: Int, height: Int) {
+        mWidth = width
+        mHeight = height
+        mLottieDrawable?.resize(width, height)
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val width = measuredWidth
-        val height = measuredHeight
+        val width = if (mWidth == null) measuredWidth else mWidth!!
+        val height = if (mHeight == null) measuredHeight else mHeight!!
         mLottieDrawable?.let { drawable ->
             if ((width != drawable.intrinsicWidth || height != drawable.intrinsicHeight)) {
-                drawable.setSize(width, height)
+                drawable.resize(width, height)
             }
         }
     }
