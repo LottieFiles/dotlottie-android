@@ -23,9 +23,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
 
-    private var mWidth: Int? = 0
-    private var mHeight: Int? = 0
-
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val mAssetManager: AssetManager = context.assets
@@ -33,6 +30,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     @get:FloatRange(from = 0.0)
     val speed: Float
         get() = mLottieDrawable?.speed ?: error("DotLottieDrawable is null")
+
+    val loop: Boolean
+        get() = loopCount != 1
 
     val autoPlay: Boolean
         get() = mLottieDrawable?.autoPlay ?: error("DotLottieDrawable is null")
@@ -111,6 +111,10 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun stop() {
         mLottieDrawable?.stop()
+    }
+
+    fun setRepeatMode(repeatMode: Mode) {
+        mLottieDrawable?.setRepeatMode(repeatMode)
     }
 
     fun pause() {
@@ -209,16 +213,11 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun resize(width: Int, height: Int) {
-        mWidth = width
-        mHeight = height
         mLottieDrawable?.resize(width, height)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-//        val width = if (mWidth == null) measuredWidth else mWidth!!
-//        val height = if (mHeight == null) measuredHeight else mHeight!!
-
         val width = measuredWidth
         val height = measuredHeight
         mLottieDrawable?.let { drawable ->

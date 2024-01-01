@@ -34,7 +34,7 @@ class Config private constructor(
             this.speed = speed
         }
 
-        fun src(asset: String) = apply {
+        fun fileName(asset: String) = apply {
             this.asset = asset
         }
 

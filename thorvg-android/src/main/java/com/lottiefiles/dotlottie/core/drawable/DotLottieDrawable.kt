@@ -237,6 +237,10 @@ class DotLottieDrawable(
         invalidateSelf()
     }
 
+    fun setRepeatMode(repeatMode: Mode) {
+        this.mode = repeatMode
+    }
+
     override fun stop() {
         mRunning = false
         mFrame = when(mode) {
@@ -301,14 +305,14 @@ class DotLottieDrawable(
     }
 
     override fun draw(canvas: Canvas) {
-        if (mNativePtr == 0L) {
+        if (mNativePtr == 0L || mBuffer == null) {
             return
         }
 
         if (mAutoPlay || mRunning) {
             val startTime = System.nanoTime()
             nDrawLottieFrame(mNativePtr, mBuffer, mFrame.toFloat())
-            //canvas.drawColor(backgroundColor)
+            canvas.drawColor(backgroundColor)
             canvas.drawBitmap(mBuffer!!, 0f, 0f, Paint())
             mDotLottieEventListener.forEach { it.onFrame(mFrame) }
 

@@ -11,34 +11,36 @@ import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.model.Mode
 import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
+import com.lottiefiles.sample.databinding.MainBinding
 
 class MainActivity : ComponentActivity() {
 
     private val TAG = "MainActivity"
 
-    private val lottieView by lazy { findViewById<DotLottieAnimation>(R.id.lottie_view) }
-    private val edFrame by lazy { findViewById<EditText>(R.id.edFrame) }
-    private val btnFrame by lazy { findViewById<Button>(R.id.btn_setframe) }
-    private val tvStatus by lazy { findViewById<TextView>(R.id.tvStatus) }
+    private val binding by lazy {
+        MainBinding.inflate(layoutInflater)
+    }
 
     private val eventListener = object : DotLottieEventListener {
         override fun onPlay() {
-            tvStatus.text = "Status : Play"
+            binding.tvStatus.text = "Status : Play"
             Log.d(TAG, "onPlay")
         }
 
         override fun onPause() {
-            tvStatus.text = "Status : Pause"
+            binding.tvStatus.text = "Status : Pause"
             Log.d(TAG, "onPause")
         }
 
         override fun onStop() {
-            tvStatus.text = "Status : Stop"
+            binding.tvStatus.text = "Status : Stop"
             Log.d(TAG, "onStop")
         }
 
         override fun onFrame(frame: Double) {
             Log.d(TAG, "frame $frame")
+            val f = "%.2f".format(frame)
+            binding.tvFrame.text = "Frame : $f"
         }
 
         override fun onLoop() {
@@ -47,6 +49,7 @@ class MainActivity : ComponentActivity() {
 
         override fun onComplete() {
             Log.d(TAG, "On Completed")
+            binding.animState.text = "Play"
         }
 
         override fun onLoad() {
@@ -60,44 +63,84 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main)
+        setContentView(binding.root)
 
         val config = Config.Builder()
             .autoPlay(true)
-            .speed(2f)
+            .speed(1f)
             .loop(true)
-            .src("contact.json") // file name of json/.lottie
+            .fileName("test.json") // file name of json/.lottie
 //            .src("https://dfdfdf") // from url of json /
 //            .data("{dfdf dfdk fd}") // content of json or dotlottie by array
             .mode(Mode.Forward)
-            .useFrameInterpolation(false)
-            //.backgroundColor("#000000")
+            .useFrameInterpolation(true)
+            .backgroundColor("#FF0000")
             .build()
 
         // Sample app
 
 
-        lottieView.load(config)
-//        lottieView.resize(700, 700)
-//        lottieView.setSegments(0.0, 30.0)
+        binding.lottieView.load(config)
 
-        findViewById<View>(R.id.anim_state).setOnClickListener { v: View ->
+        binding.btnSetSegment.setOnClickListener {
+            val start = binding.edStartFrame.text.toString().toDouble()
+            val end = binding.edEndFrame.text.toString().toDouble()
+            binding.lottieView.setSegments(start, end)
+            binding.lottieView.stop()
+            binding.lottieView.play()
+        }
+
+        binding.animState.setOnClickListener { v: View ->
             val button = v as TextView
-            if ("Pause".contentEquals(button.text)) {
-                lottieView.pause()
+            if (!binding.lottieView.isPaused()) {
+                binding.lottieView.pause()
                 button.text = "Resume"
             } else {
-                lottieView.play()
+                binding.lottieView.play()
                 button.text = "Pause"
             }
         }
 
-        btnFrame.setOnClickListener {
-            val frame = edFrame.text.toString().toDouble()
-            lottieView.setFrame(frame)
-            edFrame.setText("")
+        binding.btnSetframe.setOnClickListener {
+            val frame = binding.edFrame.text.toString().toDouble()
+            binding.lottieView.setFrame(frame)
+            binding.edFrame.text.clear()
         }
 
-        lottieView.addEventListener(eventListener)
+        binding.animStop.setOnClickListener {
+            binding.lottieView.stop()
+            binding.animState.text = "Play"
+        }
+
+        binding.lottieView.addEventListener(eventListener)
+
+        binding.btnForward.setOnClickListener {
+            binding.lottieView.setRepeatMode(Mode.Forward)
+        }
+        binding.btnReverse.setOnClickListener {
+            binding.lottieView.setRepeatMode(Mode.Reverse)
+        }
+        binding.btnBounce.setOnClickListener {
+            binding.lottieView.setRepeatMode(Mode.Forward)
+        }
+        binding.btnReverseBounce.setOnClickListener {
+            binding.lottieView.setRepeatMode(Mode.Reverse)
+        }
+        binding.btnLoop.setOnClickListener {
+            val text = if (binding.lottieView.loop) {
+                "Loop off"
+            } else {
+                "Loop on"
+            }
+            binding.lottieView.setLoop(!binding.lottieView.loop)
+            binding.btnLoop.text = text
+        }
+        binding.cbxFrameInterpolation.addOnCheckedStateChangedListener { checkBox, state ->
+            binding.lottieView.setFrameInterpolation(checkBox.isChecked)
+        }
+        binding.btnSetSpeed.setOnClickListener {
+            val speed = binding.edSpeed.text.toString().toFloat()
+            binding.lottieView.setSpeed(speed)
+        }
     }
 }

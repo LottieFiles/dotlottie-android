@@ -39,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        dataBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -55,6 +56,7 @@ dependencies {
     implementation(project(":dotlottie-android"))
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
+    implementation("com.google.android.material:material:1.11.0")
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
