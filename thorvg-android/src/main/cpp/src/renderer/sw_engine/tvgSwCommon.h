@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -189,12 +189,16 @@ struct SwStroke
     SwFixed subPathLineLength;
     SwFixed width;
     SwFixed miterlimit;
-    SwFill* fill = nullptr;
-    SwStrokeBorder borders[2];
-    float sx, sy;
+
     StrokeCap cap;
     StrokeJoin join;
     StrokeJoin joinSaved;
+    SwFill* fill = nullptr;
+
+    SwStrokeBorder borders[2];
+
+    float sx, sy;
+
     bool firstPt;
     bool closedSubPath;
     bool handleWideStrokes;

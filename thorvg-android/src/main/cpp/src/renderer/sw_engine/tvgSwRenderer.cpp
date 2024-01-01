@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -352,7 +352,7 @@ static void _renderStroke(SwShapeTask* task, SwSurface* surface, uint8_t opacity
     if (auto strokeFill = task->rshape->strokeFill()) {
         rasterGradientStroke(surface, &task->shape, strokeFill->identifier());
     } else {
-        if (task->rshape->strokeFill(&r, &g, &b, &a)) {
+        if (task->rshape->strokeColor(&r, &g, &b, &a)) {
             a = MULTIPLY(opacity, a);
             if (a > 0) rasterStroke(surface, &task->shape, r, g, b, a);
         }
@@ -379,13 +379,6 @@ SwRenderer::~SwRenderer()
 
 bool SwRenderer::clear()
 {
-    if (surface) return rasterClear(surface, 0, 0, surface->w, surface->h);
-    return false;
-}
-
-
-bool SwRenderer::sync()
-{
     for (auto task = tasks.data; task < tasks.end(); ++task) {
         if ((*task)->disposed) {
             delete(*task);
@@ -398,6 +391,18 @@ bool SwRenderer::sync()
 
     if (!sharedMpool) mpoolClear(mpool);
 
+    if (surface) {
+        vport.x = vport.y = 0;
+        vport.w = surface->w;
+        vport.h = surface->h;
+    }
+
+    return true;
+}
+
+
+bool SwRenderer::sync()
+{
     return true;
 }
 
@@ -440,13 +445,7 @@ bool SwRenderer::target(pixel_t* data, uint32_t stride, uint32_t w, uint32_t h, 
 
 bool SwRenderer::preRender()
 {
-    if (surface) {
-        vport.x = vport.y = 0;
-        vport.w = surface->w;
-        vport.h = surface->h;
-    }
-
-    return true;
+    return rasterClear(surface, 0, 0, surface->w, surface->h);
 }
 
 

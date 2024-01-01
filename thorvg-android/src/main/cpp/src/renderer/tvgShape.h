@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,13 +20,16 @@
  * SOFTWARE.
  */
 
-#ifndef _TVG_SHAPE_H_
-#define _TVG_SHAPE_H_
+#ifndef _TVG_SHAPE_IMPL_H_
+#define _TVG_SHAPE_IMPL_H_
 
 #include <memory.h>
 #include "tvgMath.h"
 #include "tvgPaint.h"
 
+/************************************************************************/
+/* Internal Class Implementation                                        */
+/************************************************************************/
 
 struct Shape::Impl
 {
@@ -247,7 +250,7 @@ struct Shape::Impl
         return true;
     }
 
-    bool strokeFill(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+    bool strokeColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     {
         if (!rs.stroke) rs.stroke = new RenderStroke();
         if (rs.stroke->fill) {
@@ -338,9 +341,9 @@ struct Shape::Impl
 
     Paint* duplicate()
     {
-        auto ret = Shape::gen().release();
-        auto dup = ret->pImpl;
+        auto ret = Shape::gen();
 
+        auto dup = ret.get()->pImpl;
         dup->rs.rule = rs.rule;
 
         //Color
@@ -376,7 +379,7 @@ struct Shape::Impl
             dup->flag |= RenderUpdateFlag::Gradient;
         }
 
-        return ret;
+        return ret.release();
     }
 
     Iterator* iterator()
@@ -385,4 +388,4 @@ struct Shape::Impl
     }
 };
 
-#endif //_TVG_SHAPE_H_
+#endif //_TVG_SHAPE_IMPL_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ enum RenderUpdateFlag : uint8_t {None = 0, Path = 1, Color = 2, Gradient = 4, St
 
 struct Surface;
 
-enum ColorSpace : uint8_t
+enum ColorSpace
 {
     ABGR8888 = 0,      //The channels are joined in the order: alpha, blue, green, red. Colors are alpha-premultiplied.
     ARGB8888,          //The channels are joined in the order: alpha, red, green, blue. Colors are alpha-premultiplied.
@@ -138,9 +138,9 @@ struct RenderStroke
     float* dashPattern = nullptr;
     uint32_t dashCnt = 0;
     float dashOffset = 0.0f;
-    float miterlimit = 4.0f;
     StrokeCap cap = StrokeCap::Square;
     StrokeJoin join = StrokeJoin::Bevel;
+    float miterlimit = 4.0f;
     bool strokeFirst = false;
 
     struct {
@@ -164,8 +164,8 @@ struct RenderShape
     } path;
 
     Fill *fill = nullptr;
-    uint8_t color[4] = {0, 0, 0, 0};    //r, g, b, a
     RenderStroke *stroke = nullptr;
+    uint8_t color[4] = {0, 0, 0, 0};    //r, g, b, a
     FillRule rule = FillRule::Winding;
 
     ~RenderShape()
@@ -196,7 +196,7 @@ struct RenderShape
         return true;
     }
 
-    bool strokeFill(uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) const
+    bool strokeColor(uint8_t* r, uint8_t* g, uint8_t* b, uint8_t* a) const
     {
         if (!stroke) return false;
 

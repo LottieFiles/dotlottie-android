@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,10 +34,6 @@
 
 #ifdef THORVG_GL_RASTER_SUPPORT
     #include "tvgGlRenderer.h"
-#endif
-
-#ifdef THORVG_WG_RASTER_SUPPORT
-    #include "tvgWgRenderer.h"
 #endif
 
 
@@ -92,29 +88,22 @@ static bool _buildVersionInfo()
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Result Initializer::init(uint32_t threads, CanvasEngine engine) noexcept
+Result Initializer::init(CanvasEngine engine, uint32_t threads) noexcept
 {
     auto nonSupport = true;
 
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Sw) {
+    if (engine & CanvasEngine::Sw) {
         #ifdef THORVG_SW_RASTER_SUPPORT
             if (!SwRenderer::init(threads)) return Result::FailedAllocation;
             nonSupport = false;
         #endif
-    }
-
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Gl) {
+    } else if (engine & CanvasEngine::Gl) {
         #ifdef THORVG_GL_RASTER_SUPPORT
             if (!GlRenderer::init(threads)) return Result::FailedAllocation;
             nonSupport = false;
         #endif
-    }
-
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Wg) {
-        #ifdef THORVG_WG_RASTER_SUPPORT
-            if (!WgRenderer::init(threads)) return Result::FailedAllocation;
-            nonSupport = false;
-        #endif
+    } else {
+        return Result::InvalidArguments;
     }
 
     if (nonSupport) return Result::NonSupport;
@@ -137,25 +126,18 @@ Result Initializer::term(CanvasEngine engine) noexcept
 
     auto nonSupport = true;
 
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Sw) {
+    if (engine & CanvasEngine::Sw) {
         #ifdef THORVG_SW_RASTER_SUPPORT
             if (!SwRenderer::term()) return Result::InsufficientCondition;
             nonSupport = false;
         #endif
-    }
-
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Gl) {
+    } else if (engine & CanvasEngine::Gl) {
         #ifdef THORVG_GL_RASTER_SUPPORT
             if (!GlRenderer::term()) return Result::InsufficientCondition;
             nonSupport = false;
         #endif
-    }
-
-    if (engine == CanvasEngine::All || engine & CanvasEngine::Wg) {
-        #ifdef THORVG_WG_RASTER_SUPPORT
-            if (!WgRenderer::term()) return Result::InsufficientCondition;
-            nonSupport = false;
-        #endif
+    } else {
+        return Result::InvalidArguments;
     }
 
     if (nonSupport) return Result::NonSupport;
@@ -174,4 +156,3 @@ uint16_t THORVG_VERSION_NUMBER()
 {
     return _version;
 }
-

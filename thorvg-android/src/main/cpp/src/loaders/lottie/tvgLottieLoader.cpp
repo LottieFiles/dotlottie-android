@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "tvgLoader.h"
 #include "tvgLottieLoader.h"
 #include "tvgLottieModel.h"
 #include "tvgLottieParser.h"
@@ -44,6 +45,17 @@ static float _str2float(const char* str, int len)
     auto ret = strToFloat(tmp, nullptr);
     free(tmp);
     return ret;
+}
+
+
+void LottieLoader::clear()
+{
+    if (copy) free((char*)content);
+    free(dirName);
+    dirName = nullptr;
+    size = 0;
+    content = nullptr;
+    copy = false;
 }
 
 
@@ -72,21 +84,21 @@ void LottieLoader::run(unsigned tid)
 /* External Class Implementation                                        */
 /************************************************************************/
 
-LottieLoader::LottieLoader() : FrameModule(FileType::Lottie), builder(new LottieBuilder)
+LottieLoader::LottieLoader() : builder(new LottieBuilder)
 {
-
 }
 
 
 LottieLoader::~LottieLoader()
 {
-    this->done();
-
-    if (copy) free((char*)content);
-    free(dirName);
+    close();
 
     //TODO: correct position?
-    delete(comp);
+    if (comp) {
+        delete(comp);
+        comp = nullptr;
+    }
+
     delete(builder);
 }
 
@@ -194,8 +206,10 @@ bool LottieLoader::header()
 }
 
 
-bool LottieLoader::open(const char* data, uint32_t size, const std::string& rpath, bool copy)
+bool LottieLoader::open(const char* data, uint32_t size, bool copy)
 {
+    clear();
+
     //If the format is dotLottie
     auto dotLottie = _checkDotLottie(data);
     if (dotLottie) {
@@ -212,16 +226,14 @@ bool LottieLoader::open(const char* data, uint32_t size, const std::string& rpat
     this->size = size;
     this->copy = copy;
 
-    if (!rpath.empty()) {
-        this->dirName = strdup(rpath.c_str());
-    }
-
     return header();
 }
 
 
 bool LottieLoader::open(const string& path)
 {
+    clear();
+
     auto f = fopen(path.c_str(), "r");
     if (!f) return false;
 
@@ -281,8 +293,6 @@ bool LottieLoader::read()
 {
     if (!content || size == 0) return false;
 
-    if (!LoadModule::read()) return true;
-
     //the loading has been already completed in header()
     if (comp) return true;
 
@@ -292,12 +302,22 @@ bool LottieLoader::read()
 }
 
 
-Paint* LottieLoader::paint()
+bool LottieLoader::close()
+{
+    this->done();
+
+    clear();
+
+    return true;
+}
+
+
+unique_ptr<Paint> LottieLoader::paint()
 {
     this->done();
     if (!comp) return nullptr;
     comp->initiated = true;
-    return comp->scene;
+    return cast<Paint>(comp->scene);
 }
 
 

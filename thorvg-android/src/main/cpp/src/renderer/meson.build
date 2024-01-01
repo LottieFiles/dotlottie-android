@@ -8,13 +8,10 @@ if get_option('engines').contains('gl_beta') == true
     subdir('gl_engine')
 endif
 
-if get_option('engines').contains('wg_beta') == true
-    subdir('wg_engine')
-endif
-
 source_file = [
    'tvgCanvas.h',
    'tvgCommon.h',
+   'tvgBinaryDesc.h',
    'tvgFill.h',
    'tvgFrameModule.h',
    'tvgLoader.h',
@@ -26,7 +23,6 @@ source_file = [
    'tvgScene.h',
    'tvgShape.h',
    'tvgTaskScheduler.h',
-   'tvgText.h',
    'tvgAccessor.cpp',
    'tvgAnimation.cpp',
    'tvgCanvas.cpp',
@@ -42,7 +38,6 @@ source_file = [
    'tvgShape.cpp',
    'tvgSwCanvas.cpp',
    'tvgTaskScheduler.cpp',
-   'tvgText.cpp'
 ]
 
 common_dep = declare_dependency(

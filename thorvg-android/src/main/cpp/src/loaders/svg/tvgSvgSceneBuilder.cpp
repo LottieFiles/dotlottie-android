@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -347,36 +347,36 @@ static void _applyProperty(SvgLoaderData& loaderData, SvgNode* node, Shape* vg, 
     if (node->type == SvgNodeType::G || node->type == SvgNodeType::Use) return;
 
     //Apply the stroke style property
-    vg->strokeWidth(style->stroke.width);
-    vg->strokeCap(style->stroke.cap);
-    vg->strokeJoin(style->stroke.join);
+    vg->stroke(style->stroke.width);
+    vg->stroke(style->stroke.cap);
+    vg->stroke(style->stroke.join);
     vg->strokeMiterlimit(style->stroke.miterlimit);
     if (style->stroke.dash.array.count > 0) {
-        vg->strokeDash(style->stroke.dash.array.data, style->stroke.dash.array.count, style->stroke.dash.offset);
+        P(vg)->strokeDash(style->stroke.dash.array.data, style->stroke.dash.array.count, style->stroke.dash.offset);
     }
 
     //If stroke property is nullptr then do nothing
     if (style->stroke.paint.none) {
-        vg->strokeWidth(0.0f);
+        vg->stroke(0.0f);
     } else if (style->stroke.paint.gradient) {
         Box bBox = vBox;
         if (!style->stroke.paint.gradient->userSpace) bBox = _boundingBox(vg);
 
         if (style->stroke.paint.gradient->type == SvgGradientType::Linear) {
              auto linear = _applyLinearGradientProperty(style->stroke.paint.gradient, vg, bBox, style->stroke.opacity);
-             vg->strokeFill(std::move(linear));
+             vg->stroke(std::move(linear));
         } else if (style->stroke.paint.gradient->type == SvgGradientType::Radial) {
              auto radial = _applyRadialGradientProperty(style->stroke.paint.gradient, vg, bBox, style->stroke.opacity);
-             vg->strokeFill(std::move(radial));
+             vg->stroke(std::move(radial));
         }
     } else if (style->stroke.paint.url) {
         //TODO: Apply the color pointed by url
     } else if (style->stroke.paint.curColor) {
         //Apply the current style color
-        vg->strokeFill(style->color.r, style->color.g, style->color.b, style->stroke.opacity);
+        vg->stroke(style->color.r, style->color.g, style->color.b, style->stroke.opacity);
     } else {
         //Apply the stroke color
-        vg->strokeFill(style->stroke.paint.color.r, style->stroke.paint.color.g, style->stroke.paint.color.b, style->stroke.opacity);
+        vg->stroke(style->stroke.paint.color.r, style->stroke.paint.color.g, style->stroke.paint.color.b, style->stroke.opacity);
     }
 
     _applyComposition(loaderData, vg, node, vBox, svgPath);
@@ -396,9 +396,10 @@ static bool _recognizeShape(SvgNode* node, Shape* shape)
     switch (node->type) {
         case SvgNodeType::Path: {
             if (node->node.path.path) {
-                if (!svgPathToShape(node->node.path.path, shape)) {
-                    TVGERR("SVG", "Invalid path information.");
-                    return false;
+                Array<PathCommand> cmds;
+                Array<Point> pts;
+                if (svgPathToTvgPath(node->node.path.path, cmds, pts)) {
+                    shape->appendPath(cmds.data, cmds.count, pts.data, pts.count);
                 }
             }
             break;
@@ -571,14 +572,14 @@ static unique_ptr<Picture> _imageBuildHelper(SvgLoaderData& loaderData, SvgNode*
         char *decoded = nullptr;
         if (encoding == imageMimeTypeEncoding::base64) {
             auto size = b64Decode(href, strlen(href), &decoded);
-            if (picture->load(decoded, size, mimetype) != Result::Success) {
+            if (picture->load(decoded, size, mimetype, false) != Result::Success) {
                 free(decoded);
                 TaskScheduler::async(true);
                 return nullptr;
             }
         } else {
             auto size = svgUtilURLDecode(href, &decoded);
-            if (picture->load(decoded, size, mimetype) != Result::Success) {
+            if (picture->load(decoded, size, mimetype, false) != Result::Success) {
                 free(decoded);
                 TaskScheduler::async(true);
                 return nullptr;
@@ -803,7 +804,7 @@ static unique_ptr<Scene> _sceneBuildHelper(SvgLoaderData& loaderData, const SvgN
                             uint8_t r, g, b;
                             shape->fillColor(&r, &g, &b);
                             if (shape->fill() || r < 255 || g < 255 || b < 255 || shape->strokeFill() ||
-                                (shape->strokeFill(&r, &g, &b) == Result::Success && (r < 255 || g < 255 || b < 255))) {
+                                (shape->strokeColor(&r, &g, &b) == Result::Success && (r < 255 || g < 255 || b < 255))) {
                                 *isMaskWhite = false;
                             }
                         }
@@ -844,7 +845,7 @@ static void _updateInvalidViewSize(const Scene* scene, Box& vBox, float& w, floa
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Scene* svgSceneBuild(SvgLoaderData& loaderData, Box vBox, float w, float h, AspectRatioAlign align, AspectRatioMeetOrSlice meetOrSlice, const string& svgPath, SvgViewFlag viewFlag)
+unique_ptr<Scene> svgSceneBuild(SvgLoaderData& loaderData, Box vBox, float w, float h, AspectRatioAlign align, AspectRatioMeetOrSlice meetOrSlice, const string& svgPath, SvgViewFlag viewFlag)
 {
     //TODO: aspect ratio is valid only if viewBox was set
 
@@ -862,7 +863,8 @@ Scene* svgSceneBuild(SvgLoaderData& loaderData, Box vBox, float w, float h, Aspe
     }
 
     auto viewBoxClip = Shape::gen();
-    viewBoxClip->appendRect(0, 0, w, h);
+    viewBoxClip->appendRect(0, 0, w, h, 0, 0);
+    viewBoxClip->fill(0, 0, 0);
 
     auto compositeLayer = Scene::gen();
     compositeLayer->composite(std::move(viewBoxClip), CompositeMethod::ClipPath);
@@ -878,5 +880,5 @@ Scene* svgSceneBuild(SvgLoaderData& loaderData, Box vBox, float w, float h, Aspe
     loaderData.doc->node.doc.w = w;
     loaderData.doc->node.doc.h = h;
 
-    return root.release();
+    return root;
 }

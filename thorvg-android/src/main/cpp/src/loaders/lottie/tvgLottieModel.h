@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -85,10 +85,13 @@ struct LottieGradient
     uint32_t populate(ColorStop& color)
     {
         uint32_t alphaCnt = (color.input->count - (colorStops.count * 4)) / 2;
-        Array<Fill::ColorStop> output(colorStops.count + alphaCnt);
+        Array<Fill::ColorStop> output;
+        output.reserve(colorStops.count + alphaCnt);
+
         uint32_t cidx = 0;               //color count
         uint32_t clast = colorStops.count * 4;
         uint32_t aidx = clast;           //alpha count
+
         Fill::ColorStop cs;
 
         //merge color stops.

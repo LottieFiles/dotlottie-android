@@ -12,7 +12,7 @@ Java_com_lottiefiles_dotlottie_core_LottieNative_nCreateLottie(
     jint length,
     jdoubleArray outValues
 ) {
-    if (tvg::Initializer::init(3, tvg::CanvasEngine::Sw) != tvg::Result::Success) {
+    if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
         throw std::runtime_error( "Enable to initialize the engine" );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,12 @@ Canvas::~Canvas()
 }
 
 
+Result Canvas::reserve(TVG_UNUSED uint32_t n) noexcept
+{
+    return Result::NonSupport;
+}
+
+
 list<Paint*>& Canvas::paints() noexcept
 {
     return pImpl->paints;
@@ -49,9 +55,9 @@ Result Canvas::push(unique_ptr<Paint> paint) noexcept
 }
 
 
-Result Canvas::clear(bool paints, bool buffer) noexcept
+Result Canvas::clear(bool free) noexcept
 {
-    return pImpl->clear(paints, buffer);
+    return pImpl->clear(free);
 }
 
 

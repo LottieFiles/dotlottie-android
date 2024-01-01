@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2021 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -109,6 +109,16 @@ static bool _parsePaintProperty(TvgBinBlock block, Paint *paint)
 static bool _parseScene(TvgBinBlock block, Paint *paint)
 {
     auto scene = static_cast<Scene*>(paint);
+
+    //TODO: Keep this for the compatibility, Remove in TVG 1.0 release
+    //Case1: scene reserve count
+    if (block.type == TVG_TAG_SCENE_RESERVEDCNT) {
+        if (block.length != SIZE(uint32_t)) return false;
+        uint32_t reservedCnt;
+        READ_UI32(&reservedCnt, block.data);
+        //scene->reserve(reservedCnt);
+        return true;
+    }
 
     //Case2: Base Paint Properties
     if (_parsePaintProperty(block, scene)) return true;
@@ -274,7 +284,7 @@ static bool _parseShapeStrokeDashPattern(const char *ptr, const char *end, Shape
             return false;
         }
 
-        shape->strokeDash(dashPattern, dashPatternCnt);
+        shape->stroke(dashPattern, dashPatternCnt);
         free(dashPattern);
     }
     return true;
@@ -290,12 +300,12 @@ static bool _parseShapeStroke(const char *ptr, const char *end, Shape *shape)
         switch (block.type) {
             case TVG_TAG_SHAPE_STROKE_CAP: {
                 if (block.length != SIZE(TvgBinFlag)) return false;
-                shape->strokeCap((StrokeCap) *block.data);
+                shape->stroke((StrokeCap) *block.data);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_JOIN: {
                 if (block.length != SIZE(TvgBinFlag)) return false;
-                shape->strokeJoin((StrokeJoin) *block.data);
+                shape->stroke((StrokeJoin) *block.data);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_ORDER: {
@@ -307,18 +317,18 @@ static bool _parseShapeStroke(const char *ptr, const char *end, Shape *shape)
                 if (block.length != SIZE(float)) return false;
                 float width;
                 READ_FLOAT(&width, block.data);
-                shape->strokeWidth(width);
+                shape->stroke(width);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_COLOR: {
                 if (block.length != 4) return false;
-                shape->strokeFill(block.data[0], block.data[1], block.data[2], block.data[3]);
+                shape->stroke(block.data[0], block.data[1], block.data[2], block.data[3]);
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_FILL: {
                 auto fill = _parseShapeFill(block.data, block.end);
                 if (!fill) return false;
-                shape->strokeFill(std::move(fill));
+                shape->stroke(std::move(fill));
                 break;
             }
             case TVG_TAG_SHAPE_STROKE_DASHPTRN: {
@@ -404,7 +414,7 @@ static bool _parsePicture(TvgBinBlock block, Paint* paint)
             auto size = w * h * SIZE(uint32_t);
             if (block.length != 2 * SIZE(uint32_t) + size) return false;
 
-            picture->load((uint32_t*) ptr, w, h, true, true);
+            picture->load((uint32_t*) ptr, w, h, true);
 
             return true;
         }
@@ -483,7 +493,7 @@ static Paint* _parsePaint(TvgBinBlock baseBlock)
 /* External Class Implementation                                        */
 /************************************************************************/
 
-Scene* TvgBinInterpreter::run(const char *ptr, const char* end)
+unique_ptr<Scene> TvgBinInterpreter::run(const char *ptr, const char* end)
 {
     auto scene = Scene::gen();
     if (!scene) return nullptr;
@@ -498,5 +508,5 @@ Scene* TvgBinInterpreter::run(const char *ptr, const char* end)
         ptr = block.end;
     }
 
-    return scene.release();
+    return scene;
 }

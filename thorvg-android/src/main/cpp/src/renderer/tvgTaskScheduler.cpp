@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - 2024 the ThorVG project. All rights reserved.
+ * Copyright (c) 2020 - 2023 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,11 +20,11 @@
  * SOFTWARE.
  */
 
+#include <deque>
 #include <thread>
+#include <vector>
 #include <atomic>
 #include <condition_variable>
-#include "tvgArray.h"
-#include "tvgInlist.h"
 #include "tvgTaskScheduler.h"
 
 /************************************************************************/
@@ -34,7 +34,7 @@
 namespace tvg {
 
 struct TaskQueue {
-    Inlist<Task>             taskDeque;
+    deque<Task*>             taskDeque;
     mutex                    mtx;
     condition_variable       ready;
     bool                     done = false;
@@ -44,6 +44,8 @@ struct TaskQueue {
         unique_lock<mutex> lock{mtx, try_to_lock};
         if (!lock || taskDeque.empty()) return false;
         *task = taskDeque.front();
+        taskDeque.pop_front();
+
         return true;
     }
 
@@ -52,9 +54,11 @@ struct TaskQueue {
         {
             unique_lock<mutex> lock{mtx, try_to_lock};
             if (!lock) return false;
-            taskDeque.back(task);
+            taskDeque.push_back(task);
         }
+
         ready.notify_one();
+
         return true;
     }
 
@@ -78,6 +82,8 @@ struct TaskQueue {
         if (taskDeque.empty()) return false;
 
         *task = taskDeque.front();
+        taskDeque.pop_front();
+
         return true;
     }
 
@@ -85,10 +91,12 @@ struct TaskQueue {
     {
         {
             unique_lock<mutex> lock{mtx};
-            taskDeque.back(task);
+            taskDeque.push_back(task);
         }
+
         ready.notify_one();
     }
+
 };
 
 
@@ -97,33 +105,24 @@ static thread_local bool _async = true;  //toggle async tasking for each thread 
 
 struct TaskSchedulerImpl
 {
-    Array<thread*>                 threads;
-    Array<TaskQueue*>              taskQueues;
+    uint32_t                       threadCnt;
+    vector<thread>                 threads;
+    vector<TaskQueue>              taskQueues;
     atomic<uint32_t>               idx{0};
 
-    TaskSchedulerImpl(unsigned threadCnt)
+    TaskSchedulerImpl(unsigned threadCnt) : threadCnt(threadCnt), taskQueues(threadCnt)
     {
         threads.reserve(threadCnt);
-        taskQueues.reserve(threadCnt);
 
         for (unsigned i = 0; i < threadCnt; ++i) {
-            taskQueues.push(new TaskQueue);
-            threads.push(new thread([&, i] { run(i); }));
+            threads.emplace_back([&, i] { run(i); });
         }
     }
 
     ~TaskSchedulerImpl()
     {
-        for (auto tq = taskQueues.data; tq < taskQueues.end(); ++tq) {
-            (*tq)->complete();
-        }
-        for (auto thread = threads.data; thread < threads.end(); ++thread) {
-            (*thread)->join();
-            delete(*thread);
-        }
-        for (auto tq = taskQueues.data; tq < taskQueues.end(); ++tq) {
-            delete(*tq);
-        }
+        for (auto& queue : taskQueues) queue.complete();
+        for (auto& thread : threads) thread.join();
     }
 
     void run(unsigned i)
@@ -133,14 +132,14 @@ struct TaskSchedulerImpl
         //Thread Loop
         while (true) {
             auto success = false;
-            for (unsigned x = 0; x < threads.count * 2; ++x) {
-                if (taskQueues[(i + x) % threads.count]->tryPop(&task)) {
+            for (unsigned x = 0; x < threadCnt * 2; ++x) {
+                if (taskQueues[(i + x) % threadCnt].tryPop(&task)) {
                     success = true;
                     break;
                 }
             }
 
-            if (!success && !taskQueues[i]->pop(&task)) break;
+            if (!success && !taskQueues[i].pop(&task)) break;
             (*task)(i + 1);
         }
     }
@@ -148,13 +147,13 @@ struct TaskSchedulerImpl
     void request(Task* task)
     {
         //Async
-        if (threads.count > 0 && _async) {
+        if (threadCnt > 0 && _async) {
             task->prepare();
             auto i = idx++;
-            for (unsigned n = 0; n < threads.count; ++n) {
-                if (taskQueues[(i + n) % threads.count]->tryPush(task)) return;
+            for (unsigned n = 0; n < threadCnt; ++n) {
+                if (taskQueues[(i + n) % threadCnt].tryPush(task)) return;
             }
-            taskQueues[i % threads.count]->push(task);
+            taskQueues[i % threadCnt].push(task);
         //Sync
         } else {
             task->run(0);
@@ -193,7 +192,7 @@ void TaskScheduler::request(Task* task)
 
 unsigned TaskScheduler::threads()
 {
-    if (inst) return inst->threads.count;
+    if (inst) return inst->threadCnt;
     return 0;
 }
 
