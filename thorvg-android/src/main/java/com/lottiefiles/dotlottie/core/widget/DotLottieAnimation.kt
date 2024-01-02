@@ -1,7 +1,6 @@
 package com.lottiefiles.dotlottie.core.widget
 
 import android.content.Context
-import android.content.res.AssetManager
 import android.content.res.TypedArray
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -12,7 +11,6 @@ import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.model.Mode
-import com.lottiefiles.dotlottie.core.util.toColor
 import io.dotlottie.loader.DotLottieLoader
 import io.dotlottie.loader.models.DotLottie
 import io.dotlottie.loader.models.DotLottieResult
@@ -144,6 +142,10 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun pause() {
         mLottieDrawable?.pause()
+    }
+
+    fun destroy() {
+        mLottieDrawable?.release()
     }
 
     fun load(config: Config) {

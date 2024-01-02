@@ -48,7 +48,7 @@
         </LinearLayout>
 
         <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
-            android:id="@+id/lottie_view"
+            android:id="@+id/dot_lottie_view"
             android:layout_width="200dp"
             app:speed="1"
             android:layout_height="200dp" />

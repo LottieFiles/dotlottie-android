@@ -27,6 +27,11 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "onPlay")
         }
 
+        override fun onDestroy() {
+            super.onDestroy()
+            Log.d(TAG, "onDestroy")
+        }
+
         override fun onPause() {
             binding.tvStatus.text = "Status : Pause"
             Log.d(TAG, "onPause")
@@ -38,7 +43,7 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onFrame(frame: Double) {
-            Log.d(TAG, "frame $frame")
+            //Log.d(TAG, "frame $frame")
             binding.tvFrame.text = "Frame : %.2f".format(frame)
         }
 
@@ -88,86 +93,86 @@ class MainActivity : ComponentActivity() {
         // Sample app
 
 
-        binding.lottieView.load(config)
+        binding.dotLottieView.load(config)
 
         binding.btnSetSegment.setOnClickListener {
             val start = binding.edStartFrame.text.toString().toDoubleOrNull()
             val end = binding.edEndFrame.text.toString().toDoubleOrNull()
             if (start != null && end != null) {
-                binding.lottieView.setSegments(start, end)
-                binding.lottieView.stop()
-                binding.lottieView.play()
+                binding.dotLottieView.setSegments(start, end)
+                binding.dotLottieView.stop()
+                binding.dotLottieView.play()
             }
         }
 
         binding.animState.setOnClickListener { v: View ->
             val button = v as TextView
-            if (!binding.lottieView.isPaused()) {
-                binding.lottieView.pause()
+            if (!binding.dotLottieView.isPaused) {
+                binding.dotLottieView.pause()
                 button.text = "Resume"
             } else {
-                binding.lottieView.play()
+                binding.dotLottieView.play()
                 button.text = "Pause"
             }
         }
 
         binding.btnSetframe.setOnClickListener {
             binding.edFrame.text.toString().toDoubleOrNull()?.let {
-                binding.lottieView.setFrame(it)
+                binding.dotLottieView.setFrame(it)
                 binding.edFrame.text.clear()
             }
         }
 
         binding.animStop.setOnClickListener {
-            binding.lottieView.stop()
+            binding.dotLottieView.stop()
             binding.animState.text = "Play"
         }
 
-        binding.lottieView.addEventListener(eventListener)
+        binding.dotLottieView.addEventListener(eventListener)
 
         binding.btnForward.setOnClickListener {
-            binding.lottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setRepeatMode(Mode.Forward)
         }
         binding.btnReverse.setOnClickListener {
-            binding.lottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setRepeatMode(Mode.Reverse)
         }
         binding.btnBounce.setOnClickListener {
-            binding.lottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setRepeatMode(Mode.Forward)
         }
         binding.btnReverseBounce.setOnClickListener {
-            binding.lottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setRepeatMode(Mode.Reverse)
         }
         binding.btnLoop.setOnClickListener {
-            val text = if (binding.lottieView.loop) {
+            val text = if (binding.dotLottieView.loop) {
                 "Loop off"
             } else {
                 "Loop on"
             }
-            binding.lottieView.setLoop(!binding.lottieView.loop)
+            binding.dotLottieView.setLoop(!binding.dotLottieView.loop)
             binding.btnLoop.text = text
         }
         binding.cbxFrameInterpolation.addOnCheckedStateChangedListener { checkBox, state ->
-            binding.lottieView.setFrameInterpolation(checkBox.isChecked)
+            binding.dotLottieView.setFrameInterpolation(checkBox.isChecked)
         }
         binding.btnSetSpeed.setOnClickListener {
             binding.edSpeed.text.toString().toFloatOrNull()?.let {
-                binding.lottieView.setSpeed(it)
+                binding.dotLottieView.setSpeed(it)
             }
         }
 
         binding.btnFreeze.setOnClickListener {
             if (binding.btnFreeze.text.startsWith("Freeze")) {
-                binding.lottieView.freeze()
+                binding.dotLottieView.freeze()
                 binding.btnFreeze.text = "Un Freeze"
             } else {
-                binding.lottieView.unFreeze()
+                binding.dotLottieView.unFreeze()
                 binding.btnFreeze.text = "Freeze"
             }
         }
 
         binding.btnSetColor.setOnClickListener {
             val color = binding.edColor.text.toString()
-            binding.lottieView.setBackgroundColor(color)
+            binding.dotLottieView.setBackgroundColor(color)
         }
     }
 }

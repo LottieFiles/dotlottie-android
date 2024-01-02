@@ -233,7 +233,7 @@ class DotLottieDrawable(
     }
 
     fun setBackgroundColor(hexColor: String) {
-        backgroundColor = hexColor.toColor()
+        mBackgroundColor = hexColor
     }
 
     override fun start() {
