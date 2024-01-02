@@ -22,7 +22,7 @@ To add the DotLottieAndroid you need to add this dependency to module gradle fil
 
 ```kotlin
 repositories {
-    maven { url("https://jitpack.io") }
+    maven(url = "https://jitpack.io")
 }
 ```
 
@@ -95,6 +95,7 @@ dotLottieAnimationView.load(config)
 - `DotLottieAnimation.stop()` : Stop the animation
 - `DotLottieAnimation.load(Config)` : Setup the initial configuration
 - `DotLottieAnimation.setSegments(Float, Float)` : Defining the first and last frame
+- `DotLottieAnimation.setBackground(String)` : Set the animation background
 
 - `DotLottieAnimation.isPlaying()` : Check if the animation is playing
 - `DotLottieAnimation.isStopped()` : Check if the animation is stopped
