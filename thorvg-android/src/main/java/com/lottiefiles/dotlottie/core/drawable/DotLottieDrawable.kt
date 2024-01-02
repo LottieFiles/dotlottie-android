@@ -27,7 +27,8 @@ class DotLottieDrawable(
     private var mLoopCount: Int = 0,
     private var mRepeatMode: Mode = Mode.Forward,
     private var mSpeed: Float,
-    private var backgroundColor: Int = Color.TRANSPARENT
+    private var backgroundColor: Int = Color.TRANSPARENT,
+    private val mDotLottieEventListener: List<DotLottieEventListener>
 ) : Drawable(), Animatable {
 
     /**
@@ -41,6 +42,17 @@ class DotLottieDrawable(
     private var mRunning = false
     private var mPaused = false
     private var mNativePtr: Long = 0
+
+   var freeze: Boolean = false
+        set(value) {
+            if (value) {
+                mDotLottieEventListener.forEach(DotLottieEventListener::onFreeze)
+            } else {
+                mDotLottieEventListener.forEach(DotLottieEventListener::onUnFreeze)
+                start()
+            }
+            field = value
+        }
     /**
      * Gets the length of the animation. The default duration is 300 milliseconds.
      *
@@ -61,9 +73,6 @@ class DotLottieDrawable(
     // The number of times the animation will repeat. The default is 0, which means the animation
     // will play only once
     private var mRemainingRepeatCount = mLoopCount
-
-    private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
-
     /**
      * The type of repetition that will occur when repeatMode is nonzero. RESTART means the
      * animation will start from the beginning on every new cycle. REVERSE means the animation
@@ -181,7 +190,7 @@ class DotLottieDrawable(
         try {
             initialize()
         } catch (e: Throwable) {
-            mDotLottieError = e
+            mDotLottieEventListener.forEach { it.onLoadError(e) }
         }
     }
 
@@ -192,6 +201,7 @@ class DotLottieDrawable(
         lastFrame = outValues[LOTTIE_INFO_FRAME_COUNT]
         duration = outValues[LOTTIE_INFO_DURATION] * 1000L
         isLoaded = true
+        mDotLottieEventListener.forEach(DotLottieEventListener::onLoad)
         updateFrameInterval()
     }
 
@@ -286,29 +296,10 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
-    fun addEventListener(eventListener: DotLottieEventListener) {
-        mDotLottieEventListener.add(eventListener)
-        collectOldState()
-    }
-
-    private fun collectOldState() {
-        mDotLottieError?.let { error ->
-            mDotLottieEventListener.forEach { it.onLoadError(error) }
-        }
-        if (isLoaded) {
-            mDotLottieEventListener.forEach(DotLottieEventListener::onLoad)
-        }
-    }
-
-    fun removeEventListener(eventListener: DotLottieEventListener) {
-        mDotLottieEventListener.remove(eventListener)
-    }
-
     override fun draw(canvas: Canvas) {
         if (mNativePtr == 0L || mBuffer == null) {
             return
         }
-
         if (mAutoPlay || mRunning) {
             val startTime = System.nanoTime()
             nDrawLottieFrame(mNativePtr, mBuffer, mFrame.toFloat())
@@ -316,6 +307,7 @@ class DotLottieDrawable(
             canvas.drawBitmap(mBuffer!!, 0f, 0f, Paint())
             mDotLottieEventListener.forEach { it.onFrame(mFrame) }
 
+            //Log.e("ericc", "On draw Buffer $mFrame : Pt $mNativePtr")
             // Increase frame count.
             if (!useFrameInterpolation) {
                 mFrame += mFramesPerUpdate
@@ -342,12 +334,12 @@ class DotLottieDrawable(
                 }
             }
             val endTime = System.nanoTime()
-            if (mPaused) {
+            if (mPaused || freeze) {
                 return
             }
 
             // Frame progression with Interpolation
-            val elapsedTime = ((endTime - startTime) / 100000) * speed
+            val elapsedTime = ((endTime - startTime) / 1000000) * speed
             val frameProgress = elapsedTime / mFrameDuration
             if (useFrameInterpolation) {
                 if (mode == Mode.Reverse) {

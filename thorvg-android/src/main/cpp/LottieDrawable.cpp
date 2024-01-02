@@ -4,6 +4,7 @@
 
 LottieDrawable::Data::Data(const char *content, uint32_t length) {
     LOGI("LottieDrawable::Data::Data length=%d", length);
+    LOGI("LottieDrawable::Data::Data length=%s", content);
     mContent = content;
     mContentLength = length;
 

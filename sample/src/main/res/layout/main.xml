@@ -27,18 +27,22 @@
                 android:text="Pause" />
 
             <com.google.android.material.button.MaterialButton
-                android:layout_marginStart="10dp"
                 android:id="@+id/anim_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stop On" />
+                android:text="Stop" />
 
             <com.google.android.material.button.MaterialButton
-                android:layout_marginStart="10dp"
                 android:id="@+id/btnLoop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Loop off" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFreeze"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Freeze" />
 
 
         </LinearLayout>
@@ -47,7 +51,6 @@
             android:id="@+id/lottie_view"
             android:layout_width="200dp"
             app:speed="1"
-            app:src="swinging.json"
             android:layout_height="200dp" />
 
         <TextView
@@ -167,6 +170,7 @@
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:layout_marginTop="10dp"
+            android:checked="true"
             android:text="Frame Interpolation"
             android:id="@+id/cbxFrameInterpolation"
             android:layout_width="wrap_content"
@@ -178,6 +182,28 @@
             android:layout_marginTop="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_marginTop="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:layout_weight="3"
+                android:hint="Color : #FFFFFF"
+                android:maxLength="7"
+                android:id="@+id/edColor"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSetColor"
+                android:layout_weight="3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Set" />
+
+        </LinearLayout>
 
 
     </LinearLayout>

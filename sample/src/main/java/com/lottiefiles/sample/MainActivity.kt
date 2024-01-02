@@ -39,8 +39,7 @@ class MainActivity : ComponentActivity() {
 
         override fun onFrame(frame: Double) {
             Log.d(TAG, "frame $frame")
-            val f = "%.2f".format(frame)
-            binding.tvFrame.text = "Frame : $f"
+            binding.tvFrame.text = "Frame : %.2f".format(frame)
         }
 
         override fun onLoop() {
@@ -50,6 +49,16 @@ class MainActivity : ComponentActivity() {
         override fun onComplete() {
             Log.d(TAG, "On Completed")
             binding.animState.text = "Play"
+        }
+
+        override fun onFreeze() {
+            super.onFreeze()
+            Log.d(TAG, "On Freeze")
+        }
+
+        override fun onUnFreeze() {
+            super.onUnFreeze()
+            Log.d(TAG, "onUnFreeze")
         }
 
         override fun onLoad() {
@@ -70,11 +79,10 @@ class MainActivity : ComponentActivity() {
             .speed(1f)
             .loop(true)
             .fileName("test.json") // file name of json/.lottie
-//            .src("https://dfdfdf") // from url of json /
-//            .data("{dfdf dfdk fd}") // content of json or dotlottie by array
+//            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") // from url of json
+//            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // from url of json
             .mode(Mode.Forward)
             .useFrameInterpolation(true)
-            .backgroundColor("#FF0000")
             .build()
 
         // Sample app
@@ -83,11 +91,13 @@ class MainActivity : ComponentActivity() {
         binding.lottieView.load(config)
 
         binding.btnSetSegment.setOnClickListener {
-            val start = binding.edStartFrame.text.toString().toDouble()
-            val end = binding.edEndFrame.text.toString().toDouble()
-            binding.lottieView.setSegments(start, end)
-            binding.lottieView.stop()
-            binding.lottieView.play()
+            val start = binding.edStartFrame.text.toString().toDoubleOrNull()
+            val end = binding.edEndFrame.text.toString().toDoubleOrNull()
+            if (start != null && end != null) {
+                binding.lottieView.setSegments(start, end)
+                binding.lottieView.stop()
+                binding.lottieView.play()
+            }
         }
 
         binding.animState.setOnClickListener { v: View ->
@@ -102,9 +112,10 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnSetframe.setOnClickListener {
-            val frame = binding.edFrame.text.toString().toDouble()
-            binding.lottieView.setFrame(frame)
-            binding.edFrame.text.clear()
+            binding.edFrame.text.toString().toDoubleOrNull()?.let {
+                binding.lottieView.setFrame(it)
+                binding.edFrame.text.clear()
+            }
         }
 
         binding.animStop.setOnClickListener {
@@ -139,8 +150,24 @@ class MainActivity : ComponentActivity() {
             binding.lottieView.setFrameInterpolation(checkBox.isChecked)
         }
         binding.btnSetSpeed.setOnClickListener {
-            val speed = binding.edSpeed.text.toString().toFloat()
-            binding.lottieView.setSpeed(speed)
+            binding.edSpeed.text.toString().toFloatOrNull()?.let {
+                binding.lottieView.setSpeed(it)
+            }
+        }
+
+        binding.btnFreeze.setOnClickListener {
+            if (binding.btnFreeze.text.startsWith("Freeze")) {
+                binding.lottieView.freeze()
+                binding.btnFreeze.text = "Un Freeze"
+            } else {
+                binding.lottieView.unFreeze()
+                binding.btnFreeze.text = "Freeze"
+            }
+        }
+
+        binding.btnSetColor.setOnClickListener {
+            val color = binding.edColor.text.toString()
+            binding.lottieView.setBackgroundColor(color)
         }
     }
 }

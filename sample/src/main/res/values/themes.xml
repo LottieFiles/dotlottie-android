@@ -2,7 +2,7 @@
 
 <resources xmlns:tools="http://schemas.android.com/tools">
 <!-- Base application theme. -->
-<style name="Theme.Sample" parent="Theme.Material3.DayNight.NoActionBar">
+<style name="Theme.Sample" parent="Theme.Material3.Light.NoActionBar">
     <!-- Customize your light theme here. -->
     <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
 </style>

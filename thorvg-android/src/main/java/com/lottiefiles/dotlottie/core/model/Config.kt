@@ -8,6 +8,7 @@ class Config private constructor(
     val mode: Mode,
     val backgroundColor: String,
     val loop: Boolean,
+    val srcUrl: String,
     val data: Any?
 ){
 
@@ -18,6 +19,7 @@ class Config private constructor(
         private var useFrameInterpolator: Boolean = false
         private var speed: Float = 1f
         private var asset: String = ""
+        private var srcUrl: String = ""
         private var backgroundColor: String = "#FFFFFF"
         private var mode: Mode = Mode.Forward
         private var data: Any? = null
@@ -36,6 +38,10 @@ class Config private constructor(
 
         fun fileName(asset: String) = apply {
             this.asset = asset
+        }
+
+        fun src(url: String) = apply {
+            this.srcUrl = url
         }
 
         fun backgroundColor(color: String) = apply {
@@ -63,6 +69,7 @@ class Config private constructor(
                 asset = this.asset,
                 useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
+                srcUrl = this.srcUrl,
                 backgroundColor = this.backgroundColor
             )
         }
