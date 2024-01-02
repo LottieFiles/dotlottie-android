@@ -4,7 +4,7 @@ plugins {
     `maven-publish`
 }
 
-group = "com.github.jitpack"
+group = "com.github.LottieFiles"
 version = "0.0.3"
 
 android {
@@ -36,10 +36,6 @@ android {
             path("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
         jvmTarget = "1.8"
