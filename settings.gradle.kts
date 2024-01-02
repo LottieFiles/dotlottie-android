@@ -15,8 +15,10 @@ dependencyResolutionManagement {
     }
 }
 
-
-
 rootProject.name = "dotlottie-android"
 include(":sample")
 include(":thorvg-android")
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version("0.4.0")
+}
