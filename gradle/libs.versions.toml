@@ -1,5 +1,5 @@
 [versions]
-agp = "8.0.0"
+agp = "8.2.0"
 androidx-lifecycle-runtime-ktx = "2.6.2"
 disklrucache = "2.0.2"
 dotlottieloader-android = "1.1"
