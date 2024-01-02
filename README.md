@@ -28,7 +28,7 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("com.github.LottieFiles:dotlottie-android:0.0.1")
+    implementation("com.github.LottieFiles:dotlottie-android:0.0.3")
 }
 
 ```
