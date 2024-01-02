@@ -4,6 +4,9 @@ plugins {
     `maven-publish`
 }
 
+group = "com.github.jitpack"
+version = "0.0.3"
+
 android {
     namespace = "com.lottiefiles.dotlottie.core"
     compileSdk = 33
