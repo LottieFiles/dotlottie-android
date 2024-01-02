@@ -27,7 +27,7 @@ class DotLottieDrawable(
     private var mLoopCount: Int = 0,
     private var mRepeatMode: Mode = Mode.Forward,
     private var mSpeed: Float,
-    private var backgroundColor: Int = Color.TRANSPARENT,
+    private var mBackgroundColor: String = "",
     private val mDotLottieEventListener: List<DotLottieEventListener>
 ) : Drawable(), Animatable {
 
@@ -42,6 +42,9 @@ class DotLottieDrawable(
     private var mRunning = false
     private var mPaused = false
     private var mNativePtr: Long = 0
+
+    val backgroundColor: String
+        get() = mBackgroundColor
 
    var freeze: Boolean = false
         set(value) {
@@ -303,7 +306,7 @@ class DotLottieDrawable(
         if (mAutoPlay || mRunning) {
             val startTime = System.nanoTime()
             nDrawLottieFrame(mNativePtr, mBuffer, mFrame.toFloat())
-            canvas.drawColor(backgroundColor)
+            canvas.drawColor(mBackgroundColor.toColor())
             canvas.drawBitmap(mBuffer!!, 0f, 0f, Paint())
             mDotLottieEventListener.forEach { it.onFrame(mFrame) }
 

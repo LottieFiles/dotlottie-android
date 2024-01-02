@@ -78,6 +78,9 @@ class DotLottieAnimation @JvmOverloads constructor(
             mLottieDrawable?.mode = value
         }
 
+    val backgroundColor: String
+        get() = mLottieDrawable?.backgroundColor ?: ""
+
     val segments: Pair<Double, Double>
         get() = mLottieDrawable?.segments ?: error("DotLottieDrawable is null")
 
@@ -219,7 +222,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                 mLoopCount = if (config.loop) INFINITE_LOOP else 1,
                 mAutoPlay = config.autoPlay,
                 mSpeed = config.speed,
-                backgroundColor = config.backgroundColor.toColor(),
+                mBackgroundColor = config.backgroundColor,
                 mUseFrameInterpolator = config.useFrameInterpolator,
                 contentStr = contentStr ?: error("Invalid content !"),
                 mDotLottieEventListener = mDotLottieEventListener
