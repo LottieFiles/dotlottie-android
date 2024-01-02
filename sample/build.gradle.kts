@@ -53,7 +53,7 @@ android {
 
 dependencies {
 
-    implementation(project(":dotlottie-android"))
+    implementation(project(":thorvg-android"))
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation("com.google.android.material:material:1.11.0")

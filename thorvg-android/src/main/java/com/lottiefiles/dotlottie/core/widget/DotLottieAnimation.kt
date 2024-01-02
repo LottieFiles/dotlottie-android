@@ -22,7 +22,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 import java.nio.charset.StandardCharsets
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -38,7 +37,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
-    private val mAssetManager: AssetManager = context.assets
     private val coroutineScope = CoroutineScope(SupervisorJob())
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
@@ -259,25 +257,6 @@ class DotLottieAnimation @JvmOverloads constructor(
                 mLottieDrawable?.callback = this@DotLottieAnimation
             }
         }
-    }
-
-    private fun loadJsonFromAsset(fileName: String?): String? {
-        var json: String? = null
-        try {
-            val inputStream = mAssetManager.open(fileName!!)
-            val size = inputStream.available()
-            val buffer = ByteArray(size)
-
-            // Read JSON data from InputStream.
-            inputStream.read(buffer)
-            inputStream.close()
-
-            // Convert a byte array to a string.
-            json = String(buffer, StandardCharsets.UTF_8)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        return json
     }
 
     fun resize(width: Int, height: Int) {

@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    `maven-publish`
 }
 
 android {
@@ -42,17 +43,25 @@ android {
     }
 }
 
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.LottieFiles"
+            artifactId = "dotlottie-android"
+            version = "0.0.3"
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
+}
+
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
-    //implementation(libs.moshi)
-    //kapt(libs.moshi.kotlin.codegen)
-    //implementation(libs.okhttp)
-    //implementation(libs.kotlin.coroutines.okhttp)
-    //implementation(libs.disklrucache)
-    implementation("com.github.dotlottie:dotlottieloader-android:1.1")
+    implementation(libs.dotlottieloader.android)
     implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)

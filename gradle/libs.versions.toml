@@ -2,6 +2,7 @@
 agp = "8.2.0"
 androidx-lifecycle-runtime-ktx = "2.6.2"
 disklrucache = "2.0.2"
+dotlottieloader-android = "1.1"
 kotlin = "1.9.0"
 core-ktx = "1.12.0"
 junit = "4.13.2"
@@ -21,6 +22,7 @@ okhttp = "4.12.0"
 androidx-lifecycle-runtime-ktx-v262 = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle-runtime-ktx" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 disklrucache = { module = "com.jakewharton:disklrucache", version.ref = "disklrucache" }
+dotlottieloader-android = { module = "com.github.dotlottie:dotlottieloader-android", version.ref = "dotlottieloader-android" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
