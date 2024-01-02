@@ -52,6 +52,17 @@ class DotLottieAnimation @JvmOverloads constructor(
     val autoPlay: Boolean
         get() = mLottieDrawable?.autoPlay ?: error("DotLottieDrawable is null")
 
+    val isPlaying: Boolean
+        get() =  mLottieDrawable?.isRunning ?: false
+
+
+    val isPaused: Boolean
+        get() = mLottieDrawable?.isPaused() ?: false
+
+
+    val isStopped: Boolean
+        get() = mLottieDrawable?.isStopped() ?: false
+
     val isLoaded: Boolean
         get() = mLottieDrawable?.isLoaded ?: error("DotLottieDrawable is null")
 
@@ -110,18 +121,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setSpeed(speed: Float) {
         mLottieDrawable?.speed = speed
-    }
-
-    fun isPlaying(): Boolean {
-        return mLottieDrawable?.isRunning ?: false
-    }
-
-    fun isPaused(): Boolean {
-        return mLottieDrawable?.isPaused() ?: false
-    }
-
-    fun isStopped(): Boolean {
-        return mLottieDrawable?.isStopped() ?: false
     }
 
     fun play() {
