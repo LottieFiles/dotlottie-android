@@ -353,7 +353,7 @@ class DotLottieDrawable(
             }
 
             // Frame progression with Interpolation
-            val elapsedTime = ((endTime - startTime) / 1000000) * speed
+            val elapsedTime = ((endTime - startTime) / 100000) * speed
             val frameProgress = elapsedTime / mFrameDuration
             if (useFrameInterpolation) {
                 if (mode == Mode.Reverse) {

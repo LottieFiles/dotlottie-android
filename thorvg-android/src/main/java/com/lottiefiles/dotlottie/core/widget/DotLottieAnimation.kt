@@ -223,7 +223,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                 config.asset.isJsonAsset() ||
                 config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
                 config.srcUrl.isNotBlank() -> loadFromUrl(config.srcUrl)
-                else -> loadAsset(assetFilePath)
+                config.data is String -> config.data
+                else -> error("Asset not found")
             }
             mLottieDrawable = DotLottieDrawable(
                 mRepeatMode = config.mode,
