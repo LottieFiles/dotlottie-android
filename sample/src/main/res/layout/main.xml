@@ -7,204 +7,217 @@
 
     </data>
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:padding="10dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        tools:context=".MainActivity">
-
-        <LinearLayout
-            android:layout_marginBottom="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/anim_state"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pause" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/anim_stop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Stop" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLoop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Loop off" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFreeze"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Freeze" />
-
-
-        </LinearLayout>
-
-        <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
-            android:id="@+id/dot_lottie_view"
-            android:layout_width="200dp"
-            app:speed="1"
-            android:layout_height="200dp" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_marginBottom="20dp"
-            android:layout_marginTop="20dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Status : " />
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:padding="10dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            tools:context=".MainActivity">
 
-            <EditText
-                android:layout_weight="0.5"
-                android:hint="Frame"
-                android:inputType="numberDecimal"
-                android:id="@+id/edFrame"
-                android:layout_width="100dp"
+            <LinearLayout
+                android:layout_marginBottom="20dp"
+                android:layout_marginTop="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPlay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Play" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPause"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pause" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/anim_stop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Stop" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFreeze"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Freeze" />
+
+
+            </LinearLayout>
+
+            <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
+                android:id="@+id/dot_lottie_view"
+                android:layout_width="200dp"
+                app:speed="1"
+                android:layout_height="200dp" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_marginBottom="20dp"
+                android:layout_marginTop="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status : " />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:layout_weight="0.5"
+                    android:hint="Frame"
+                    android:inputType="numberDecimal"
+                    android:id="@+id/edFrame"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_setframe"
+                    android:layout_weight="0.5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Set Frame" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnForward"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Forward" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReverse"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reverse" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBounce"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bounce" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReverseBounce"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="R.Bounce" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:layout_weight="3"
+                    android:hint="Speed"
+                    android:inputType="numberDecimal"
+                    android:id="@+id/edSpeed"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetSpeed"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apply" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:weightSum="9"
+                android:layout_height="wrap_content">
+                <EditText
+                    android:layout_weight="3"
+                    android:hint="Start"
+                    android:inputType="numberDecimal"
+                    android:id="@+id/edStartFrame"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content" />
+
+                <EditText
+                    android:layout_weight="3"
+                    android:hint="End"
+                    android:inputType="numberDecimal"
+                    android:id="@+id/edEndFrame"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetSegment"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Set Segment" />
+
+            </LinearLayout>
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:layout_marginTop="10dp"
+                android:checked="true"
+                android:text="Frame Interpolation"
+                android:id="@+id/cbxFrameInterpolation"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_setframe"
-                android:layout_weight="0.5"
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:layout_marginTop="10dp"
+                android:checked="true"
+                android:text="Loop"
+                android:id="@+id/cbxLoop"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Set Frame" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnForward"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Forward" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnReverse"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Reverse" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBounce"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bounce" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnReverseBounce"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="R.Bounce" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <EditText
-                android:layout_weight="3"
-                android:hint="Speed"
-                android:inputType="numberDecimal"
-                android:id="@+id/edSpeed"
-                android:layout_width="100dp"
                 android:layout_height="wrap_content" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetSpeed"
-                android:layout_weight="3"
+            <TextView
+                android:id="@+id/tvFrame"
+                android:text="Frame : "
+                android:layout_marginTop="10dp"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Set" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:weightSum="9"
-            android:layout_height="wrap_content">
-            <EditText
-                android:layout_weight="3"
-                android:hint="Start"
-                android:inputType="numberDecimal"
-                android:id="@+id/edStartFrame"
-                android:layout_width="100dp"
                 android:layout_height="wrap_content" />
 
-            <EditText
-                android:layout_weight="3"
-                android:hint="Start"
-                android:inputType="numberDecimal"
-                android:id="@+id/edEndFrame"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content" />
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetSegment"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Set" />
+                <EditText
+                    android:layout_weight="3"
+                    android:hint="Color : #FFFFFF"
+                    android:maxLength="7"
+                    android:id="@+id/edColor"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetColor"
+                    android:layout_weight="3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Set" />
+
+            </LinearLayout>
+
 
         </LinearLayout>
-
-        <com.google.android.material.checkbox.MaterialCheckBox
-            android:layout_marginTop="10dp"
-            android:checked="true"
-            android:text="Frame Interpolation"
-            android:id="@+id/cbxFrameInterpolation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvFrame"
-            android:text="Frame : "
-            android:layout_marginTop="10dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <LinearLayout
-            android:layout_marginTop="10dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <EditText
-                android:layout_weight="3"
-                android:hint="Color : #FFFFFF"
-                android:maxLength="7"
-                android:id="@+id/edColor"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetColor"
-                android:layout_weight="3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Set" />
-
-        </LinearLayout>
-
-
-    </LinearLayout>
+    </ScrollView>
 </layout>

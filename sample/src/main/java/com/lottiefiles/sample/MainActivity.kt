@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
         override fun onDestroy() {
             super.onDestroy()
             Log.d(TAG, "onDestroy")
+            binding.tvStatus.text = "Status : Destroyed"
         }
 
         override fun onPause() {
@@ -39,12 +40,19 @@ class MainActivity : ComponentActivity() {
 
         override fun onStop() {
             binding.tvStatus.text = "Status : Stop"
+            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+                binding.dotLottieView.currentFrame,
+                binding.dotLottieView.totalFrames,
+            )
             Log.d(TAG, "onStop")
         }
 
         override fun onFrame(frame: Double) {
             //Log.d(TAG, "frame $frame")
-            binding.tvFrame.text = "Frame : %.2f".format(frame)
+            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+                frame,
+                binding.dotLottieView.totalFrames,
+            )
         }
 
         override fun onLoop() {
@@ -53,7 +61,7 @@ class MainActivity : ComponentActivity() {
 
         override fun onComplete() {
             Log.d(TAG, "On Completed")
-            binding.animState.text = "Play"
+            //binding.tvStatus.text = "Play"
         }
 
         override fun onFreeze() {
@@ -83,10 +91,11 @@ class MainActivity : ComponentActivity() {
             .autoPlay(true)
             .speed(1f)
             .loop(true)
-            .fileName("test.json") // file name of json/.lottie
+//            .fileName("check.json") // file name of json/.lottie
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") // from url of json
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // from url of json
             .mode(Mode.Forward)
+            .data("")
             .useFrameInterpolation(true)
             .build()
 
@@ -105,15 +114,17 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        binding.animState.setOnClickListener { v: View ->
-            val button = v as TextView
-            if (!binding.dotLottieView.isPaused) {
-                binding.dotLottieView.pause()
-                button.text = "Resume"
-            } else {
+        binding.btnPlay.setOnClickListener { v: View ->
+            val isPausedOrStopped = binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
+            if (isPausedOrStopped) {
                 binding.dotLottieView.play()
-                button.text = "Pause"
             }
+        }
+
+        binding.btnPause.setOnClickListener { v: View ->
+            val isPausedOrStopped = binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
+            if (isPausedOrStopped) return@setOnClickListener
+            binding.dotLottieView.pause()
         }
 
         binding.btnSetframe.setOnClickListener {
@@ -124,8 +135,8 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.animStop.setOnClickListener {
+            if (binding.dotLottieView.isStopped) return@setOnClickListener
             binding.dotLottieView.stop()
-            binding.animState.text = "Play"
         }
 
         binding.dotLottieView.addEventListener(eventListener)
@@ -142,14 +153,8 @@ class MainActivity : ComponentActivity() {
         binding.btnReverseBounce.setOnClickListener {
             binding.dotLottieView.setRepeatMode(Mode.Reverse)
         }
-        binding.btnLoop.setOnClickListener {
-            val text = if (binding.dotLottieView.loop) {
-                "Loop off"
-            } else {
-                "Loop on"
-            }
-            binding.dotLottieView.setLoop(!binding.dotLottieView.loop)
-            binding.btnLoop.text = text
+        binding.cbxLoop.addOnCheckedStateChangedListener { checkBox, state ->
+            binding.dotLottieView.setLoop(checkBox.isChecked)
         }
         binding.cbxFrameInterpolation.addOnCheckedStateChangedListener { checkBox, state ->
             binding.dotLottieView.setFrameInterpolation(checkBox.isChecked)

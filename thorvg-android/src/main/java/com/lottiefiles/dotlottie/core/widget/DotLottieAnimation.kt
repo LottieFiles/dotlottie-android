@@ -47,6 +47,12 @@ class DotLottieAnimation @JvmOverloads constructor(
     val loop: Boolean
         get() = loopCount != 1
 
+    val direction: Int
+        get() = when(mLottieDrawable?.mode ?: Mode.Forward) {
+            Mode.Forward, Mode.Bounce -> 1
+            Mode.Reverse, Mode.BounceReverse -> -1
+        }
+
     val autoPlay: Boolean
         get() = mLottieDrawable?.autoPlay ?: error("DotLottieDrawable is null")
 
@@ -320,6 +326,6 @@ class DotLottieAnimation @JvmOverloads constructor(
          * This value used used with the [.setRepeatCount] property to repeat
          * the animation indefinitely.
          */
-        const val INFINITE_LOOP = -1
+        const val INFINITE_LOOP = Int.MAX_VALUE
     }
 }
