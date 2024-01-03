@@ -89,11 +89,11 @@ class MainActivity : ComponentActivity() {
 
         val config = Config.Builder()
             .autoPlay(true)
-            .speed(1f)
+            .speed(1.5f)
             .loop(true)
-//            .fileName("check.json") // file name of json/.lottie
-//            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") // from url of json
-//            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // from url of json
+            .fileName("swinging.json") // file name of json/.lottie
+//            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
+//            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
             .mode(Mode.Forward)
             .data("")
             .useFrameInterpolation(true)
