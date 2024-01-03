@@ -307,7 +307,6 @@ class DotLottieDrawable(
         if (mNativePtr == 0L || mBuffer == null) {
             return
         }
-        Log.e("ericc", "Count $mRemainingRepeatCount")
         if (mAutoPlay || mRunning) {
             val startTime = System.nanoTime()
             nDrawLottieFrame(mNativePtr, mBuffer, mFrame.toFloat())

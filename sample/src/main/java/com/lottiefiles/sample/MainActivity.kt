@@ -95,7 +95,6 @@ class MainActivity : ComponentActivity() {
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
             .mode(Mode.Forward)
-            .data("")
             .useFrameInterpolation(true)
             .build()
 

@@ -20,7 +20,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -218,29 +221,69 @@ class DotLottieAnimation @JvmOverloads constructor(
     private fun setupConfig() {
         val config = mConfig ?: return
         coroutineScope.launch {
-            val assetFilePath = config.asset
-            val contentStr = when {
-                config.asset.isJsonAsset() ||
-                config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
-                config.srcUrl.isNotBlank() -> loadFromUrl(config.srcUrl)
-                config.data is String -> config.data
-                else -> error("Asset not found")
+            try {
+                val assetFilePath = config.asset
+                val contentStr = when {
+                    config.asset.isJsonAsset() ||
+                            config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
+                    config.srcUrl.isNotBlank() -> loadFromUrl(config.srcUrl)
+                    config.data is String -> config.data
+                    config.data is ByteArray -> loadFromByteArray(config.data)
+                    else -> error("Asset not found")
+                }
+                mLottieDrawable = DotLottieDrawable(
+                    mRepeatMode = config.mode,
+                    mLoopCount = if (config.loop) INFINITE_LOOP else 1,
+                    mAutoPlay = config.autoPlay,
+                    mSpeed = config.speed,
+                    mBackgroundColor = config.backgroundColor,
+                    mUseFrameInterpolator = config.useFrameInterpolator,
+                    contentStr = contentStr ?: error("Invalid content !"),
+                    mDotLottieEventListener = mDotLottieEventListener
+                )
+                mLottieDrawable?.callback = this@DotLottieAnimation
+                withContext(Dispatchers.Main) {
+                    requestLayout()
+                    invalidate()
+                }
+            } catch (e: Exception) {
+                mDotLottieEventListener.forEach {
+                    it.onLoadError(e)
+                }
             }
-            mLottieDrawable = DotLottieDrawable(
-                mRepeatMode = config.mode,
-                mLoopCount = if (config.loop) INFINITE_LOOP else 1,
-                mAutoPlay = config.autoPlay,
-                mSpeed = config.speed,
-                mBackgroundColor = config.backgroundColor,
-                mUseFrameInterpolator = config.useFrameInterpolator,
-                contentStr = contentStr ?: error("Invalid content !"),
-                mDotLottieEventListener = mDotLottieEventListener
-            )
-            mLottieDrawable?.callback = this@DotLottieAnimation
-            withContext(Dispatchers.Main) {
-                requestLayout()
-                invalidate()
+        }
+    }
+
+    private fun byteArrayToFile(data: ByteArray): File? {
+        return try {
+            val filePath = File(context.cacheDir, "${UUID.randomUUID()}.lottie").apply {
+                createNewFile()
             }
+            val fileOutputStream = FileOutputStream(filePath)
+            fileOutputStream.write(data)
+            fileOutputStream.close()
+            filePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private suspend fun loadFromByteArray(data: ByteArray): String? {
+        return suspendCoroutine { cont ->
+            val file = byteArrayToFile(data) ?: return@suspendCoroutine
+            DotLottieLoader.with(context).fromAsset(file.path).load(object : DotLottieResult {
+                override fun onSuccess(result: DotLottie) {
+                    val anim = result.animations.entries.lastOrNull()
+                    if (anim != null) {
+                        val content = String(anim.value, StandardCharsets.UTF_8)
+                        cont.resume(content)
+                    }
+                }
+                override fun onError(throwable: Throwable) {
+                    cont.resumeWithException(throwable)
+                }
+            })
         }
     }
 
