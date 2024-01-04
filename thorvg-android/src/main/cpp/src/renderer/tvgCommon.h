@@ -31,26 +31,26 @@ using namespace tvg;
 
 //for MSVC Compat
 #ifdef _MSC_VER
-#define TVG_UNUSED
+    #define TVG_UNUSED
     #define strncasecmp _strnicmp
     #define strcasecmp _stricmp
 #else
-#define TVG_UNUSED __attribute__ ((__unused__))
+    #define TVG_UNUSED __attribute__ ((__unused__))
 #endif
 
 // Portable 'fallthrough' attribute
 #if __has_cpp_attribute(fallthrough)
-#ifdef _MSC_VER
+    #ifdef _MSC_VER
         #define TVG_FALLTHROUGH [[fallthrough]];
     #else
         #define TVG_FALLTHROUGH __attribute__ ((fallthrough));
     #endif
 #else
-#define TVG_FALLTHROUGH
+    #define TVG_FALLTHROUGH
 #endif
 
 #if defined(_MSC_VER) && defined(__clang__)
-#define strncpy strncpy_s
+    #define strncpy strncpy_s
     #define strdup _strdup
 #endif
 
@@ -62,12 +62,12 @@ using namespace tvg;
 #define TVG_CLASS_ID_LINEAR    4
 #define TVG_CLASS_ID_RADIAL    5
 
-enum class FileType { Tvg = 0, Svg, Lottie, Raw, Png, Jpg, Webp, Unknown };
+enum class FileType { Tvg = 0, Svg, Lottie, Raw, Png, Jpg, Webp, Gif, Unknown };
 
 using Size = Point;
 
 #ifdef THORVG_LOG_ENABLED
-constexpr auto ErrorColor = "\033[31m";  //red
+    constexpr auto ErrorColor = "\033[31m";  //red
     constexpr auto ErrorBgColor = "\033[41m";//bg red
     constexpr auto LogColor = "\033[32m";    //green
     constexpr auto LogBgColor = "\033[42m";  //bg green
@@ -76,8 +76,8 @@ constexpr auto ErrorColor = "\033[31m";  //red
     #define TVGERR(tag, fmt, ...) fprintf(stderr, "%s[E]%s %s" tag "%s (%s %d): %s" fmt "\n", ErrorBgColor, ResetColors, ErrorColor, GreyColor, __FILE__, __LINE__, ResetColors, ##__VA_ARGS__)
     #define TVGLOG(tag, fmt, ...) fprintf(stdout, "%s[L]%s %s" tag "%s (%s %d): %s" fmt "\n", LogBgColor, ResetColors, LogColor, GreyColor, __FILE__, __LINE__, ResetColors, ##__VA_ARGS__)
 #else
-#define TVGERR(...) do {} while(0)
-#define TVGLOG(...) do {} while(0)
+    #define TVGERR(...) do {} while(0)
+    #define TVGLOG(...) do {} while(0)
 #endif
 
 uint16_t THORVG_VERSION_NUMBER();

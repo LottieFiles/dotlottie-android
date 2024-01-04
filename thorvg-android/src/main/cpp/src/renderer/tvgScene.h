@@ -66,7 +66,7 @@ struct Scene::Impl
     RenderData rd = nullptr;
     Scene* scene = nullptr;
     uint8_t opacity;                     //for composition
-    bool needComp;                       //composite or not
+    bool needComp = false;               //composite or not
 
     Impl(Scene* s) : scene(s)
     {
@@ -75,7 +75,7 @@ struct Scene::Impl
     ~Impl()
     {
         for (auto paint : paints) {
-            if (paint->pImpl->unref() == 0) delete(paint);
+            if (P(paint)->unref() == 0) delete(paint);
         }
     }
 
@@ -148,6 +148,7 @@ struct Scene::Impl
         if (needComp) {
             cmp = renderer.target(bounds(renderer), renderer.colorSpace());
             renderer.beginComposite(cmp, CompositeMethod::None, opacity);
+            needComp = false;
         }
 
         for (auto paint : paints) {
@@ -220,7 +221,9 @@ struct Scene::Impl
         auto dup = ret.get()->pImpl;
 
         for (auto paint : paints) {
-            dup->paints.push_back(paint->duplicate());
+            auto cdup = paint->duplicate();
+            P(cdup)->ref();
+            dup->paints.push_back(cdup);
         }
 
         return ret.release();
@@ -231,8 +234,8 @@ struct Scene::Impl
         auto dispose = renderer ? true : false;
 
         for (auto paint : paints) {
-            if (dispose) free &= paint->pImpl->dispose(*renderer);
-            if (free) delete(paint);
+            if (dispose) free &= P(paint)->dispose(*renderer);
+            if (P(paint)->unref() == 0 && free) delete(paint);
         }
         paints.clear();
         renderer = nullptr;

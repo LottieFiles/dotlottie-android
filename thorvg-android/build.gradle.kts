@@ -1,7 +1,11 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    `maven-publish`
 }
+
+group = "com.github.LottieFiles"
+version = "0.0.3"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
@@ -34,11 +38,24 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.LottieFiles"
+            artifactId = "dotlottie-android"
+            version = "0.0.3"
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
     }
 }
 
@@ -47,6 +64,8 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
+    implementation(libs.dotlottieloader.android)
+    implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }

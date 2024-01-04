@@ -29,7 +29,6 @@
 Scene::Scene() : pImpl(new Impl(this))
 {
     Paint::pImpl->id = TVG_CLASS_ID_SCENE;
-    Paint::pImpl->method(new PaintMethod<Scene::Impl>(pImpl));
 }
 
 
@@ -55,6 +54,7 @@ Result Scene::push(unique_ptr<Paint> paint) noexcept
 {
     auto p = paint.release();
     if (!p) return Result::MemoryCorruption;
+    PP(p)->ref();
     pImpl->paints.push_back(p);
 
     return Result::Success;

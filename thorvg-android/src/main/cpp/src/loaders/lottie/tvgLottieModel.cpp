@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+#include "tvgPaint.h"
 #include "tvgFill.h"
 #include "tvgLottieModel.h"
 
@@ -34,7 +35,18 @@
 /* External Class Implementation                                        */
 /************************************************************************/
 
-void LottieTrimpath::segment(int32_t frameNo, float& start, float& end)
+LottieImage::~LottieImage()
+{
+    free(b64Data);
+    free(mimeType);
+
+    if (picture && PP(picture)->unref() == 0) {
+        delete(picture);
+    }
+}
+
+
+void LottieTrimpath::segment(float frameNo, float& start, float& end)
 {
     auto s = this->start(frameNo) * 0.01f;
     auto e = this->end(frameNo) * 0.01f;
@@ -77,7 +89,7 @@ void LottieTrimpath::segment(int32_t frameNo, float& start, float& end)
 }
 
 
-Fill* LottieGradient::fill(int32_t frameNo)
+Fill* LottieGradient::fill(float frameNo)
 {
     Fill* fill = nullptr;
 
@@ -123,7 +135,6 @@ Fill* LottieGradient::fill(int32_t frameNo)
 void LottieGroup::prepare(LottieObject::Type type)
 {
     LottieObject::type = type;
-    if (transform) statical &= transform->statical;
     for (auto child = children.data; child < children.end(); ++child) {
         statical &= (*child)->statical;
         if (!statical) break;
@@ -131,29 +142,53 @@ void LottieGroup::prepare(LottieObject::Type type)
 }
 
 
+LottieLayer::~LottieLayer()
+{
+    if (refId) {
+        //No need to free assets children because the Composition owns them.
+        children.clear();
+        free(refId);
+    }
+
+    for (auto m = masks.data; m < masks.end(); ++m) {
+        delete(*m);
+    }
+
+    delete(matte.target);
+    delete(transform);
+}
+
 void LottieLayer::prepare()
 {
-    LottieGroup::prepare(LottieObject::Layer);
+    if (transform) statical &= transform->statical;
+    if (timeRemap.frames) statical = false;
 
-    /* if layer is hidden, only useulf data is its transform matrix.
+    /* if layer is hidden, only useful data is its transform matrix.
         so force it to be a Null Layer and release all resource. */
-    if (!hidden) return;
-    type = LottieLayer::Null;
-    children.reset();
+    if (hidden) {
+        type = LottieLayer::Null;
+        children.reset();
+        return;
+    }
+    LottieGroup::prepare(LottieObject::Layer);
 }
 
 
-int32_t LottieLayer::remap(int32_t frameNo)
+float LottieLayer::remap(float frameNo)
 {
-    if (timeRemap.frames) {
+    if (timeRemap.frames || timeRemap.value) {
         frameNo = comp->frameAtTime(timeRemap(frameNo));
+    } else {
+        frameNo -= startFrame;
     }
-    return (int32_t)(frameNo / timeStretch);
+    return (frameNo / timeStretch);
 }
 
 
 LottieComposition::~LottieComposition()
 {
+    if (!initiated) delete(scene);
+
     delete(root);
     free(version);
     free(name);

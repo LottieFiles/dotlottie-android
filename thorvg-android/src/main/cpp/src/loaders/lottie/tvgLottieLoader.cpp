@@ -66,14 +66,16 @@ void LottieLoader::run(unsigned tid)
         builder->update(comp, frameNo);
     //initial loading
     } else {
-        LottieParser parser(content, dirName);
-        if (!parser.parse()) return;
-        comp = parser.comp;
-        if (!comp) return;
+        if (!comp) {
+            LottieParser parser(content, dirName);
+            if (!parser.parse()) return;
+            comp = parser.comp;
+        }
         builder->build(comp);
         w = static_cast<float>(comp->w);
         h = static_cast<float>(comp->h);
         frameDuration = comp->duration();
+        frameCnt = comp->frameCnt();
     }
 }
 
@@ -104,7 +106,11 @@ LottieLoader::~LottieLoader()
 bool LottieLoader::header()
 {
     //A single thread doesn't need to perform intensive tasks.
-    if (TaskScheduler::threads() == 0) return true;
+    if (TaskScheduler::threads() == 0) {
+        run(0);
+        if (comp) return true;
+        else return false;
+    }
 
     //Quickly validate the given Lottie file without parsing in order to get the animation info.
     auto startFrame = 0.0f;
@@ -191,7 +197,8 @@ bool LottieLoader::header()
         return false;
     }
 
-    frameDuration = (endFrame - startFrame) / frameRate;
+    frameCnt = (endFrame - startFrame);
+    frameDuration = frameCnt / frameRate;
 
     TVGLOG("LOTTIE", "info: frame rate = %f, duration = %f size = %d x %d", frameRate, frameDuration, (int)w, (int)h);
 
@@ -273,6 +280,11 @@ bool LottieLoader::resize(Paint* paint, float w, float h)
     Matrix m = {sx, 0, 0, 0, sy, 0, 0, 0, 1};
     paint->transform(m);
 
+    //apply the scale to the base clipper
+    const Paint* clipper;
+    paint->composite(&clipper);
+    if (clipper) const_cast<Paint*>(clipper)->transform(m);
+
     return true;
 }
 
@@ -304,19 +316,19 @@ unique_ptr<Paint> LottieLoader::paint()
 {
     this->done();
     if (!comp) return nullptr;
+    comp->initiated = true;
     return cast<Paint>(comp->scene);
 }
 
 
-bool LottieLoader::frame(uint32_t frameNo)
+bool LottieLoader::frame(float no)
 {
-    if (this->frameNo == frameNo) return true;
+    //no meaing to update if frame diff is less then 1ms
+    if (fabsf(this->frameNo - no) < 0.001f) return false;
 
     this->done();
 
-    if (!comp || frameNo >= comp->frameCnt()) return false;
-
-    this->frameNo = frameNo;
+    this->frameNo = no;
 
     TaskScheduler::request(this);
 
@@ -324,16 +336,13 @@ bool LottieLoader::frame(uint32_t frameNo)
 }
 
 
-uint32_t LottieLoader::totalFrame()
+float LottieLoader::totalFrame()
 {
-    this->done();
-
-    if (!comp) return 0;
-    return comp->frameCnt();
+    return frameCnt;
 }
 
 
-uint32_t LottieLoader::curFrame()
+float LottieLoader::curFrame()
 {
     return frameNo;
 }

@@ -22,13 +22,13 @@ To add the DotLottieAndroid you need to add this dependency to module gradle fil
 
 ```kotlin
 repositories {
-    maven { url("https://jitpack.io") }
+    maven(url = "https://jitpack.io")
 }
 ```
 
 ```kotlin
 dependencies {
-    implementation("com.github.LottieFiles:dotlottie-android:0.0.1")
+    implementation("com.github.LottieFiles:dotlottie-android:0.0.3")
 }
 
 ```
@@ -56,19 +56,25 @@ First put your animation in the assets folder in your android and add `DotLottie
 In your kotlin code, get access to the component just added in your layout
 and you can have access to set of method that allow you interact with the animation
 
-`val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
-`
+```kotlin
+val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
+```
 
 Set up the initial animation configuration
 
-`val config = DotLottieConfig.Builder()
+```kotlin
+val config = DotLottieConfig.Builder()
     .autoPlay(true)
     .speed(1f)
     .loop(true)
-    .src("test.json") // asset from the asset folder
+    .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // url of .json or .lottie
+    .fileName("file.json") // asset from the asset folder .json or .lottie
     .backgroundColor("#FFFFFF")
+    .useInterpolation(true)
+    .mode(Mode.Forward)
     .build()
-dotLottieAnimationView.load(config)`
+dotLottieAnimationView.load(config)
+```
 
 ### API
 
@@ -89,6 +95,7 @@ dotLottieAnimationView.load(config)`
 - `DotLottieAnimation.stop()` : Stop the animation
 - `DotLottieAnimation.load(Config)` : Setup the initial configuration
 - `DotLottieAnimation.setSegments(Float, Float)` : Defining the first and last frame
+- `DotLottieAnimation.setBackground(String)` : Set the animation background
 
 - `DotLottieAnimation.isPlaying()` : Check if the animation is playing
 - `DotLottieAnimation.isStopped()` : Check if the animation is stopped
@@ -114,7 +121,7 @@ private val eventListener = object : DotLottieEventListener {
         Log.d(TAG, "onStop")
     }
 
-    override fun onFrame(frame: Int) {
+    override fun onFrame(frame: Float) {
         Log.d(TAG, "frame $frame")
     }
 
@@ -146,6 +153,8 @@ private val eventListener = object : DotLottieEventListener {
 
 Attache the listener to the component, you can add one or 
 
-`dotLottieAnimationView.addEventListener(eventListener)`
+```kotlin
+dotLottieAnimationView.addEventListener(eventListener)
+```
 
 

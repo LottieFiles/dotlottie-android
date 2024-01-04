@@ -97,11 +97,8 @@ struct SwShapeTask : SwTask
         if (!rshape->stroke->fill && (MULTIPLY(rshape->stroke->color[3], opacity) == 0)) return 0.0f;
         if (mathZero(rshape->stroke->trim.begin - rshape->stroke->trim.end)) return 0.0f;
 
-        if (transform) {
-            if (transform->e11 > transform->e22) width *= transform->e11;
-            else width *= transform->e22;
-        }
-        return fabsf(width);
+        if (transform) return (width * sqrt(transform->e11 * transform->e11 + transform->e12 * transform->e12));
+        else return width;
     }
 
 
@@ -142,7 +139,9 @@ struct SwShapeTask : SwTask
             visibleFill = (alpha > 0 || rshape->fill);
             if (visibleFill || clipper) {
                 shapeReset(&shape);
-                if (!shapePrepare(&shape, rshape, transform, clipRegion, bbox, mpool, tid, clips.count > 0 ? true : false)) goto err;
+                if (!shapePrepare(&shape, rshape, transform, clipRegion, bbox, mpool, tid, clips.count > 0 ? true : false)) {
+                    visibleFill = false;
+                }
             }
         }
         //Fill
@@ -745,6 +744,12 @@ void* SwRenderer::prepareCommon(SwTask* task, const RenderTransform* transform, 
         task->transform = nullptr;
     }
 
+    //zero size?
+    if (task->transform) {
+        if (task->transform->e11 == 0.0f && task->transform->e12 == 0.0f) return task; //zero width
+        if (task->transform->e21 == 0.0f && task->transform->e22 == 0.0f) return task; //zero height
+    }
+
     task->opacity = opacity;
     task->surface = surface;
     task->mpool = mpool;
@@ -770,10 +775,8 @@ RenderData SwRenderer::prepare(Surface* surface, const RenderMesh* mesh, RenderD
     //prepare task
     auto task = static_cast<SwImageTask*>(data);
     if (!task) task = new SwImageTask;
-    if (flags & RenderUpdateFlag::Image) {
-        task->source = surface;
-        task->mesh = mesh;
-    }
+    task->source = surface;
+    task->mesh = mesh;
     return prepareCommon(task, transform, clips, opacity, flags);
 }
 

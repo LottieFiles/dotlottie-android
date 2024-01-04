@@ -2,11 +2,13 @@ package com.lottiefiles.dotlottie.core.model
 
 class Config private constructor(
     val autoPlay: Boolean,
+    val useFrameInterpolator: Boolean,
     val speed: Float,
     val asset: String,
     val mode: Mode,
     val backgroundColor: String,
     val loop: Boolean,
+    val srcUrl: String,
     val data: Any?
 ){
 
@@ -14,8 +16,10 @@ class Config private constructor(
 
         private var autoPlay: Boolean = false
         private var loop: Boolean = false
+        private var useFrameInterpolator: Boolean = false
         private var speed: Float = 1f
         private var asset: String = ""
+        private var srcUrl: String = ""
         private var backgroundColor: String = "#FFFFFF"
         private var mode: Mode = Mode.Forward
         private var data: Any? = null
@@ -32,12 +36,20 @@ class Config private constructor(
             this.speed = speed
         }
 
-        fun src(asset: String) = apply {
+        fun fileName(asset: String) = apply {
             this.asset = asset
+        }
+
+        fun src(url: String) = apply {
+            this.srcUrl = url
         }
 
         fun backgroundColor(color: String) = apply {
             this.backgroundColor = color
+        }
+
+        fun useFrameInterpolation(useFrameInterpolator: Boolean) = apply {
+            this.useFrameInterpolator = useFrameInterpolator
         }
 
         fun data(data: Any) = apply {
@@ -55,7 +67,9 @@ class Config private constructor(
                 mode = this.mode,
                 data = this.data,
                 asset = this.asset,
+                useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
+                srcUrl = this.srcUrl,
                 backgroundColor = this.backgroundColor
             )
         }
