@@ -54,8 +54,9 @@
             <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
                 android:id="@+id/dot_lottie_view"
                 android:layout_width="200dp"
-                app:speed="1"
-                android:layout_height="200dp" />
+                android:layout_height="200dp"
+                app:autoPlay="true"
+                app:speed="1" />
 
             <TextView
                 android:id="@+id/tvStatus"

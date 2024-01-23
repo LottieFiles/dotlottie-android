@@ -8,7 +8,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
-import com.lottiefiles.dotlottie.core.model.Mode
+import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
 import com.lottiefiles.sample.databinding.MainBinding
@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
             .fileName("swinging.json") // file name of json/.lottie
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
-            .mode(Mode.Forward)
+            .mode(Mode.REVERSE)
             .useFrameInterpolation(true)
             .build()
 
@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnSetframe.setOnClickListener {
-            binding.edFrame.text.toString().toDoubleOrNull()?.let {
+            binding.edFrame.text.toString().toFloatOrNull()?.let {
                 binding.dotLottieView.setFrame(it)
                 binding.edFrame.text.clear()
             }
@@ -141,16 +141,16 @@ class MainActivity : ComponentActivity() {
         binding.dotLottieView.addEventListener(eventListener)
 
         binding.btnForward.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setRepeatMode(Mode.FORWARD)
         }
         binding.btnReverse.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setRepeatMode(Mode.REVERSE)
         }
         binding.btnBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setRepeatMode(Mode.FORWARD)
         }
         binding.btnReverseBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setRepeatMode(Mode.REVERSE)
         }
         binding.cbxLoop.addOnCheckedStateChangedListener { checkBox, state ->
             binding.dotLottieView.setLoop(checkBox.isChecked)

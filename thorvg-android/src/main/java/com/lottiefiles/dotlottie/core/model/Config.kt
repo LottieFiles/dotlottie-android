@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.model
 
+import com.dotlottie.dlplayer.Mode
+
 class Config private constructor(
     val autoPlay: Boolean,
     val useFrameInterpolator: Boolean,
@@ -21,7 +23,7 @@ class Config private constructor(
         private var asset: String = ""
         private var srcUrl: String = ""
         private var backgroundColor: String = "#FFFFFF"
-        private var mode: Mode = Mode.Forward
+        private var mode: Mode = Mode.FORWARD
         private var data: Any? = null
 
         fun autoPlay(autoPlay: Boolean) = apply {
