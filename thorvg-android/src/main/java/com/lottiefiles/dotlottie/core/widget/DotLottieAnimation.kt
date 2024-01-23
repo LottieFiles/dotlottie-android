@@ -12,7 +12,6 @@ import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
-import com.dotlottie.dlplayer.Mode as RustMode
 import io.dotlottie.loader.DotLottieLoader
 import io.dotlottie.loader.models.DotLottie
 import io.dotlottie.loader.models.DotLottieResult
@@ -55,9 +54,9 @@ class DotLottieAnimation @JvmOverloads constructor(
         get() = loopCount != 1u
 
     val direction: Int
-        get() = when(mLottieDrawable?.mode ?: RustMode.FORWARD) {
-            RustMode.FORWARD, RustMode.BOUNCE -> 1
-            RustMode.REVERSE, RustMode.REVERSE_BOUNCE -> -1
+        get() = when(mLottieDrawable?.mode ?: Mode.FORWARD) {
+            Mode.FORWARD, Mode.BOUNCE -> 1
+            Mode.REVERSE, Mode.REVERSE_BOUNCE -> -1
         }
 
     val autoPlay: Boolean
@@ -83,7 +82,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     val currentFrame: Float
         get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
 
-    var mode: RustMode
+    var mode: Mode
         get() = mLottieDrawable?.mode ?: error("DotLottieDrawable is null")
         set(value) {
             mLottieDrawable?.mode = value
@@ -151,7 +150,7 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.stop()
     }
 
-    fun setRepeatMode(repeatMode: RustMode) {
+    fun setRepeatMode(repeatMode: Mode) {
         mLottieDrawable?.setRepeatMode(repeatMode)
     }
 
@@ -238,7 +237,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                 }
                 // TODO: MOde from config
                 mLottieDrawable = DotLottieDrawable(
-                    playMode = RustMode.FORWARD,
+                    playMode = Mode.FORWARD,
                     repeatCount = if (config.loop) INFINITE_LOOP else 1,
                     _autoPlay = config.autoPlay,
                     _speed = config.speed,
@@ -315,7 +314,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     width = width,
                     height = height,
 //                   TODO: getMode(mode)
-                    playMode = RustMode.FORWARD,
+                    playMode = Mode.FORWARD,
                     _speed = getFloat(R.styleable.DotLottieAnimation_speed, 1f),
                     dotLottieEventListener = mDotLottieEventListener
                 )
