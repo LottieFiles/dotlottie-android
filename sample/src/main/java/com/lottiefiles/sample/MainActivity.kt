@@ -47,8 +47,7 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "onStop")
         }
 
-        override fun onFrame(frame: Double) {
-            //Log.d(TAG, "frame $frame")
+        override fun onFrame(frame: Float) {
             binding.tvFrame.text = "Frame : %.2f / %.2f".format(
                 frame,
                 binding.dotLottieView.totalFrames,
@@ -141,16 +140,16 @@ class MainActivity : ComponentActivity() {
         binding.dotLottieView.addEventListener(eventListener)
 
         binding.btnForward.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.FORWARD)
+            binding.dotLottieView.setPlayMode(Mode.FORWARD)
         }
         binding.btnReverse.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.REVERSE)
+            binding.dotLottieView.setPlayMode(Mode.REVERSE)
         }
         binding.btnBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.FORWARD)
+            binding.dotLottieView.setPlayMode(Mode.BOUNCE)
         }
         binding.btnReverseBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.REVERSE)
+            binding.dotLottieView.setPlayMode(Mode.REVERSE_BOUNCE)
         }
         binding.cbxLoop.addOnCheckedStateChangedListener { checkBox, state ->
             binding.dotLottieView.setLoop(checkBox.isChecked)

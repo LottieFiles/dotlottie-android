@@ -11,7 +11,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.toColor
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation.Companion.INFINITE_LOOP
 import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
@@ -62,8 +61,6 @@ class DotLottieDrawable(
     val segments: Pair<Double, Double>
         get() = 0.0 to 0.0
 
-    private var mFrameDuration: Double = 0.0
-
     // TODO: Implement repeatCount
     private var remainingRepeatCount: Int = repeatCount
 
@@ -72,11 +69,8 @@ class DotLottieDrawable(
      */
     private val mHandler = Handler(Looper.getMainLooper())
     private val mNextFrameRunnable = Runnable {
-        if (repeatCount == INFINITE_LOOP || remainingRepeatCount > -1) {
-            invalidateSelf()
-        }
+        invalidateSelf()
     }
-
 
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
@@ -92,8 +86,12 @@ class DotLottieDrawable(
         return height
     }
 
-    var useFrameInterpolation: Boolean = useFrameInterpolator
-        private set
+    var useFrameInterpolation: Boolean
+        get() = dlPlayer!!.config().useFrameInterpolation
+        set(value) {
+            config.useFrameInterpolation = value
+            dlPlayer!!.setConfig(config)
+        }
 
     // TODO: implement repeat count
     var loopCount: UInt = 0u
@@ -186,7 +184,7 @@ class DotLottieDrawable(
         play()
     }
 
-    fun setRepeatMode(playMode:  Mode) {
+    fun setPlayMode(playMode:  Mode) {
         config.mode = playMode
         dlPlayer!!.setConfig(config)
     }
@@ -206,7 +204,10 @@ class DotLottieDrawable(
     }
 
     fun setCurrentFrame(frame: Float) {
+        mHandler.removeCallbacks(mNextFrameRunnable)
         dlPlayer!!.setFrame(frame)
+        dlPlayer!!.render()
+        invalidateSelf()
     }
 
     fun setFrameInterpolation(enabled: Boolean) {
@@ -225,9 +226,7 @@ class DotLottieDrawable(
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
-        if (!dlPlayer!!.isPlaying()) return
 
-        val startTime = System.nanoTime()
         val nextFrame = dlPlayer!!.requestFrame()
         dlPlayer!!.setFrame(nextFrame)
         dlPlayer!!.render()
@@ -239,11 +238,13 @@ class DotLottieDrawable(
 
         canvas.drawColor(backgroundColor.toColor())
         canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
-        val endTime = System.nanoTime()
+        dotLottieEventListener.forEach {
+            it.onFrame(frame = dlPlayer!!.currentFrame())
+        }
 
         mHandler.postDelayed(
             mNextFrameRunnable,
-            (mFrameDuration - (endTime - startTime) / 1000000).toLong()
+            0
         )
     }
 

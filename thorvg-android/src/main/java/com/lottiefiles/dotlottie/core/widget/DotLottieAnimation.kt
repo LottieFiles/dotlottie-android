@@ -5,7 +5,6 @@ import android.content.res.TypedArray
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Mode
@@ -138,7 +137,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun play() {
-        Log.i("DRAW:", "play function")
         mLottieDrawable?.play()
     }
 
@@ -150,8 +148,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.stop()
     }
 
-    fun setRepeatMode(repeatMode: Mode) {
-        mLottieDrawable?.setRepeatMode(repeatMode)
+    fun setPlayMode(repeatMode: Mode) {
+        mLottieDrawable?.setPlayMode(repeatMode)
     }
 
     fun pause() {
@@ -336,7 +334,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         setupConfigFromXml()
         mLottieDrawable?.let { drawable ->
             if ((width != drawable.intrinsicWidth || height != drawable.intrinsicHeight)) {
-                Log.i("DRAW: ", "Measured ${width} - ${height}")
                 drawable.resize(width, height)
             }
         }
