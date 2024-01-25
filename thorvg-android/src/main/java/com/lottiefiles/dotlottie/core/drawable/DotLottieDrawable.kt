@@ -39,7 +39,9 @@ class DotLottieDrawable(
         loopAnimation = true,
         mode = Mode.FORWARD,  // Replace SOME_MODE with actual value
         speed = 1.0f,
-        useFrameInterpolation = true
+        useFrameInterpolation = true,
+        backgroundColor = 0x00000000u,
+        segments = listOf()
     )
 
    var freeze: Boolean = false
