@@ -8,6 +8,7 @@ interface DotLottieEventListener {
     fun onDestroy() {}
     fun onLoop() {}
     fun onComplete() {}
+    fun onLoopComplete() {}
     fun onLoad() {}
     fun onLoadError(error: Throwable) {}
 

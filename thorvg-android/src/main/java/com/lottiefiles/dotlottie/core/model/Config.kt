@@ -8,7 +8,7 @@ class Config private constructor(
     val speed: Float,
     val asset: String,
     val mode: Mode,
-    val backgroundColor: String,
+    val backgroundColor: Int,
     val loop: Boolean,
     val srcUrl: String,
     val data: Any?
@@ -22,7 +22,7 @@ class Config private constructor(
         private var speed: Float = 1f
         private var asset: String = ""
         private var srcUrl: String = ""
-        private var backgroundColor: String = "#FFFFFF"
+        private var backgroundColor: Int = 0x0000000
         private var mode: Mode = Mode.FORWARD
         private var data: Any? = null
 
@@ -46,7 +46,7 @@ class Config private constructor(
             this.srcUrl = url
         }
 
-        fun backgroundColor(color: String) = apply {
+        fun backgroundColor(color: Int) = apply {
             this.backgroundColor = color
         }
 

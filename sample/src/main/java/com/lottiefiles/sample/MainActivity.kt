@@ -1,5 +1,6 @@
 package com.lottiefiles.sample
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -58,6 +59,10 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "On Loop")
         }
 
+        override fun onLoopComplete() {
+            Log.d(TAG, "On Loop Completed")
+        }
+
         override fun onComplete() {
             Log.d(TAG, "On Completed")
             //binding.tvStatus.text = "Play"
@@ -97,18 +102,13 @@ class MainActivity : ComponentActivity() {
             .useFrameInterpolation(true)
             .build()
 
-        // Sample app
-
-
         binding.dotLottieView.load(config)
 
         binding.btnSetSegment.setOnClickListener {
-            val start = binding.edStartFrame.text.toString().toDoubleOrNull()
-            val end = binding.edEndFrame.text.toString().toDoubleOrNull()
+            val start = binding.edStartFrame.text.toString().toFloatOrNull()
+            val end = binding.edEndFrame.text.toString().toFloatOrNull()
             if (start != null && end != null) {
                 binding.dotLottieView.setSegments(start, end)
-                binding.dotLottieView.stop()
-                binding.dotLottieView.play()
             }
         }
 
@@ -174,8 +174,12 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnSetColor.setOnClickListener {
-            val color = binding.edColor.text.toString()
-            binding.dotLottieView.setBackgroundColor(color)
+            try {
+                val color = Color.parseColor(binding.edColor.text.toString())
+                binding.dotLottieView.setBackgroundColor(color)
+            } catch (e: Exception) {
+                Log.i(TAG, "Color parse failed", e)
+            }
         }
     }
 }
