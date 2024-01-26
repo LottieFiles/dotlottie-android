@@ -2,7 +2,6 @@ package com.lottiefiles.dotlottie.core.drawable
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PixelFormat
@@ -10,9 +9,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.annotation.FloatRange
-import com.lottiefiles.dotlottie.core.util.toColor
 import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
@@ -35,9 +32,12 @@ class DotLottieDrawable(
         set(value) {
             if (value) {
                 dotLottieEventListener.forEach(DotLottieEventListener::onFreeze)
+                mHandler.removeCallbacks(mNextFrameRunnable)
+                dlPlayer!!.pause()
             } else {
                 dotLottieEventListener.forEach(DotLottieEventListener::onUnFreeze)
-                start()
+                dlPlayer!!.play()
+                mHandler.removeCallbacks(mNextFrameRunnable)
             }
             field = value
         }
@@ -212,8 +212,13 @@ class DotLottieDrawable(
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
-        if (dlPlayer!!.currentFrame() == dlPlayer!!.totalFrames()) {
-            dotLottieEventListener.forEach(DotLottieEventListener::onLoopComplete)
+
+        if (dlPlayer!!.isComplete()) {
+            if (dlPlayer!!.config().loopAnimation) {
+                dotLottieEventListener.forEach(DotLottieEventListener::onLoopComplete)
+            } else {
+                dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+            }
         }
 
         val nextFrame = dlPlayer!!.requestFrame()

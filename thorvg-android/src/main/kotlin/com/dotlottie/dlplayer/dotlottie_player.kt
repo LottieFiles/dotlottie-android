@@ -50,8 +50,8 @@ open class RustBuffer : Structure() {
 
     companion object {
         internal fun alloc(size: Int = 0) =
-            rustCall { status ->
-                _UniFFILib.INSTANCE.ffi_dotlottie_player_rustbuffer_alloc(size, status)
+            uniffiRustCall { status ->
+                UniffiLib.INSTANCE.ffi_dotlottie_player_rustbuffer_alloc(size, status)
             }.also {
                 if (it.data == null) {
                     throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=$size)")
@@ -71,8 +71,8 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) =
-            rustCall { status ->
-                _UniFFILib.INSTANCE.ffi_dotlottie_player_rustbuffer_free(buf, status)
+            uniffiRustCall { status ->
+                UniffiLib.INSTANCE.ffi_dotlottie_player_rustbuffer_free(buf, status)
             }
     }
 
@@ -211,12 +211,12 @@ public interface FfiConverterRustBuffer<KotlinType> : FfiConverter<KotlinType, R
 // This would be a good candidate for isolating in its own ffi-support lib.
 // Error runtime.
 @Structure.FieldOrder("code", "error_buf")
-internal open class RustCallStatus : Structure() {
+internal open class UniffiRustCallStatus : Structure() {
     @JvmField var code: Byte = 0
 
     @JvmField var error_buf: RustBuffer.ByValue = RustBuffer.ByValue()
 
-    class ByValue : RustCallStatus(), Structure.ByValue
+    class ByValue : UniffiRustCallStatus(), Structure.ByValue
 
     fun isSuccess(): Boolean {
         return code == 0.toByte()
@@ -234,7 +234,7 @@ internal open class RustCallStatus : Structure() {
 class InternalException(message: String) : Exception(message)
 
 // Each top-level error class has a companion object that can lift the error from the call status's rust buffer
-interface CallStatusErrorHandler<E> {
+interface UniffiRustCallStatusErrorHandler<E> {
     fun lift(error_buf: RustBuffer.ByValue): E
 }
 
@@ -243,20 +243,20 @@ interface CallStatusErrorHandler<E> {
 // synchronize itself
 
 // Call a rust function that returns a Result<>.  Pass in the Error class companion that corresponds to the Err
-private inline fun <U, E : Exception> rustCallWithError(
-    errorHandler: CallStatusErrorHandler<E>,
-    callback: (RustCallStatus) -> U,
+private inline fun <U, E : Exception> uniffiRustCallWithError(
+    errorHandler: UniffiRustCallStatusErrorHandler<E>,
+    callback: (UniffiRustCallStatus) -> U,
 ): U {
-    var status = RustCallStatus()
+    var status = UniffiRustCallStatus()
     val return_value = callback(status)
-    checkCallStatus(errorHandler, status)
+    uniffiCheckCallStatus(errorHandler, status)
     return return_value
 }
 
-// Check RustCallStatus and throw an error if the call wasn't successful
-private fun <E : Exception> checkCallStatus(
-    errorHandler: CallStatusErrorHandler<E>,
-    status: RustCallStatus,
+// Check UniffiRustCallStatus and throw an error if the call wasn't successful
+private fun <E : Exception> uniffiCheckCallStatus(
+    errorHandler: UniffiRustCallStatusErrorHandler<E>,
+    status: UniffiRustCallStatus,
 ) {
     if (status.isSuccess()) {
         return
@@ -276,8 +276,8 @@ private fun <E : Exception> checkCallStatus(
     }
 }
 
-// CallStatusErrorHandler implementation for times when we don't expect a CALL_ERROR
-object NullCallStatusErrorHandler : CallStatusErrorHandler<InternalException> {
+// UniffiRustCallStatusErrorHandler implementation for times when we don't expect a CALL_ERROR
+object UniffiNullRustCallStatusErrorHandler : UniffiRustCallStatusErrorHandler<InternalException> {
     override fun lift(error_buf: RustBuffer.ByValue): InternalException {
         RustBuffer.free(error_buf)
         return InternalException("Unexpected CALL_ERROR")
@@ -285,8 +285,8 @@ object NullCallStatusErrorHandler : CallStatusErrorHandler<InternalException> {
 }
 
 // Call a rust function that returns a plain value
-private inline fun <U> rustCall(callback: (RustCallStatus) -> U): U {
-    return rustCallWithError(NullCallStatusErrorHandler, callback)
+private inline fun <U> uniffiRustCall(callback: (UniffiRustCallStatus) -> U): U {
+    return uniffiRustCallWithError(UniffiNullRustCallStatusErrorHandler, callback)
 }
 
 // IntegerType that matches Rust's `usize` / C's `size_t`
@@ -377,7 +377,7 @@ internal class UniFfiHandleMap<T : Any> {
 internal interface UniFffiRustFutureContinuationCallbackType : com.sun.jna.Callback {
     fun callback(
         continuationHandle: USize,
-        pollResult: Short,
+        pollResult: Byte,
     )
 }
 
@@ -399,75 +399,90 @@ private inline fun <reified Lib : Library> loadIndirect(componentName: String): 
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
-internal interface _UniFFILib : Library {
+internal interface UniffiLib : Library {
     companion object {
-        internal val INSTANCE: _UniFFILib by lazy {
-            loadIndirect<_UniFFILib>(componentName = "dotlottie_player")
-                .also { lib: _UniFFILib ->
+        internal val INSTANCE: UniffiLib by lazy {
+            loadIndirect<UniffiLib>(componentName = "dotlottie_player")
+                .also { lib: UniffiLib ->
                     uniffiCheckContractApiVersion(lib)
                     uniffiCheckApiChecksums(lib)
                 }
         }
+
+        // The Cleaner for the whole library
+        internal val CLEANER: UniffiCleaner by lazy {
+            UniffiCleaner.create()
+        }
     }
+
+    fun uniffi_dotlottie_player_fn_clone_dotlottieplayer(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Pointer
 
     fun uniffi_dotlottie_player_fn_free_dotlottieplayer(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
     fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(
         `config`: RustBuffer.ByValue,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Long
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Long
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_config(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Float
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(
@@ -475,7 +490,7 @@ internal interface _UniFFILib : Library {
         `animationId`: RustBuffer.ByValue,
         `width`: Int,
         `height`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(
@@ -483,7 +498,7 @@ internal interface _UniFFILib : Library {
         `animationData`: RustBuffer.ByValue,
         `width`: Int,
         `height`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(
@@ -491,7 +506,7 @@ internal interface _UniFFILib : Library {
         `animationPath`: RustBuffer.ByValue,
         `width`: Int,
         `height`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(
@@ -499,99 +514,152 @@ internal interface _UniFFILib : Library {
         `fileData`: RustBuffer.ByValue,
         `width`: Int,
         `height`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Int
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_play(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(
         `ptr`: Pointer,
         `width`: Int,
         `height`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
         `ptr`: Pointer,
         `config`: RustBuffer.ByValue,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
         `ptr`: Pointer,
         `no`: Float,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_subscribe(
+        `ptr`: Pointer,
+        `observer`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
         `ptr`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Float
+
+    fun uniffi_dotlottie_player_fn_clone_observer(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Pointer
+
+    fun uniffi_dotlottie_player_fn_free_observer(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_frame(
+        `ptr`: Pointer,
+        `frameNo`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_load(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_loop(
+        `ptr`: Pointer,
+        `loopCount`: Int,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_pause(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_play(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_render(
+        `ptr`: Pointer,
+        `frameNo`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_stop(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
 
     fun ffi_dotlottie_player_rustbuffer_alloc(
         `size`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun ffi_dotlottie_player_rustbuffer_from_bytes(
         `bytes`: ForeignBytes.ByValue,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun ffi_dotlottie_player_rustbuffer_free(
         `buf`: RustBuffer.ByValue,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
     fun ffi_dotlottie_player_rustbuffer_reserve(
         `buf`: RustBuffer.ByValue,
         `additional`: Int,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-
-    fun ffi_dotlottie_player_rust_future_continuation_callback_set(`callback`: UniFffiRustFutureContinuationCallbackType): Unit
 
     fun ffi_dotlottie_player_rust_future_poll_u8(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_u8(`handle`: Pointer): Unit
@@ -600,12 +668,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_u8(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun ffi_dotlottie_player_rust_future_poll_i8(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_i8(`handle`: Pointer): Unit
@@ -614,12 +683,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_i8(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
     fun ffi_dotlottie_player_rust_future_poll_u16(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_u16(`handle`: Pointer): Unit
@@ -628,12 +698,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_u16(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Short
 
     fun ffi_dotlottie_player_rust_future_poll_i16(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_i16(`handle`: Pointer): Unit
@@ -642,12 +713,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_i16(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Short
 
     fun ffi_dotlottie_player_rust_future_poll_u32(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_u32(`handle`: Pointer): Unit
@@ -656,12 +728,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_u32(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Int
 
     fun ffi_dotlottie_player_rust_future_poll_i32(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_i32(`handle`: Pointer): Unit
@@ -670,12 +743,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_i32(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Int
 
     fun ffi_dotlottie_player_rust_future_poll_u64(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_u64(`handle`: Pointer): Unit
@@ -684,12 +758,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_u64(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Long
 
     fun ffi_dotlottie_player_rust_future_poll_i64(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_i64(`handle`: Pointer): Unit
@@ -698,12 +773,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_i64(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Long
 
     fun ffi_dotlottie_player_rust_future_poll_f32(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_f32(`handle`: Pointer): Unit
@@ -712,12 +788,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_f32(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
     fun ffi_dotlottie_player_rust_future_poll_f64(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_f64(`handle`: Pointer): Unit
@@ -726,12 +803,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_f64(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Double
 
     fun ffi_dotlottie_player_rust_future_poll_pointer(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_pointer(`handle`: Pointer): Unit
@@ -740,12 +818,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_pointer(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
 
     fun ffi_dotlottie_player_rust_future_poll_rust_buffer(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_rust_buffer(`handle`: Pointer): Unit
@@ -754,12 +833,13 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_rust_buffer(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
     fun ffi_dotlottie_player_rust_future_poll_void(
         `handle`: Pointer,
-        `uniffiCallback`: USize,
+        `callback`: UniFffiRustFutureContinuationCallbackType,
+        `callbackData`: USize,
     ): Unit
 
     fun ffi_dotlottie_player_rust_future_cancel_void(`handle`: Pointer): Unit
@@ -768,7 +848,7 @@ internal interface _UniFFILib : Library {
 
     fun ffi_dotlottie_player_rust_future_complete_void(
         `handle`: Pointer,
-        _uniffi_out_err: RustCallStatus,
+        uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len(): Short
@@ -782,6 +862,8 @@ internal interface _UniFFILib : Library {
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_current_frame(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_duration(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_loaded(): Short
 
@@ -821,16 +903,32 @@ internal interface _UniFFILib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_stop(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_frame(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_load(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_loop(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_pause(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_play(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_render(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_stop(): Short
 
     fun uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new(): Short
 
     fun ffi_dotlottie_player_uniffi_contract_version(): Int
 }
 
-private fun uniffiCheckContractApiVersion(lib: _UniFFILib) {
+private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
     // Get the bindings contract version from our ComponentInterface
-    val bindings_contract_version = 24
+    val bindings_contract_version = 25
     // Get the scaffolding contract version by calling the into the dylib
     val scaffolding_contract_version = lib.ffi_dotlottie_player_uniffi_contract_version()
     if (bindings_contract_version != scaffolding_contract_version) {
@@ -839,7 +937,7 @@ private fun uniffiCheckContractApiVersion(lib: _UniFFILib) {
 }
 
 @Suppress("UNUSED_PARAMETER")
-private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
+private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len() != 33793.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -849,13 +947,16 @@ private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_clear() != 26373.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_config() != 46335.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_config() != 36040.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_current_frame() != 42425.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_duration() != 3831.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete() != 51890.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_loaded() != 20186.toShort()) {
@@ -885,7 +986,7 @@ private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_loop_count() != 14780.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest() != 43594.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest() != 39779.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest_string() != 60193.toShort()) {
@@ -906,7 +1007,7 @@ private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_resize() != 16787.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config() != 10331.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config() != 39472.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame() != 44086.toShort()) {
@@ -915,10 +1016,34 @@ private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_stop() != 25240.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe() != 50774.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames() != 12091.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new() != 25412.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_frame() != 37649.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_load() != 21687.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_loop() != 13082.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_pause() != 65305.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_play() != 49450.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_render() != 49553.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_stop() != 37707.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new() != 61364.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -926,6 +1051,37 @@ private fun uniffiCheckApiChecksums(lib: _UniFFILib) {
 // Async support
 
 // Public interface members begin here.
+
+// Interface implemented by anything that can contain an object reference.
+//
+// Such types expose a `destroy()` method that must be called to cleanly
+// dispose of the contained objects. Failure to call this method may result
+// in memory leaks.
+//
+// The easiest way to ensure this method is called is to use the `.use`
+// helper method to execute a block and destroy the object at the end.
+interface Disposable {
+    fun destroy()
+
+    companion object {
+        fun destroy(vararg args: Any?) {
+            args.filterIsInstance<Disposable>()
+                .forEach(Disposable::destroy)
+        }
+    }
+}
+
+inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
+    try {
+        block(this)
+    } finally {
+        try {
+            // N.B. our implementation is on the nullable type `Disposable?`.
+            this?.destroy()
+        } catch (e: Throwable) {
+            // swallow
+        }
+    }
 
 public object FfiConverterByte : FfiConverter<Byte, Byte> {
     override fun lift(value: Byte): Byte {
@@ -1120,36 +1276,72 @@ public object FfiConverterByteArray : FfiConverterRustBuffer<ByteArray> {
     }
 }
 
-// Interface implemented by anything that can contain an object reference.
+// The cleaner interface for Object finalization code to run.
+// This is the entry point to any implementation that we're using.
 //
-// Such types expose a `destroy()` method that must be called to cleanly
-// dispose of the contained objects. Failure to call this method may result
-// in memory leaks.
-//
-// The easiest way to ensure this method is called is to use the `.use`
-// helper method to execute a block and destroy the object at the end.
-interface Disposable {
-    fun destroy()
-
-    companion object {
-        fun destroy(vararg args: Any?) {
-            args.filterIsInstance<Disposable>()
-                .forEach(Disposable::destroy)
-        }
+// The cleaner registers objects and returns cleanables, so now we are
+// defining a `UniffiCleaner` with a `UniffiClenaer.Cleanable` to abstract the
+// different implmentations available at compile time.
+interface UniffiCleaner {
+    interface Cleanable {
+        fun clean()
     }
+
+    fun register(
+        value: Any,
+        cleanUpTask: Runnable,
+    ): UniffiCleaner.Cleanable
+
+    companion object
 }
 
-inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
+// The fallback Jna cleaner, which is available for both Android, and the JVM.
+private class UniffiJnaCleaner : UniffiCleaner {
+    private val cleaner = com.sun.jna.internal.Cleaner.getCleaner()
+
+    override fun register(
+        value: Any,
+        cleanUpTask: Runnable,
+    ): UniffiCleaner.Cleanable = UniffiJnaCleanable(cleaner.register(value, cleanUpTask))
+}
+
+private class UniffiJnaCleanable(
+    private val cleanable: com.sun.jna.internal.Cleaner.Cleanable,
+) : UniffiCleaner.Cleanable {
+    override fun clean() = cleanable.clean()
+}
+
+// We decide at uniffi binding generation time whether we were
+// using Android or not.
+// There are further runtime checks to chose the correct implementation
+// of the cleaner.
+private fun UniffiCleaner.Companion.create(): UniffiCleaner =
     try {
-        block(this)
-    } finally {
-        try {
-            // N.B. our implementation is on the nullable type `Disposable?`.
-            this?.destroy()
-        } catch (e: Throwable) {
-            // swallow
-        }
+        // For safety's sake: if the library hasn't been run in android_cleaner = true
+        // mode, but is being run on Android, then we still need to think about
+        // Android API versions.
+        // So we check if java.lang.ref.Cleaner is there, and use that…
+        java.lang.Class.forName("java.lang.ref.Cleaner")
+        JavaLangRefCleaner()
+    } catch (e: ClassNotFoundException) {
+        // … otherwise, fallback to the JNA cleaner.
+        UniffiJnaCleaner()
     }
+
+private class JavaLangRefCleaner : UniffiCleaner {
+    val cleaner = java.lang.ref.Cleaner.create()
+
+    override fun register(
+        value: Any,
+        cleanUpTask: Runnable,
+    ): UniffiCleaner.Cleanable = JavaLangRefCleanable(cleaner.register(value, cleanUpTask))
+}
+
+private class JavaLangRefCleanable(
+    val cleanable: java.lang.ref.Cleaner.Cleanable,
+) : UniffiCleaner.Cleanable {
+    override fun clean() = cleanable.clean()
+}
 
 // The base class for all UniFFI Object types.
 //
@@ -1170,8 +1362,8 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
 //
 //   * Given an `FFIObject` instance, calling code is expected to call the special
 //     `destroy` method in order to free it after use, either by calling it explicitly
-//     or by using a higher-level helper like the `use` method. Failing to do so will
-//     leak the underlying Rust struct.
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
 //
 //   * We can't assume that calling code will do the right thing, and must be prepared
 //     to handle Kotlin method calls executing concurrently with or even after a call to
@@ -1180,6 +1372,14 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
 //   * We must never allow Rust code to operate on the underlying Rust struct after
 //     the destructor has been called, and must never call the destructor more than once.
 //     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
 //
 // If we try to implement this with mutual exclusion on access to the pointer, there is the
 // possibility of a race between a method call and a concurrent call to `destroy`:
@@ -1222,24 +1422,50 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
 // called *and* all in-flight method calls have completed, avoiding violating any of the expectations
 // of the underlying Rust code.
 //
-// In the future we may be able to replace some of this with automatic finalization logic, such as using
-// the new "Cleaner" functionaility in Java 9. The above scheme has been designed to work even if `destroy` is
-// invoked by garbage-collection machinery rather than by calling code (which by the way, it's apparently also
-// possible for the JVM to finalize an object while there is an in-flight call to one of its methods [1],
-// so there would still be some complexity here).
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
 //
-// Sigh...all of this for want of a robust finalization mechanism.
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
 //
 // [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
 //
-abstract class FFIObject(
-    protected val pointer: Pointer,
-) : Disposable, AutoCloseable {
+abstract class FFIObject : Disposable, AutoCloseable {
+    constructor(pointer: Pointer) {
+        this.pointer = pointer
+    }
+
+    /**
+     * This constructor can be used to instantiate a fake object.
+     *
+     * **WARNING: Any object instantiated with this constructor cannot be passed to an actual Rust-backed object.**
+     * Since there isn't a backing [Pointer] the FFI lower functions will crash.
+     * @param noPointer Placeholder value so we can have a constructor separate from the default empty one that may be
+     *   implemented for classes extending [FFIObject].
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noPointer: NoPointer) {
+        this.pointer = null
+    }
+
+    protected val pointer: Pointer?
+    protected abstract val cleanable: UniffiCleaner.Cleanable
+
     private val wasDestroyed = AtomicBoolean(false)
     private val callCounter = AtomicLong(1)
 
-    protected open fun freeRustArcPtr() {
-        // To be overridden in subclasses.
+    open fun uniffiClonePointer(): Pointer {
+        // Overridden by generated subclasses, the default method exists to allow users to manually
+        // implement the interface
+        throw RuntimeException("uniffiClonePointer not implemented")
     }
 
     override fun destroy() {
@@ -1248,7 +1474,7 @@ abstract class FFIObject(
         if (this.wasDestroyed.compareAndSet(false, true)) {
             // This decrement always matches the initial count of 1 given at creation time.
             if (this.callCounter.decrementAndGet() == 0L) {
-                this.freeRustArcPtr()
+                cleanable.clean()
             }
         }
     }
@@ -1272,15 +1498,18 @@ abstract class FFIObject(
         } while (!this.callCounter.compareAndSet(c, c + 1L))
         // Now we can safely do the method call without the pointer being freed concurrently.
         try {
-            return block(this.pointer)
+            return block(this.uniffiClonePointer())
         } finally {
             // This decrement always matches the increment we performed above.
             if (this.callCounter.decrementAndGet() == 0L) {
-                this.freeRustArcPtr()
+                cleanable.clean()
             }
         }
     }
 }
+
+/** Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly. */
+object NoPointer
 
 public interface DotLottiePlayerInterface {
     fun `bufferLen`(): ULong
@@ -1294,6 +1523,8 @@ public interface DotLottiePlayerInterface {
     fun `currentFrame`(): Float
 
     fun `duration`(): Float
+
+    fun `isComplete`(): Boolean
 
     fun `isLoaded`(): Boolean
 
@@ -1352,42 +1583,59 @@ public interface DotLottiePlayerInterface {
 
     fun `stop`(): Boolean
 
+    fun `subscribe`(`observer`: Observer)
+
     fun `totalFrames`(): Float
 
     companion object
 }
 
-class DotLottiePlayer(
-    pointer: Pointer,
-) : FFIObject(pointer), DotLottiePlayerInterface {
+open class DotLottiePlayer : FFIObject, DotLottiePlayerInterface {
+    constructor(pointer: Pointer) : super(pointer)
+
+    /**
+     * This constructor can be used to instantiate a fake object.
+     *
+     * **WARNING: Any object instantiated with this constructor cannot be passed to an actual Rust-backed object.**
+     * Since there isn't a backing [Pointer] the FFI lower functions will crash.
+     * @param noPointer Placeholder value so we can have a constructor separate from the default empty one that may be
+     *   implemented for classes extending [FFIObject].
+     */
+    constructor(noPointer: NoPointer) : super(noPointer)
     constructor(`config`: Config) :
         this(
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(
                     FfiConverterTypeConfig.lower(`config`),
                     _status,
                 )
             },
         )
 
-    /**
-     * Disconnect the object from the underlying Rust object.
-     *
-     * It can be called more than once, but once called, interacting with the object
-     * causes an `IllegalStateException`.
-     *
-     * Clients **must** call this method once done with the object, or cause a memory leak.
-     */
-    protected override fun freeRustArcPtr() {
-        rustCall { status ->
-            _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_free_dotlottieplayer(this.pointer, status)
+    override val cleanable: UniffiCleaner.Cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
+        override fun run() {
+            pointer?.let { ptr ->
+                uniffiRustCall { status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_free_dotlottieplayer(ptr, status)
+                }
+            }
+        }
+    }
+
+    override fun uniffiClonePointer(): Pointer {
+        return uniffiRustCall { status ->
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_dotlottieplayer(pointer!!, status)
         }
     }
 
     override fun `bufferLen`(): ULong =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(
                     it,
                     _status,
                 )
@@ -1398,8 +1646,8 @@ class DotLottiePlayer(
 
     override fun `bufferPtr`(): ULong =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(
                     it,
                     _status,
                 )
@@ -1410,8 +1658,8 @@ class DotLottiePlayer(
 
     override fun `clear`() =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(
                     it,
                     _status,
                 )
@@ -1420,8 +1668,8 @@ class DotLottiePlayer(
 
     override fun `config`(): Config =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_config(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_config(
                     it,
                     _status,
                 )
@@ -1432,8 +1680,8 @@ class DotLottiePlayer(
 
     override fun `currentFrame`(): Float =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(
                     it,
                     _status,
                 )
@@ -1444,8 +1692,8 @@ class DotLottiePlayer(
 
     override fun `duration`(): Float =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(
                     it,
                     _status,
                 )
@@ -1454,10 +1702,22 @@ class DotLottiePlayer(
             FfiConverterFloat.lift(it)
         }
 
+    override fun `isComplete`(): Boolean =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(
+                    it,
+                    _status,
+                )
+            }
+        }.let {
+            FfiConverterBoolean.lift(it)
+        }
+
     override fun `isLoaded`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(
                     it,
                     _status,
                 )
@@ -1468,8 +1728,8 @@ class DotLottiePlayer(
 
     override fun `isPaused`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(
                     it,
                     _status,
                 )
@@ -1480,8 +1740,8 @@ class DotLottiePlayer(
 
     override fun `isPlaying`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(
                     it,
                     _status,
                 )
@@ -1492,8 +1752,8 @@ class DotLottiePlayer(
 
     override fun `isStopped`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
                     it,
                     _status,
                 )
@@ -1508,8 +1768,8 @@ class DotLottiePlayer(
         `height`: UInt,
     ): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(
                     it,
                     FfiConverterString.lower(`animationId`),
                     FfiConverterUInt.lower(`width`),
@@ -1527,8 +1787,8 @@ class DotLottiePlayer(
         `height`: UInt,
     ): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(
                     it,
                     FfiConverterString.lower(`animationData`),
                     FfiConverterUInt.lower(`width`),
@@ -1546,8 +1806,8 @@ class DotLottiePlayer(
         `height`: UInt,
     ): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(
                     it,
                     FfiConverterString.lower(`animationPath`),
                     FfiConverterUInt.lower(`width`),
@@ -1565,8 +1825,8 @@ class DotLottiePlayer(
         `height`: UInt,
     ): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(
                     it,
                     FfiConverterByteArray.lower(`fileData`),
                     FfiConverterUInt.lower(`width`),
@@ -1580,8 +1840,8 @@ class DotLottiePlayer(
 
     override fun `loopCount`(): UInt =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
                     it,
                     _status,
                 )
@@ -1592,8 +1852,8 @@ class DotLottiePlayer(
 
     override fun `manifest`(): Manifest? =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(
                     it,
                     _status,
                 )
@@ -1604,8 +1864,8 @@ class DotLottiePlayer(
 
     override fun `manifestString`(): String =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
                     it,
                     _status,
                 )
@@ -1616,8 +1876,8 @@ class DotLottiePlayer(
 
     override fun `pause`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(
                     it,
                     _status,
                 )
@@ -1628,8 +1888,8 @@ class DotLottiePlayer(
 
     override fun `play`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_play(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_play(
                     it,
                     _status,
                 )
@@ -1640,8 +1900,8 @@ class DotLottiePlayer(
 
     override fun `render`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
                     it,
                     _status,
                 )
@@ -1652,8 +1912,8 @@ class DotLottiePlayer(
 
     override fun `requestFrame`(): Float =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(
                     it,
                     _status,
                 )
@@ -1667,8 +1927,8 @@ class DotLottiePlayer(
         `height`: UInt,
     ): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(
                     it,
                     FfiConverterUInt.lower(`width`),
                     FfiConverterUInt.lower(`height`),
@@ -1681,8 +1941,8 @@ class DotLottiePlayer(
 
     override fun `setConfig`(`config`: Config) =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
                     it,
                     FfiConverterTypeConfig.lower(`config`),
                     _status,
@@ -1692,8 +1952,8 @@ class DotLottiePlayer(
 
     override fun `setFrame`(`no`: Float): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
                     it,
                     FfiConverterFloat.lower(`no`),
                     _status,
@@ -1705,8 +1965,8 @@ class DotLottiePlayer(
 
     override fun `stop`(): Boolean =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(
                     it,
                     _status,
                 )
@@ -1715,10 +1975,21 @@ class DotLottiePlayer(
             FfiConverterBoolean.lift(it)
         }
 
+    override fun `subscribe`(`observer`: Observer) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_subscribe(
+                    it,
+                    FfiConverterTypeObserver.lower(`observer`),
+                    _status,
+                )
+            }
+        }
+
     override fun `totalFrames`(): Float =
         callWithPointer {
-            rustCall { _status ->
-                _UniFFILib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
                     it,
                     _status,
                 )
@@ -1731,7 +2002,9 @@ class DotLottiePlayer(
 }
 
 public object FfiConverterTypeDotLottiePlayer : FfiConverter<DotLottiePlayer, Pointer> {
-    override fun lower(value: DotLottiePlayer): Pointer = value.callWithPointer { it }
+    override fun lower(value: DotLottiePlayer): Pointer {
+        return value.uniffiClonePointer()
+    }
 
     override fun lift(value: Pointer): DotLottiePlayer {
         return DotLottiePlayer(value)
@@ -1747,6 +2020,160 @@ public object FfiConverterTypeDotLottiePlayer : FfiConverter<DotLottiePlayer, Po
 
     override fun write(
         value: DotLottiePlayer,
+        buf: ByteBuffer,
+    ) {
+        // The Rust code always expects pointers written as 8 bytes,
+        // and will fail to compile if they don't fit.
+        buf.putLong(Pointer.nativeValue(lower(value)))
+    }
+}
+
+public interface ObserverInterface {
+    fun `onFrame`(`frameNo`: Float)
+
+    fun `onLoad`()
+
+    fun `onLoop`(`loopCount`: UInt)
+
+    fun `onPause`()
+
+    fun `onPlay`()
+
+    fun `onRender`(`frameNo`: Float)
+
+    fun `onStop`()
+
+    companion object
+}
+
+open class Observer : FFIObject, ObserverInterface {
+    constructor(pointer: Pointer) : super(pointer)
+
+    /**
+     * This constructor can be used to instantiate a fake object.
+     *
+     * **WARNING: Any object instantiated with this constructor cannot be passed to an actual Rust-backed object.**
+     * Since there isn't a backing [Pointer] the FFI lower functions will crash.
+     * @param noPointer Placeholder value so we can have a constructor separate from the default empty one that may be
+     *   implemented for classes extending [FFIObject].
+     */
+    constructor(noPointer: NoPointer) : super(noPointer)
+
+    override val cleanable: UniffiCleaner.Cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
+        override fun run() {
+            pointer?.let { ptr ->
+                uniffiRustCall { status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_free_observer(ptr, status)
+                }
+            }
+        }
+    }
+
+    override fun uniffiClonePointer(): Pointer {
+        return uniffiRustCall { status ->
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_observer(pointer!!, status)
+        }
+    }
+
+    override fun `onFrame`(`frameNo`: Float) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_frame(
+                    it,
+                    FfiConverterFloat.lower(`frameNo`),
+                    _status,
+                )
+            }
+        }
+
+    override fun `onLoad`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load(
+                    it,
+                    _status,
+                )
+            }
+        }
+
+    override fun `onLoop`(`loopCount`: UInt) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_loop(
+                    it,
+                    FfiConverterUInt.lower(`loopCount`),
+                    _status,
+                )
+            }
+        }
+
+    override fun `onPause`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_pause(
+                    it,
+                    _status,
+                )
+            }
+        }
+
+    override fun `onPlay`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_play(
+                    it,
+                    _status,
+                )
+            }
+        }
+
+    override fun `onRender`(`frameNo`: Float) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_render(
+                    it,
+                    FfiConverterFloat.lower(`frameNo`),
+                    _status,
+                )
+            }
+        }
+
+    override fun `onStop`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_stop(
+                    it,
+                    _status,
+                )
+            }
+        }
+
+    companion object
+}
+
+public object FfiConverterTypeObserver : FfiConverter<Observer, Pointer> {
+    override fun lower(value: Observer): Pointer {
+        return value.uniffiClonePointer()
+    }
+
+    override fun lift(value: Pointer): Observer {
+        return Observer(value)
+    }
+
+    override fun read(buf: ByteBuffer): Observer {
+        // The Rust code always writes pointers as 8 bytes, and will
+        // fail to compile if they don't fit.
+        return lift(Pointer(buf.getLong()))
+    }
+
+    override fun allocationSize(value: Observer) = 8
+
+    override fun write(
+        value: Observer,
         buf: ByteBuffer,
     ) {
         // The Rust code always expects pointers written as 8 bytes,
