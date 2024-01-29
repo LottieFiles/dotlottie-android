@@ -10,7 +10,7 @@ import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.FloatRange
-import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.Mode
@@ -114,7 +114,6 @@ class DotLottieDrawable(
             dlPlayer!!.setConfig(config)
         }
 
-    private var mDotLottieError: Throwable? = null
     val isLoaded: Boolean
         get() = dlPlayer!!.isLoaded()
 
@@ -132,9 +131,10 @@ class DotLottieDrawable(
         dlPlayer!!.loadAnimationData(animationData, width.toUInt(), height.toUInt())
         bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
-        dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+        dotLottieEventListener.forEach {
+            dlPlayer!!.subscribe(it)
+        }
     }
-
 
     fun release() {
         dlPlayer!!.destroy()
@@ -161,7 +161,6 @@ class DotLottieDrawable(
 
     fun play() {
         dlPlayer!!.play()
-        dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
         invalidateSelf()
     }
 
@@ -176,7 +175,6 @@ class DotLottieDrawable(
 
     override fun stop() {
         dlPlayer!!.stop()
-        dotLottieEventListener.forEach(DotLottieEventListener::onStop)
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
@@ -206,20 +204,11 @@ class DotLottieDrawable(
 
     fun pause() {
         dlPlayer!!.pause()
-        dotLottieEventListener.forEach(DotLottieEventListener::onPause)
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
-
-        if (dlPlayer!!.isComplete()) {
-            if (dlPlayer!!.config().loopAnimation) {
-                dotLottieEventListener.forEach(DotLottieEventListener::onLoopComplete)
-            } else {
-                dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
-            }
-        }
 
         val nextFrame = dlPlayer!!.requestFrame()
         dlPlayer!!.setFrame(nextFrame)
@@ -230,9 +219,6 @@ class DotLottieDrawable(
         bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
         bufferBytes.rewind()
         canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
-        dotLottieEventListener.forEach {
-            it.onFrame(frame = dlPlayer!!.currentFrame())
-        }
 
         mHandler.postDelayed(
             mNextFrameRunnable,

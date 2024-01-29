@@ -31,6 +31,8 @@ import java.nio.charset.CodingErrorAction
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 // This is a helper for safely working with byte buffers returned from the Rust code.
 // A rust-owned buffer is represented by its capacity, its current length, and a
@@ -406,6 +408,7 @@ internal interface UniffiLib : Library {
                 .also { lib: UniffiLib ->
                     uniffiCheckContractApiVersion(lib)
                     uniffiCheckApiChecksums(lib)
+                    uniffiCallbackInterfaceObserver.register(lib)
                 }
         }
 
@@ -593,6 +596,13 @@ internal interface UniffiLib : Library {
     ): Pointer
 
     fun uniffi_dotlottie_player_fn_free_observer(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_init_callback_observer(`handle`: ForeignCallback): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_complete(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
@@ -907,6 +917,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_observer_on_complete(): Short
+
     fun uniffi_dotlottie_player_checksum_method_observer_on_frame(): Short
 
     fun uniffi_dotlottie_player_checksum_method_observer_on_load(): Short
@@ -1016,31 +1028,34 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_stop() != 25240.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe() != 50774.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe() != 45859.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames() != 12091.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_frame() != 37649.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_complete() != 24930.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_load() != 21687.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_frame() != 51247.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_loop() != 13082.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_load() != 56735.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_pause() != 65305.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_loop() != 7035.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_play() != 49450.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_pause() != 146.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_render() != 49553.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_play() != 59485.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_stop() != 37707.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_render() != 55581.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_stop() != 52331.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new() != 61364.toShort()) {
@@ -2028,7 +2043,9 @@ public object FfiConverterTypeDotLottiePlayer : FfiConverter<DotLottiePlayer, Po
     }
 }
 
-public interface ObserverInterface {
+public interface Observer {
+    fun `onComplete`()
+
     fun `onFrame`(`frameNo`: Float)
 
     fun `onLoad`()
@@ -2046,7 +2063,7 @@ public interface ObserverInterface {
     companion object
 }
 
-open class Observer : FFIObject, ObserverInterface {
+open class ObserverImpl : FFIObject, Observer {
     constructor(pointer: Pointer) : super(pointer)
 
     /**
@@ -2078,6 +2095,16 @@ open class Observer : FFIObject, ObserverInterface {
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_observer(pointer!!, status)
         }
     }
+
+    override fun `onComplete`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_complete(
+                    it,
+                    _status,
+                )
+            }
+        }
 
     override fun `onFrame`(`frameNo`: Float) =
         callWithPointer {
@@ -2155,13 +2182,419 @@ open class Observer : FFIObject, ObserverInterface {
     companion object
 }
 
+internal typealias UniffiHandle = Long
+
+internal class ConcurrentHandleMap<T>(
+    private val leftMap: MutableMap<UniffiHandle, T> = mutableMapOf(),
+) {
+    private val lock = java.util.concurrent.locks.ReentrantLock()
+    private val currentHandle = AtomicLong(0L)
+    private val stride = 1L
+
+    fun insert(obj: T): UniffiHandle =
+        lock.withLock {
+            currentHandle.getAndAdd(stride)
+                .also { handle ->
+                    leftMap[handle] = obj
+                }
+        }
+
+    fun get(handle: UniffiHandle) =
+        lock.withLock {
+            leftMap[handle] ?: throw InternalException("No callback in handlemap; this is a Uniffi bug")
+        }
+
+    fun delete(handle: UniffiHandle) {
+        this.remove(handle)
+    }
+
+    fun remove(handle: UniffiHandle): T? =
+        lock.withLock {
+            leftMap.remove(handle)
+        }
+}
+
+interface ForeignCallback : com.sun.jna.Callback {
+    public fun invoke(
+        handle: UniffiHandle,
+        method: Int,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int
+}
+
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+internal const val IDX_CALLBACK_FREE = 0
+
+// Callback return codes
+internal const val UNIFFI_CALLBACK_SUCCESS = 0
+internal const val UNIFFI_CALLBACK_ERROR = 1
+internal const val UNIFFI_CALLBACK_UNEXPECTED_ERROR = 2
+
+public abstract class FfiConverterCallbackInterface<CallbackInterface> : FfiConverter<CallbackInterface, UniffiHandle> {
+    internal val handleMap = ConcurrentHandleMap<CallbackInterface>()
+
+    internal fun drop(handle: UniffiHandle) {
+        handleMap.remove(handle)
+    }
+
+    override fun lift(value: UniffiHandle): CallbackInterface {
+        return handleMap.get(value)
+    }
+
+    override fun read(buf: ByteBuffer) = lift(buf.getLong())
+
+    override fun lower(value: CallbackInterface) = handleMap.insert(value)
+
+    override fun allocationSize(value: CallbackInterface) = 8
+
+    override fun write(
+        value: CallbackInterface,
+        buf: ByteBuffer,
+    ) {
+        buf.putLong(lower(value))
+    }
+}
+
+// Implement the foreign callback handler for Observer
+internal class UniffiCallbackInterfaceObserver : ForeignCallback {
+    @Suppress("TooGenericExceptionCaught")
+    override fun invoke(
+        handle: UniffiHandle,
+        method: Int,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        val cb = FfiConverterTypeObserver.handleMap.get(handle)
+        return when (method) {
+            IDX_CALLBACK_FREE -> {
+                FfiConverterTypeObserver.handleMap.remove(handle)
+
+                // Successful return
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs`
+                UNIFFI_CALLBACK_SUCCESS
+            }
+            1 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnComplete`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            2 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnFrame`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            3 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnLoad`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            4 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnLoop`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            5 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnPause`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            6 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnPlay`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            7 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnRender`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            8 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnStop`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+
+            else -> {
+                // An unexpected error happened.
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs`
+                try {
+                    // Try to serialize the error into a string
+                    outBuf.setValue(FfiConverterString.lower("Invalid Callback index"))
+                } catch (e: Throwable) {
+                    // If that fails, then it's time to give up and just return
+                }
+                UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            }
+        }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnComplete`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onComplete`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnFrame`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        val argsBuf =
+            argsData.getByteBuffer(0, argsLen.toLong()).also {
+                it.order(ByteOrder.BIG_ENDIAN)
+            }
+
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onFrame`(
+                FfiConverterFloat.read(argsBuf),
+            )
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnLoad`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onLoad`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnLoop`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        val argsBuf =
+            argsData.getByteBuffer(0, argsLen.toLong()).also {
+                it.order(ByteOrder.BIG_ENDIAN)
+            }
+
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onLoop`(
+                FfiConverterUInt.read(argsBuf),
+            )
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnPause`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onPause`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnPlay`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onPlay`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnRender`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        val argsBuf =
+            argsData.getByteBuffer(0, argsLen.toLong()).also {
+                it.order(ByteOrder.BIG_ENDIAN)
+            }
+
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onRender`(
+                FfiConverterFloat.read(argsBuf),
+            )
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnStop`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onStop`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    // Registers the foreign callback with the Rust side.
+    // This method is generated for each callback interface.
+    internal fun register(lib: UniffiLib) {
+        lib.uniffi_dotlottie_player_fn_init_callback_observer(this)
+    }
+}
+
+internal val uniffiCallbackInterfaceObserver = UniffiCallbackInterfaceObserver()
+
 public object FfiConverterTypeObserver : FfiConverter<Observer, Pointer> {
+    internal val handleMap = ConcurrentHandleMap<Observer>()
+
     override fun lower(value: Observer): Pointer {
-        return value.uniffiClonePointer()
+        return Pointer(handleMap.insert(value))
     }
 
     override fun lift(value: Pointer): Observer {
-        return Observer(value)
+        return ObserverImpl(value)
     }
 
     override fun read(buf: ByteBuffer): Observer {

@@ -11,6 +11,7 @@ import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import io.dotlottie.loader.DotLottieLoader
 import io.dotlottie.loader.models.DotLottie
 import io.dotlottie.loader.models.DotLottieResult

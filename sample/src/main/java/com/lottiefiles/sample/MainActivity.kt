@@ -4,14 +4,10 @@ import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
-import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.sample.databinding.MainBinding
 
 class MainActivity : ComponentActivity() {
