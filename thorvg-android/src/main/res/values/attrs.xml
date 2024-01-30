@@ -10,14 +10,14 @@
 <!--        </attr>-->
         <!-- Defines the animation behavior when it reaches the end and the repeat count is
              greater than 0 or infinite. The default value is restart. -->
-        <attr name="dotLottie_mode">
+        <attr name="dotLottie_playMode">
             <!-- The animation starts again from the beginning. -->
             <enum name="normal" value="1" />
             <!-- The animation plays backward. -->
             <enum name="reverse" value="2" />
         </attr>
         <attr name="dotLottie_speed" format="float"/>
-        <attr name="dotLottie_autoPlay" format="boolean" />
+        <attr name="dotLottie_autoplay" format="boolean" />
         <attr name="dotLottie_backgroundColor" format="integer" />
         <attr name="dotLottie_useFrameInterpolation" format="boolean" />
     </declare-styleable>

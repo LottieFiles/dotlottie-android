@@ -88,13 +88,13 @@ class MainActivity : ComponentActivity() {
         setContentView(binding.root)
 
         val config = Config.Builder()
-            .autoPlay(true)
+            .autoplay(true)
             .speed(1f)
             .loop(true)
             .fileName("swinging.json") // file name of json/.lottie
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
-            .mode(Mode.FORWARD)
+            .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
             .build()
 

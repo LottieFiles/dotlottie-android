@@ -3,6 +3,7 @@ package com.lottiefiles.dotlottie.core.widget
 import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
@@ -54,14 +55,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     val loop: Boolean
         get() = mLottieDrawable?.loop ?: false
 
-    val direction: Int
-        get() = when(mLottieDrawable?.mode ?: Mode.FORWARD) {
-            Mode.FORWARD, Mode.BOUNCE -> 1
-            Mode.REVERSE, Mode.REVERSE_BOUNCE -> -1
-        }
-
-    val autoPlay: Boolean
-        get() = mLottieDrawable?.autoPlay ?: error("DotLottieDrawable is null")
+    val autoplay: Boolean
+        get() = mLottieDrawable?.autoplay ?: error("DotLottieDrawable is null")
 
     val isPlaying: Boolean
         get() =  mLottieDrawable?.isRunning ?: false
@@ -82,11 +77,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     val currentFrame: Float
         get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
 
-    var mode: Mode
-        get() = mLottieDrawable?.mode ?: error("DotLottieDrawable is null")
-        set(value) {
-            mLottieDrawable?.mode = value
-        }
+    val playMode: Mode
+        get() = mLottieDrawable?.playMode ?: error("DotLottieDrawable is null")
 
     val segments: Pair<Float, Float>
         get() = mLottieDrawable?.segments ?: error("DotLottieDrawable is null")
@@ -233,15 +225,16 @@ class DotLottieAnimation @JvmOverloads constructor(
                     animationData = contentStr ?: error("Invalid content !"),
                     dotLottieEventListener = mDotLottieEventListener,
                     config = DLConfig(
-                        autoplay = config.autoPlay,
+                        autoplay = config.autoplay,
                         loopAnimation = config.loop,
-                        mode = config.mode,
+                        mode = config.playMode,
                         speed = config.speed,
                         useFrameInterpolation = config.useFrameInterpolator,
-                        backgroundColor = config.backgroundColor.toUInt(),
+                        backgroundColor = Color.TRANSPARENT.toUInt(),
                         segments = listOf()
                     )
                 )
+
                 mLottieDrawable?.callback = this@DotLottieAnimation
                 withContext(Dispatchers.Main) {
                     requestLayout()
@@ -300,22 +293,21 @@ class DotLottieAnimation @JvmOverloads constructor(
         coroutineScope.launch {
             if (assetFilePath.isNotBlank()) {
                 val contentStr = loadAsset(assetFilePath)
-                val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_mode, MODE_FORWARD)
+                val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
                 mLottieDrawable = DotLottieDrawable(
                     animationData = contentStr ?: error("Invalid content"),
                     width = width,
                     height = height,
                     dotLottieEventListener = mDotLottieEventListener,
                     config = DLConfig(
-                        autoplay = getBoolean(R.styleable.DotLottieAnimation_dotLottie_autoPlay, true),
+                        autoplay = getBoolean(R.styleable.DotLottieAnimation_dotLottie_autoplay, true),
                         loopAnimation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_loop, false),
                         mode = getMode(mode),
                         speed = getFloat(R.styleable.DotLottieAnimation_dotLottie_speed, 1f),
                         useFrameInterpolation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation, true),
-                        backgroundColor = getInt(R.styleable.DotLottieAnimation_dotLottie_backgroundColor, 0x000000).toUInt(),
+                        backgroundColor = Color.TRANSPARENT.toUInt(),
                         segments = listOf()
                     )
-
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
             }

@@ -85,18 +85,13 @@ class DotLottieDrawable(
             dlPlayer!!.setConfig(config)
         }
 
-    var mode: Mode
+    val playMode: Mode
         get() = dlPlayer!!.config().mode
-        set(value) {
-            config.mode = value;
-            dlPlayer!!.setConfig(config)
-        }
-
     val totalFrame: Float
         get() = dlPlayer!!.totalFrames()
 
 
-    val autoPlay: Boolean
+    val autoplay: Boolean
         get() = dlPlayer!!.config().autoplay
 
     val currentFrame: Float

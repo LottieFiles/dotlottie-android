@@ -55,12 +55,12 @@
                 android:id="@+id/dot_lottie_view"
                 android:layout_width="200dp"
                 android:layout_height="200dp"
-                app:dotLottie_autoPlay="true"
+                app:dotLottie_autoplay="true"
                 app:dotLottie_loop="true"
-                app:dotLottie_mode="normal"
+                app:dotLottie_playMode="normal"
                 app:dotLottie_speed="1"
                 app:dotLottie_useFrameInterpolation="true"
-                tools:autoPlay="true"
+                tools:autoplay="true"
                 tools:speed="2" />
 
             <TextView

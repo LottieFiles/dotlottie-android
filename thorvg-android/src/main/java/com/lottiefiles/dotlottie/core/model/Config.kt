@@ -3,12 +3,12 @@ package com.lottiefiles.dotlottie.core.model
 import com.dotlottie.dlplayer.Mode
 
 class Config private constructor(
-    val autoPlay: Boolean,
+    val autoplay: Boolean,
     val useFrameInterpolator: Boolean,
     val speed: Float,
     val asset: String,
-    val mode: Mode,
-    val backgroundColor: Int,
+    val playMode: Mode,
+//    val backgroundColor: Int,
     val loop: Boolean,
     val srcUrl: String,
     val data: Any?
@@ -16,18 +16,18 @@ class Config private constructor(
 
     class Builder {
 
-        private var autoPlay: Boolean = false
+        private var autoplay: Boolean = false
         private var loop: Boolean = false
         private var useFrameInterpolator: Boolean = false
         private var speed: Float = 1f
         private var asset: String = ""
         private var srcUrl: String = ""
         private var backgroundColor: Int = 0x0000000
-        private var mode: Mode = Mode.FORWARD
+        private var playMode: Mode = Mode.FORWARD
         private var data: Any? = null
 
-        fun autoPlay(autoPlay: Boolean) = apply {
-            this.autoPlay = autoPlay
+        fun autoplay(autoplay: Boolean) = apply {
+            this.autoplay = autoplay
         }
 
         fun loop(loop: Boolean) = apply {
@@ -46,9 +46,9 @@ class Config private constructor(
             this.srcUrl = url
         }
 
-        fun backgroundColor(color: Int) = apply {
-            this.backgroundColor = color
-        }
+//        fun backgroundColor(color: Int) = apply {
+//            this.backgroundColor = color
+//        }
 
         fun useFrameInterpolation(useFrameInterpolator: Boolean) = apply {
             this.useFrameInterpolator = useFrameInterpolator
@@ -58,21 +58,21 @@ class Config private constructor(
             this.data = data
         }
 
-        fun mode(mode: Mode) = apply {
-            this.mode = mode
+        fun playMode(mode: Mode) = apply {
+            this.playMode = mode
         }
 
         fun build(): Config {
             return Config(
-                autoPlay = this.autoPlay,
+                autoplay = this.autoplay,
                 speed = this.speed,
-                mode = this.mode,
+                playMode = this.playMode,
                 data = this.data,
                 asset = this.asset,
                 useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
                 srcUrl = this.srcUrl,
-                backgroundColor = this.backgroundColor
+//                backgroundColor = this.backgroundColor
             )
         }
     }
