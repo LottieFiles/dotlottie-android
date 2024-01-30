@@ -69,9 +69,8 @@ val config = DotLottieConfig.Builder()
     .loop(true)
     .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // url of .json or .lottie
     .fileName("file.json") // asset from the asset folder .json or .lottie
-    .backgroundColor("#FFFFFF")
     .useInterpolation(true)
-    .mode(Mode.Forward)
+    .playMode(Mode.Forward)
     .build()
 dotLottieAnimationView.load(config)
 ```
