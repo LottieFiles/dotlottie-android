@@ -590,6 +590,12 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_unsubscribe(
+        `ptr`: Pointer,
+        `observer`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
     fun uniffi_dotlottie_player_fn_clone_observer(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
@@ -917,6 +923,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_unsubscribe(): Short
+
     fun uniffi_dotlottie_player_checksum_method_observer_on_complete(): Short
 
     fun uniffi_dotlottie_player_checksum_method_observer_on_frame(): Short
@@ -1032,6 +1040,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames() != 12091.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_unsubscribe() != 1373.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_observer_on_complete() != 24930.toShort()) {
@@ -1602,6 +1613,8 @@ public interface DotLottiePlayerInterface {
 
     fun `totalFrames`(): Float
 
+    fun `unsubscribe`(`observer`: Observer)
+
     companion object
 }
 
@@ -2011,6 +2024,17 @@ open class DotLottiePlayer : FFIObject, DotLottiePlayerInterface {
             }
         }.let {
             FfiConverterFloat.lift(it)
+        }
+
+    override fun `unsubscribe`(`observer`: Observer) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_unsubscribe(
+                    it,
+                    FfiConverterTypeObserver.lower(`observer`),
+                    _status,
+                )
+            }
         }
 
     companion object

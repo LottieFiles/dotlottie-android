@@ -37,26 +37,26 @@ class MainActivity : ComponentActivity() {
 
         override fun onStop() {
             binding.tvStatus.text = "Status : Stop"
-            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-                binding.dotLottieView.currentFrame,
-                binding.dotLottieView.totalFrames,
-            )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                binding.dotLottieView.currentFrame,
+//                binding.dotLottieView.totalFrames,
+//            )
             Log.d(TAG, "onStop")
         }
 
         override fun onFrame(frame: Float) {
             binding.tvFrame.text = "Frame : %.2f / %.2f".format(
                 frame,
-                binding.dotLottieView.totalFrames,
+                0f,
             )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                frame,
+//                binding.dotLottieView.totalFrames,
+//            )
         }
 
         override fun onLoop() {
             Log.d(TAG, "On Loop")
-        }
-
-        override fun onLoopComplete() {
-            Log.d(TAG, "On Loop Completed")
         }
 
         override fun onComplete() {
@@ -89,12 +89,12 @@ class MainActivity : ComponentActivity() {
 
         val config = Config.Builder()
             .autoPlay(true)
-            .speed(1.5f)
+            .speed(1f)
             .loop(true)
             .fileName("swinging.json") // file name of json/.lottie
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
-            .mode(Mode.REVERSE)
+            .mode(Mode.FORWARD)
             .useFrameInterpolation(true)
             .build()
 
