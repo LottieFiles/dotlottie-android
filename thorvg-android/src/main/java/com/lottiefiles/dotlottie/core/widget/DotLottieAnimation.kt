@@ -96,7 +96,7 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     // TODO: Implement repeat count
     val loopCount: UInt
-        get() = 0u ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
 
     val useFrameInterpolation: Boolean
         get() = mLottieDrawable?.useFrameInterpolation ?: error("DotLottieDrawable is null")
@@ -110,8 +110,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         invalidate()
     }
 
-    fun setFrameInterpolation(enable: Boolean) {
-        mLottieDrawable?.setFrameInterpolation(enable)
+    fun setUseFrameInterpolation(enable: Boolean) {
+        mLottieDrawable?.useFrameInterpolation = enable
     }
 
     fun setSegments(firstFrame: Float, lastFrame: Float) {

@@ -37,13 +37,16 @@ class DotLottieDrawable(
             } else {
                 dotLottieEventListener.forEach(DotLottieEventListener::onUnFreeze)
                 dlPlayer!!.play()
-                mHandler.removeCallbacks(mNextFrameRunnable)
+                invalidateSelf()
             }
             field = value
         }
 
     var duration: Float = 0.0f
         get() = dlPlayer!!.duration()
+
+    var loopCount: UInt = 0u
+        get() = dlPlayer!!.loopCount()
 
     val segments: Pair<Float, Float>?
         get()  {
@@ -191,10 +194,6 @@ class DotLottieDrawable(
         dlPlayer!!.setFrame(frame)
         dlPlayer!!.render()
         invalidateSelf()
-    }
-
-    fun setFrameInterpolation(enabled: Boolean) {
-        useFrameInterpolation = enabled
     }
 
     fun setSegments(first: Float, second: Float) {

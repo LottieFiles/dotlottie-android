@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
             binding.dotLottieView.setLoop(checkBox.isChecked)
         }
         binding.cbxFrameInterpolation.addOnCheckedStateChangedListener { checkBox, state ->
-            binding.dotLottieView.setFrameInterpolation(checkBox.isChecked)
+            binding.dotLottieView.setUseFrameInterpolation(checkBox.isChecked)
         }
         binding.btnSetSpeed.setOnClickListener {
             binding.edSpeed.text.toString().toFloatOrNull()?.let {
