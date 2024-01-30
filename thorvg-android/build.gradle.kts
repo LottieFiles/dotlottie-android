@@ -15,11 +15,6 @@ android {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++14"
-            }
-        }
     }
 
     buildTypes {
@@ -29,12 +24,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
         }
     }
     compileOptions {
@@ -60,6 +49,7 @@ publishing {
 }
 
 dependencies {
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)

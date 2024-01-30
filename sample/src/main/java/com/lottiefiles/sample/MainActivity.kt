@@ -1,16 +1,13 @@
 package com.lottiefiles.sample
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
-import com.lottiefiles.dotlottie.core.model.Mode
-import com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
-import com.lottiefiles.dotlottie.core.widget.DotLottieEventListener
+import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.sample.databinding.MainBinding
 
 class MainActivity : ComponentActivity() {
@@ -40,19 +37,22 @@ class MainActivity : ComponentActivity() {
 
         override fun onStop() {
             binding.tvStatus.text = "Status : Stop"
-            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-                binding.dotLottieView.currentFrame,
-                binding.dotLottieView.totalFrames,
-            )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                binding.dotLottieView.currentFrame,
+//                binding.dotLottieView.totalFrames,
+//            )
             Log.d(TAG, "onStop")
         }
 
-        override fun onFrame(frame: Double) {
-            //Log.d(TAG, "frame $frame")
+        override fun onFrame(frame: Float) {
             binding.tvFrame.text = "Frame : %.2f / %.2f".format(
                 frame,
-                binding.dotLottieView.totalFrames,
+                0f,
             )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                frame,
+//                binding.dotLottieView.totalFrames,
+//            )
         }
 
         override fun onLoop() {
@@ -88,28 +88,23 @@ class MainActivity : ComponentActivity() {
         setContentView(binding.root)
 
         val config = Config.Builder()
-            .autoPlay(true)
-            .speed(1.5f)
+            .autoplay(true)
+            .speed(1f)
             .loop(true)
             .fileName("swinging.json") // file name of json/.lottie
 //            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
 //            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
-            .mode(Mode.Forward)
+            .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
             .build()
-
-        // Sample app
-
 
         binding.dotLottieView.load(config)
 
         binding.btnSetSegment.setOnClickListener {
-            val start = binding.edStartFrame.text.toString().toDoubleOrNull()
-            val end = binding.edEndFrame.text.toString().toDoubleOrNull()
+            val start = binding.edStartFrame.text.toString().toFloatOrNull()
+            val end = binding.edEndFrame.text.toString().toFloatOrNull()
             if (start != null && end != null) {
                 binding.dotLottieView.setSegments(start, end)
-                binding.dotLottieView.stop()
-                binding.dotLottieView.play()
             }
         }
 
@@ -127,7 +122,7 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnSetframe.setOnClickListener {
-            binding.edFrame.text.toString().toDoubleOrNull()?.let {
+            binding.edFrame.text.toString().toFloatOrNull()?.let {
                 binding.dotLottieView.setFrame(it)
                 binding.edFrame.text.clear()
             }
@@ -141,22 +136,22 @@ class MainActivity : ComponentActivity() {
         binding.dotLottieView.addEventListener(eventListener)
 
         binding.btnForward.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setPlayMode(Mode.FORWARD)
         }
         binding.btnReverse.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setPlayMode(Mode.REVERSE)
         }
         binding.btnBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Forward)
+            binding.dotLottieView.setPlayMode(Mode.BOUNCE)
         }
         binding.btnReverseBounce.setOnClickListener {
-            binding.dotLottieView.setRepeatMode(Mode.Reverse)
+            binding.dotLottieView.setPlayMode(Mode.REVERSE_BOUNCE)
         }
         binding.cbxLoop.addOnCheckedStateChangedListener { checkBox, state ->
             binding.dotLottieView.setLoop(checkBox.isChecked)
         }
         binding.cbxFrameInterpolation.addOnCheckedStateChangedListener { checkBox, state ->
-            binding.dotLottieView.setFrameInterpolation(checkBox.isChecked)
+            binding.dotLottieView.setUseFrameInterpolation(checkBox.isChecked)
         }
         binding.btnSetSpeed.setOnClickListener {
             binding.edSpeed.text.toString().toFloatOrNull()?.let {
@@ -175,8 +170,12 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnSetColor.setOnClickListener {
-            val color = binding.edColor.text.toString()
-            binding.dotLottieView.setBackgroundColor(color)
+            try {
+                val color = Color.parseColor(binding.edColor.text.toString())
+                binding.dotLottieView.setBackgroundColor(color)
+            } catch (e: Exception) {
+                Log.i(TAG, "Color parse failed", e)
+            }
         }
     }
 }

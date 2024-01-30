@@ -64,30 +64,36 @@ Set up the initial animation configuration
 
 ```kotlin
 val config = DotLottieConfig.Builder()
-    .autoPlay(true)
+    .autoplay(true)
     .speed(1f)
     .loop(true)
     .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // url of .json or .lottie
     .fileName("file.json") // asset from the asset folder .json or .lottie
-    .backgroundColor("#FFFFFF")
     .useInterpolation(true)
-    .mode(Mode.Forward)
+    .playMode(Mode.Forward)
     .build()
 dotLottieAnimationView.load(config)
 ```
 
 ### API
 
+#### Properties
 - `DotLottieAnimation.totalFrames` : Return the number of frame of the animations
 - `DotLottieAnimation.currentFrame` : Get the current frame
-- `DotLottieAnimation.mode` : Return the repeat mode of the animation, 
+- `DotLottieAnimation.playMode` : Return the  playMode of the animation, 
 - `DotLottieAnimation.loop` : Return the repeat mode of the animation, 
-- `DotLottieAnimation.loopCount` : Return the number of loop of the animation, 
+- `DotLottieAnimation.loopCount` : Return the number of times animation has looped, 
 - `DotLottieAnimation.duration` : Get the animation duration in millis
 - `DotLottieAnimation.speed` : Get the animation speed
-- `DotLottieAnimation.autoPlay` : Get the animation speed
+- `DotLottieAnimation.autoplay` : Get the animation speed
 - `DotLottieAnimation.segments` : Get the first and last frame
 
+- `DotLottieAnimation.isPlaying` : Check if the animation is playing
+- `DotLottieAnimation.isStopped` : Check if the animation is stopped
+- `DotLottieAnimation.isPaused` : Check if the animation is paused
+- `DotLottieAnimation.isLoaded` : Check if the animation is Loaded
+
+#### Methods
 - `DotLottieAnimation.setSpeed(Float)` : Modifier the animation speed
 - `DotLottieAnimation.setLoop(Boolean)` : Make the animation to loop or not
 - `DotLottieAnimation.play()` : Play the animation
@@ -95,13 +101,12 @@ dotLottieAnimationView.load(config)
 - `DotLottieAnimation.stop()` : Stop the animation
 - `DotLottieAnimation.load(Config)` : Setup the initial configuration
 - `DotLottieAnimation.setSegments(Float, Float)` : Defining the first and last frame
-- `DotLottieAnimation.setBackground(String)` : Set the animation background
+- `DotLottieAnimation.setPlayMode(Mode)` : Defining the first and last frame
+- `DotLottieAnimation.setBackgroundColor(Int)` : Set the animation background
+- `DotLottieAnimation.setUseFrameInterpolation(Boolean)` : When enabled it renders frames in between.
 
-- `DotLottieAnimation.isPlaying()` : Check if the animation is playing
-- `DotLottieAnimation.isStopped()` : Check if the animation is stopped
-- `DotLottieAnimation.isPaused()` : Check if the animation is paused
 
-#### Event
+#### Events
 
 It's possible to monitor the event of your animation
 first create an instance of the `DotLottieEventListener` and attache it to the 

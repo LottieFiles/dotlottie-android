@@ -3,14 +3,16 @@ package com.lottiefiles.dotlottie.core.widget
 import android.content.Context
 import android.content.res.TypedArray
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.FloatRange
+import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
-import com.lottiefiles.dotlottie.core.model.Mode
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import io.dotlottie.loader.DotLottieLoader
 import io.dotlottie.loader.models.DotLottie
 import io.dotlottie.loader.models.DotLottieResult
@@ -27,6 +29,7 @@ import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import com.dotlottie.dlplayer.Config as DLConfig
 
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -36,6 +39,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
 
+    private var width: Int = 0
+    private var height: Int = 0
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val coroutineScope = CoroutineScope(SupervisorJob())
@@ -48,20 +53,13 @@ class DotLottieAnimation @JvmOverloads constructor(
         get() = mLottieDrawable?.speed ?: error("DotLottieDrawable is null")
 
     val loop: Boolean
-        get() = loopCount != 1
+        get() = mLottieDrawable?.loop ?: false
 
-    val direction: Int
-        get() = when(mLottieDrawable?.mode ?: Mode.Forward) {
-            Mode.Forward, Mode.Bounce -> 1
-            Mode.Reverse, Mode.BounceReverse -> -1
-        }
-
-    val autoPlay: Boolean
-        get() = mLottieDrawable?.autoPlay ?: error("DotLottieDrawable is null")
+    val autoplay: Boolean
+        get() = mLottieDrawable?.autoplay ?: error("DotLottieDrawable is null")
 
     val isPlaying: Boolean
         get() =  mLottieDrawable?.isRunning ?: false
-
 
     val isPaused: Boolean
         get() = mLottieDrawable?.isPaused() ?: false
@@ -73,28 +71,23 @@ class DotLottieAnimation @JvmOverloads constructor(
     val isLoaded: Boolean
         get() = mLottieDrawable?.isLoaded ?: error("DotLottieDrawable is null")
 
-    val totalFrames: Double
+    val totalFrames: Float
         get() = mLottieDrawable?.totalFrame ?: error("DotLottieDrawable is null")
 
-    val currentFrame: Double
+    val currentFrame: Float
         get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
 
-    var mode: Mode
-        get() = mLottieDrawable?.mode ?: error("DotLottieDrawable is null")
-        set(value) {
-            mLottieDrawable?.mode = value
-        }
+    val playMode: Mode
+        get() = mLottieDrawable?.playMode ?: error("DotLottieDrawable is null")
 
-    val backgroundColor: String
-        get() = mLottieDrawable?.backgroundColor ?: ""
-
-    val segments: Pair<Double, Double>
+    val segments: Pair<Float, Float>
         get() = mLottieDrawable?.segments ?: error("DotLottieDrawable is null")
 
-    val duration: Double
+    val duration: Float
         get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
 
-    val loopCount: Int
+    // TODO: Implement repeat count
+    val loopCount: UInt
         get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
 
     val useFrameInterpolation: Boolean
@@ -104,21 +97,21 @@ class DotLottieAnimation @JvmOverloads constructor(
     /***
      * Method
      */
-    fun setFrame(frame: Double) {
+    fun setFrame(frame: Float) {
         mLottieDrawable?.setCurrentFrame(frame)
         invalidate()
     }
 
-    fun setFrameInterpolation(enable: Boolean) {
-        mLottieDrawable?.setFrameInterpolation(enable)
+    fun setUseFrameInterpolation(enable: Boolean) {
+        mLottieDrawable?.useFrameInterpolation = enable
     }
 
-    fun setSegments(firstFrame: Double, lastFrame: Double) {
+    fun setSegments(firstFrame: Float, lastFrame: Float) {
         mLottieDrawable?.setSegments(firstFrame, lastFrame)
     }
 
     fun setLoop(loop: Boolean) {
-        mLottieDrawable?.loopCount = if (loop) INFINITE_LOOP else 1
+        mLottieDrawable?.loop = loop
     }
 
     fun freeze() {
@@ -134,19 +127,15 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun play() {
-        mLottieDrawable?.start()
-    }
-
-    fun setBackgroundColor(color: String) {
-        mLottieDrawable?.setBackgroundColor(color)
+        mLottieDrawable?.play()
     }
 
     fun stop() {
         mLottieDrawable?.stop()
     }
 
-    fun setRepeatMode(repeatMode: Mode) {
-        mLottieDrawable?.setRepeatMode(repeatMode)
+    fun setPlayMode(repeatMode: Mode) {
+        mLottieDrawable?.setPlayMode(repeatMode)
     }
 
     fun pause() {
@@ -163,7 +152,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     init {
-        setupConfigFromXml()
     }
 
     private fun setupConfigFromXml() {
@@ -225,22 +213,28 @@ class DotLottieAnimation @JvmOverloads constructor(
                 val assetFilePath = config.asset
                 val contentStr = when {
                     config.asset.isJsonAsset() ||
-                            config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
+                    config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
                     config.srcUrl.isNotBlank() -> loadFromUrl(config.srcUrl)
                     config.data is String -> config.data
                     config.data is ByteArray -> loadFromByteArray(config.data)
                     else -> error("Asset not found")
                 }
                 mLottieDrawable = DotLottieDrawable(
-                    mRepeatMode = config.mode,
-                    mLoopCount = if (config.loop) INFINITE_LOOP else 1,
-                    mAutoPlay = config.autoPlay,
-                    mSpeed = config.speed,
-                    mBackgroundColor = config.backgroundColor,
-                    mUseFrameInterpolator = config.useFrameInterpolator,
-                    contentStr = contentStr ?: error("Invalid content !"),
-                    mDotLottieEventListener = mDotLottieEventListener
+                    height = height,
+                    width = width,
+                    animationData = contentStr ?: error("Invalid content !"),
+                    dotLottieEventListener = mDotLottieEventListener,
+                    config = DLConfig(
+                        autoplay = config.autoplay,
+                        loopAnimation = config.loop,
+                        mode = config.playMode,
+                        speed = config.speed,
+                        useFrameInterpolation = config.useFrameInterpolator,
+                        backgroundColor = Color.TRANSPARENT.toUInt(),
+                        segments = listOf()
+                    )
                 )
+
                 mLottieDrawable?.callback = this@DotLottieAnimation
                 withContext(Dispatchers.Main) {
                     requestLayout()
@@ -289,24 +283,31 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun getMode(mode: Int): Mode {
         return when(mode) {
-            1 -> Mode.Forward
-            else -> Mode.Reverse
+            1 -> Mode.FORWARD
+            else -> Mode.REVERSE
         }
     }
 
     private fun TypedArray.setupDotLottieDrawable() {
-        val assetFilePath = getString(R.styleable.DotLottieAnimation_src) ?: ""
+        val assetFilePath = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: ""
         coroutineScope.launch {
             if (assetFilePath.isNotBlank()) {
                 val contentStr = loadAsset(assetFilePath)
-                val mode = getInt(R.styleable.DotLottieAnimation_mode, MODE_RESTART)
+                val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
                 mLottieDrawable = DotLottieDrawable(
-                    mAutoPlay = getBoolean(R.styleable.DotLottieAnimation_autoPlay, true),
-                    contentStr = contentStr ?: error("Invalid content"),
-                    mLoopCount = getInt(R.styleable.DotLottieAnimation_repeatCount, INFINITE_LOOP),
-                    mRepeatMode = getMode(mode),
-                    mSpeed = getFloat(R.styleable.DotLottieAnimation_speed, 1f),
-                    mDotLottieEventListener = mDotLottieEventListener
+                    animationData = contentStr ?: error("Invalid content"),
+                    width = width,
+                    height = height,
+                    dotLottieEventListener = mDotLottieEventListener,
+                    config = DLConfig(
+                        autoplay = getBoolean(R.styleable.DotLottieAnimation_dotLottie_autoplay, true),
+                        loopAnimation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_loop, false),
+                        mode = getMode(mode),
+                        speed = getFloat(R.styleable.DotLottieAnimation_dotLottie_speed, 1f),
+                        useFrameInterpolation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation, true),
+                        backgroundColor = Color.TRANSPARENT.toUInt(),
+                        segments = listOf()
+                    )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
             }
@@ -319,8 +320,11 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        val width = measuredWidth
-        val height = measuredHeight
+
+        width = measuredWidth
+        height = measuredHeight
+
+        setupConfigFromXml()
         mLottieDrawable?.let { drawable ->
             if ((width != drawable.intrinsicWidth || height != drawable.intrinsicHeight)) {
                 drawable.resize(width, height)
@@ -364,7 +368,7 @@ class DotLottieAnimation @JvmOverloads constructor(
          * When the animation reaches the end and `repeatCount` is INFINITE
          * or a positive value, the animation restarts from the beginning.
          */
-        const val MODE_RESTART = 1
+        const val MODE_FORWARD = 1
 
         /**
          * This value used used with the [.setRepeatCount] property to repeat
