@@ -36,23 +36,18 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onStop() {
-            binding.tvStatus.text = "Status : Stop"
-//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-//                binding.dotLottieView.currentFrame,
-//                binding.dotLottieView.totalFrames,
-//            )
+            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+                binding.dotLottieView.currentFrame,
+                binding.dotLottieView.totalFrames,
+            )
             Log.d(TAG, "onStop")
         }
 
         override fun onFrame(frame: Float) {
             binding.tvFrame.text = "Frame : %.2f / %.2f".format(
                 frame,
-                0f,
+                binding.dotLottieView.totalFrames,
             )
-//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-//                frame,
-//                binding.dotLottieView.totalFrames,
-//            )
         }
 
         override fun onLoop() {
