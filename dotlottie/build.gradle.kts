@@ -33,6 +33,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    buildFeatures {
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.1"
+    }
 }
 
 publishing {
@@ -58,4 +64,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    // JitPack Compose
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.ui.tooling.preview)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
 }
