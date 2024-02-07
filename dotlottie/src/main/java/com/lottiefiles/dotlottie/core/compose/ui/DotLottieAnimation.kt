@@ -36,7 +36,7 @@ fun DotLottieAnimation(
     data: Any? = null,
     autoplay: Boolean = false,
     loop: Boolean = false,
-    useFrameInterpolator: Boolean = true,
+    useFrameInterpolation: Boolean = true,
     speed: Float = 1f,
     playMode: Mode = Mode.FORWARD,
     controller: DotLottieController = DotLottieController(),
@@ -54,7 +54,7 @@ fun DotLottieAnimation(
             .speed(speed)
             .loop(loop)
             .playMode(playMode)
-            .useFrameInterpolation(useFrameInterpolator)
+            .useFrameInterpolation(useFrameInterpolation)
 
         if (src.isNotEmpty()) {
             conf.src(src)

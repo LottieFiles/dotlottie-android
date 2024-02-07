@@ -62,6 +62,7 @@ val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
 
 Set up the initial animation configuration
 
+#### Traditional UI 
 ```kotlin
 val config = DotLottieConfig.Builder()
     .autoplay(true)
@@ -73,6 +74,63 @@ val config = DotLottieConfig.Builder()
     .playMode(Mode.Forward)
     .build()
 dotLottieAnimationView.load(config)
+```
+
+### Using JetPack Compose
+
+```kotlin
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import java.awt.Color
+import java.lang.reflect.Modifier
+
+fun ExampleComposeComponent() {
+    val dotLottieController = remember { DotLottieController() }
+    DotLottieAnimation(
+        width = 500u,
+        height = 500u,
+        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie", // url of .json or .lottie
+        asset = "file.json",
+        autoplay = true,
+        loop = true,
+        speed = 3f,
+        useFrameInterpolation = false,
+        playMode = Mode.Forward,
+        modifier = Modifier.background(Color.LIGHT_GRAY)
+    )
+}
+```
+
+#### Controlling player using JetPack Compose
+```kotlin
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import java.awt.Color
+import java.lang.reflect.Modifier
+
+fun ExampleComposeComponent() {
+    val dotLottieController = remember { DotLottieController() }
+    
+    LaunchedEffect(UInt) {
+        dotLottieController.setLoop(true)
+        dotLottieController.setSpeed(3f)
+        // Play
+        dotLottieController.play()
+        // Pause
+        dotLottieController.pause()
+        // Stop
+        dotLottieController.play()
+    }
+    
+    DotLottieAnimation(
+        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie", // url of .json or .lottie
+        autoplay = false,
+        loop = false,
+        speed = 1f,
+        useFrameInterpolation = false,
+        playMode = Mode.Forward,
+        controller = dotLottieController
+    )
+}
+
 ```
 
 ### API
