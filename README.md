@@ -84,7 +84,6 @@ import java.awt.Color
 import java.lang.reflect.Modifier
 
 fun ExampleComposeComponent() {
-    val dotLottieController = remember { DotLottieController() }
     DotLottieAnimation(
         width = 500u,
         height = 500u,
@@ -103,6 +102,7 @@ fun ExampleComposeComponent() {
 #### Controlling player using JetPack Compose
 ```kotlin
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import java.awt.Color
 import java.lang.reflect.Modifier
 
