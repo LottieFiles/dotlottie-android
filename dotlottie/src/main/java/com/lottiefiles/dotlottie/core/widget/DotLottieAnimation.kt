@@ -13,6 +13,7 @@ import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import io.dotlottie.loader.DotLottieLoader
 import io.dotlottie.loader.models.DotLottie
 import io.dotlottie.loader.models.DotLottieResult
@@ -172,39 +173,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         return endsWith(".lottie")
     }
 
-    private suspend fun loadFromUrl(url: String): String {
-        return suspendCoroutine { cont ->
-            DotLottieLoader.with(context).fromUrl(url).load(object : DotLottieResult {
-                override fun onSuccess(result: DotLottie) {
-                    val anim = result.animations.entries.lastOrNull()
-                    if (anim != null) {
-                        val data = String(anim.value, StandardCharsets.UTF_8)
-                        cont.resume(data)
-                    }
-                }
-                override fun onError(throwable: Throwable) {
-                    cont.resumeWithException(throwable)
-                }
-            })
-        }
-    }
-
-    private suspend fun loadAsset(filePath: String): String? {
-        return suspendCoroutine { cont ->
-            DotLottieLoader.with(context).fromAsset(filePath).load(object : DotLottieResult {
-                override fun onSuccess(result: DotLottie) {
-                    val anim = result.animations.entries.lastOrNull()
-                    if (anim != null) {
-                        val data = String(anim.value, StandardCharsets.UTF_8)
-                        cont.resume(data)
-                    }
-                }
-                override fun onError(throwable: Throwable) {
-                    cont.resumeWithException(throwable)
-                }
-            })
-        }
-    }
 
     private fun setupConfig() {
         val config = mConfig ?: return
@@ -213,10 +181,10 @@ class DotLottieAnimation @JvmOverloads constructor(
                 val assetFilePath = config.asset
                 val contentStr = when {
                     config.asset.isJsonAsset() ||
-                    config.asset.isDotLottieAsset() -> loadAsset(assetFilePath)
-                    config.srcUrl.isNotBlank() -> loadFromUrl(config.srcUrl)
+                    config.asset.isDotLottieAsset() -> DotLottieUtils.loadAsset(context, assetFilePath)
+                    config.srcUrl.isNotBlank() -> DotLottieUtils.loadFromUrl(context, config.srcUrl)
                     config.data is String -> config.data
-                    config.data is ByteArray -> loadFromByteArray(config.data)
+                    config.data is ByteArray -> DotLottieUtils.loadFromByteArray(context, config.data)
                     else -> error("Asset not found")
                 }
                 mLottieDrawable = DotLottieDrawable(
@@ -248,39 +216,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
-    private fun byteArrayToFile(data: ByteArray): File? {
-        return try {
-            val filePath = File(context.cacheDir, "${UUID.randomUUID()}.lottie").apply {
-                createNewFile()
-            }
-            val fileOutputStream = FileOutputStream(filePath)
-            fileOutputStream.write(data)
-            fileOutputStream.close()
-            filePath
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private suspend fun loadFromByteArray(data: ByteArray): String? {
-        return suspendCoroutine { cont ->
-            val file = byteArrayToFile(data) ?: return@suspendCoroutine
-            DotLottieLoader.with(context).fromAsset(file.path).load(object : DotLottieResult {
-                override fun onSuccess(result: DotLottie) {
-                    val anim = result.animations.entries.lastOrNull()
-                    if (anim != null) {
-                        val content = String(anim.value, StandardCharsets.UTF_8)
-                        cont.resume(content)
-                    }
-                }
-                override fun onError(throwable: Throwable) {
-                    cont.resumeWithException(throwable)
-                }
-            })
-        }
-    }
-
     private fun getMode(mode: Int): Mode {
         return when(mode) {
             1 -> Mode.FORWARD
@@ -292,7 +227,7 @@ class DotLottieAnimation @JvmOverloads constructor(
         val assetFilePath = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: ""
         coroutineScope.launch {
             if (assetFilePath.isNotBlank()) {
-                val contentStr = loadAsset(assetFilePath)
+                val contentStr = DotLottieUtils.loadAsset(context, assetFilePath)
                 val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
                 mLottieDrawable = DotLottieDrawable(
                     animationData = contentStr ?: error("Invalid content"),
@@ -362,7 +297,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     companion object {
-        private const val TAG = "LottieDrawable"
+        private const val TAG = "DotLottie"
 
         /**
          * When the animation reaches the end and `repeatCount` is INFINITE
