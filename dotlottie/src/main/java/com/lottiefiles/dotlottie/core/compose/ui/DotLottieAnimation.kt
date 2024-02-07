@@ -49,16 +49,22 @@ fun DotLottieAnimation(
     val context = LocalContext.current
 
     val config = remember {
-        val conf  = Config.Builder()
+        val conf = Config.Builder()
             .autoplay(autoplay)
             .speed(speed)
             .loop(loop)
             .playMode(playMode)
             .useFrameInterpolation(useFrameInterpolator)
 
-        if (src.isNotEmpty()) { conf.src(src) }
-        if (asset.isNotEmpty()) { conf.fileName(asset) }
-        if (data != null) { conf.data(data) }
+        if (src.isNotEmpty()) {
+            conf.src(src)
+        }
+        if (asset.isNotEmpty()) {
+            conf.fileName(asset)
+        }
+        if (data != null) {
+            conf.data(data)
+        }
 
         conf.build()
     }
@@ -79,7 +85,7 @@ fun DotLottieAnimation(
     var nativeBuffer by remember { mutableStateOf<Pointer?>(null) }
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
-    val choreographer = remember { Choreographer.getInstance()  }
+    val choreographer = remember { Choreographer.getInstance() }
     val isRunning by controller.isRunning.collectAsState()
     val _width by controller.height.collectAsState()
     val _height by controller.width.collectAsState()
@@ -154,7 +160,7 @@ fun DotLottieAnimation(
 
     DisposableEffect(UInt) {
         controller.setPlayerInstance(dlPlayer)
-        eventListeners.forEach{ controller.addEventListener(it) }
+        eventListeners.forEach { controller.addEventListener(it) }
 
         onDispose {
             choreographer.removeFrameCallback(frameCallback)

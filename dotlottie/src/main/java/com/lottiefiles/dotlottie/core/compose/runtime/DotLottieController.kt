@@ -11,57 +11,74 @@ import kotlinx.coroutines.flow.asStateFlow
 class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
     private var observer: Observer? = null
+
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+
     private val _width = MutableStateFlow(0u)
+    val width: StateFlow<UInt> = _width.asStateFlow()
+
     private val _height = MutableStateFlow(0u)
-    val height: StateFlow<UInt> = _width.asStateFlow()
-    val width: StateFlow<UInt> = _height.asStateFlow()
+    val height: StateFlow<UInt> = _height.asStateFlow()
+
     var eventListeners = mutableListOf<DotLottieEventListener>()
-    private set
+        private set
 
     val isPlaying: Boolean
-    get() = dlplayer?.isPlaying() ?: false
+        get() = dlplayer?.isPlaying() ?: false
+
     val isLoaded: Boolean
-    get() = dlplayer?.isLoaded() ?: false
+        get() = dlplayer?.isLoaded() ?: false
+
     val isComplete: Boolean
-    get() = dlplayer?.isComplete() ?: false
+        get() = dlplayer?.isComplete() ?: false
+
     val isStopped: Boolean
-    get() = dlplayer?.isStopped() ?: false
+        get() = dlplayer?.isStopped() ?: false
+
     val isPaused: Boolean
-    get() = dlplayer?.isPaused() ?: false
+        get() = dlplayer?.isPaused() ?: false
 
     val speed: Float
-    get() = dlplayer?.config()?.speed ?: 1f
+        get() = dlplayer?.config()?.speed ?: 1f
     val loop: Boolean
-    get() = dlplayer?.config()?.loopAnimation ?: false
+        get() = dlplayer?.config()?.loopAnimation ?: false
 
     val autoplay: Boolean
-    get() = dlplayer?.config()?.autoplay ?: false
+        get() = dlplayer?.config()?.autoplay ?: false
+
     val totalFrames: Float
-    get() = dlplayer?.totalFrames() ?: 0f
+        get() = dlplayer?.totalFrames() ?: 0f
+
     val currentFrame: Float
-    get() = dlplayer?.currentFrame() ?: 0f
+        get() = dlplayer?.currentFrame() ?: 0f
+
     val playMode: Mode
-    get() = dlplayer?.config()?.mode ?: Mode.FORWARD
+        get() = dlplayer?.config()?.mode ?: Mode.FORWARD
+
     val segments: Pair<Float, Float>?
-    get()  {
-        if (dlplayer?.config()?.segments!!.isEmpty() || dlplayer?.config()?.segments?.size != 2) return null
-        return Pair(dlplayer?.config()?.segments!![0], dlplayer!!.config().segments[1])
-    }
+        get() {
+            if (dlplayer?.config()?.segments!!.isEmpty() || dlplayer?.config()?.segments?.size != 2) return null
+            return Pair(dlplayer?.config()?.segments!![0], dlplayer!!.config().segments[1])
+        }
+
     val duration: Float
-    get() = dlplayer?.duration() ?: 0f
+        get() = dlplayer?.duration() ?: 0f
+
     val loopCount: UInt
-    get() = dlplayer?.loopCount() ?: 0u
+        get() = dlplayer?.loopCount() ?: 0u
+
     val useFrameInterpolation: Boolean
-    get() = dlplayer?.config()?.useFrameInterpolation ?: false
+        get() = dlplayer?.config()?.useFrameInterpolation ?: false
 
     fun play() {
         dlplayer?.play()
     }
+
     fun pause() {
         dlplayer?.pause()
     }
+
     fun stop() {
         dlplayer?.stop()
     }
@@ -72,40 +89,57 @@ class DotLottieController {
                 _isRunning.value = false
                 eventListeners.forEach(DotLottieEventListener::onComplete)
             }
-            override fun onFrame(frameNo: Float) { eventListeners.forEach{ it.onFrame(frameNo) } }
+
+            override fun onFrame(frameNo: Float) {
+                eventListeners.forEach { it.onFrame(frameNo) }
+            }
+
             override fun onPause() {
                 _isRunning.value = false
                 eventListeners.forEach(DotLottieEventListener::onPause)
             }
+
             override fun onStop() {
                 _isRunning.value = false
                 eventListeners.forEach(DotLottieEventListener::onStop)
             }
+
             override fun onPlay() {
                 _isRunning.value = true
                 eventListeners.forEach(DotLottieEventListener::onPlay)
             }
+
             override fun onLoad() {
                 _isRunning.value = dlplayer?.isPlaying() ?: false
                 eventListeners.forEach(DotLottieEventListener::onLoad)
             }
-            override fun onLoop(loopCount: UInt) { eventListeners.forEach{ it.onLoop(loopCount) } }
-            override fun onRender(frameNo: Float) { eventListeners.forEach{ it.onRender(frameNo) } }
+
+            override fun onLoop(loopCount: UInt) {
+                eventListeners.forEach { it.onLoop(loopCount) }
+            }
+
+            override fun onRender(frameNo: Float) {
+                eventListeners.forEach { it.onRender(frameNo) }
+            }
         }
         dlplayer?.subscribe(observer!!)
     }
+
     fun setPlayerInstance(player: DotLottiePlayer) {
         dlplayer?.destroy()
         dlplayer = player
         subscribe()
     }
+
     fun resize(width: UInt, height: UInt) {
         _width.value = width
         _height.value = height
     }
+
     fun setFrame(frame: Float) {
         dlplayer?.setFrame(frame)
     }
+
     fun setUseFrameInterpolation(enable: Boolean) {
         dlplayer?.let {
             val config = it.config()
@@ -114,6 +148,7 @@ class DotLottieController {
         }
 
     }
+
     fun setSegments(firstFrame: Float, lastFrame: Float) {
         dlplayer?.let {
             val config = it.config()
@@ -121,6 +156,7 @@ class DotLottieController {
             it.setConfig(config)
         }
     }
+
     fun setLoop(loop: Boolean) {
         dlplayer?.let {
             val config = it.config()
@@ -128,14 +164,17 @@ class DotLottieController {
             it.setConfig(config)
         }
     }
+
     fun freeze() {
         dlplayer?.pause()
         eventListeners.forEach(DotLottieEventListener::onFreeze)
     }
+
     fun unFreeze() {
         dlplayer?.play()
         eventListeners.forEach(DotLottieEventListener::onUnFreeze)
     }
+
     fun setSpeed(speed: Float) {
         dlplayer?.let {
             val config = it.config()
@@ -143,6 +182,7 @@ class DotLottieController {
             it.setConfig(config)
         }
     }
+
     fun setPlayMode(mode: Mode) {
         dlplayer?.let {
             val config = it.config()
@@ -150,9 +190,11 @@ class DotLottieController {
             it.setConfig(config)
         }
     }
+
     fun addEventListener(listener: DotLottieEventListener) {
         eventListeners.add(listener)
     }
+
     fun removeEventListener(listener: DotLottieEventListener) {
         eventListeners.remove(listener)
     }

@@ -14,22 +14,12 @@ import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
-import io.dotlottie.loader.DotLottieLoader
-import io.dotlottie.loader.models.DotLottie
-import io.dotlottie.loader.models.DotLottieResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.nio.charset.StandardCharsets
-import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import com.dotlottie.dlplayer.Config as DLConfig
 
 
@@ -60,7 +50,7 @@ class DotLottieAnimation @JvmOverloads constructor(
         get() = mLottieDrawable?.autoplay ?: error("DotLottieDrawable is null")
 
     val isPlaying: Boolean
-        get() =  mLottieDrawable?.isRunning ?: false
+        get() = mLottieDrawable?.isRunning ?: false
 
     val isPaused: Boolean
         get() = mLottieDrawable?.isPaused() ?: false
@@ -181,10 +171,18 @@ class DotLottieAnimation @JvmOverloads constructor(
                 val assetFilePath = config.asset
                 val contentStr = when {
                     config.asset.isJsonAsset() ||
-                    config.asset.isDotLottieAsset() -> DotLottieUtils.loadAsset(context, assetFilePath)
+                            config.asset.isDotLottieAsset() -> DotLottieUtils.loadAsset(
+                        context,
+                        assetFilePath
+                    )
+
                     config.srcUrl.isNotBlank() -> DotLottieUtils.loadFromUrl(context, config.srcUrl)
                     config.data is String -> config.data
-                    config.data is ByteArray -> DotLottieUtils.loadFromByteArray(context, config.data)
+                    config.data is ByteArray -> DotLottieUtils.loadFromByteArray(
+                        context,
+                        config.data
+                    )
+
                     else -> error("Asset not found")
                 }
                 mLottieDrawable = DotLottieDrawable(
@@ -217,7 +215,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun getMode(mode: Int): Mode {
-        return when(mode) {
+        return when (mode) {
             1 -> Mode.FORWARD
             else -> Mode.REVERSE
         }
@@ -235,11 +233,20 @@ class DotLottieAnimation @JvmOverloads constructor(
                     height = height,
                     dotLottieEventListener = mDotLottieEventListener,
                     config = DLConfig(
-                        autoplay = getBoolean(R.styleable.DotLottieAnimation_dotLottie_autoplay, true),
-                        loopAnimation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_loop, false),
+                        autoplay = getBoolean(
+                            R.styleable.DotLottieAnimation_dotLottie_autoplay,
+                            true
+                        ),
+                        loopAnimation = getBoolean(
+                            R.styleable.DotLottieAnimation_dotLottie_loop,
+                            false
+                        ),
                         mode = getMode(mode),
                         speed = getFloat(R.styleable.DotLottieAnimation_dotLottie_speed, 1f),
-                        useFrameInterpolation = getBoolean(R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation, true),
+                        useFrameInterpolation = getBoolean(
+                            R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation,
+                            true
+                        ),
                         backgroundColor = Color.TRANSPARENT.toUInt(),
                         segments = listOf()
                     )
@@ -297,7 +304,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     companion object {
-        private const val TAG = "DotLottie"
+        private const val TAG = "DotLottieAnimation"
 
         /**
          * When the animation reaches the end and `repeatCount` is INFINITE

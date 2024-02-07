@@ -28,7 +28,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
 
-   var freeze: Boolean = false
+    var freeze: Boolean = false
         set(value) {
             if (value) {
                 dotLottieEventListener.forEach(DotLottieEventListener::onFreeze)
@@ -49,7 +49,7 @@ class DotLottieDrawable(
         get() = dlPlayer!!.loopCount()
 
     val segments: Pair<Float, Float>?
-        get()  {
+        get() {
             if (dlPlayer!!.config().segments.isEmpty()) return null
             return Pair(dlPlayer!!.config().segments[0], dlPlayer!!.config().segments[1])
         }
@@ -137,11 +137,12 @@ class DotLottieDrawable(
     fun release() {
         dlPlayer!!.destroy()
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
-        if (bitmapBuffer != null)  {
+        if (bitmapBuffer != null) {
             bitmapBuffer?.recycle()
             bitmapBuffer = null
         }
     }
+
     fun resize(w: Int, h: Int) {
         width = w
         height = h
@@ -166,7 +167,7 @@ class DotLottieDrawable(
         play()
     }
 
-    fun setPlayMode(playMode:  Mode) {
+    fun setPlayMode(playMode: Mode) {
         config.mode = playMode
         dlPlayer!!.setConfig(config)
     }
@@ -192,7 +193,7 @@ class DotLottieDrawable(
     }
 
     fun setSegments(first: Float, second: Float) {
-        config.segments  = listOf(first, second)
+        config.segments = listOf(first, second)
         dlPlayer!!.setConfig(config)
     }
 
@@ -223,6 +224,7 @@ class DotLottieDrawable(
     companion object {
 
         private const val TAG = "DotLottieDrawable"
+
         /**
          * Internal constants
          */

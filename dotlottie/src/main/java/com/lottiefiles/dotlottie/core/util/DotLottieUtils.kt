@@ -29,6 +29,7 @@ object DotLottieUtils {
         val contentStr = when {
             config.asset.isJsonAsset() ||
                     config.asset.isDotLottieAsset() -> loadAsset(context, assetFilePath)
+
             config.srcUrl.isNotBlank() -> loadFromUrl(context, config.srcUrl)
             config.data is String -> config.data
             config.data is ByteArray -> loadFromByteArray(context, config.data)
@@ -37,6 +38,7 @@ object DotLottieUtils {
 
         return contentStr
     }
+
     suspend fun loadAsset(context: Context, filePath: String): String? {
         return suspendCoroutine { cont ->
             DotLottieLoader.with(context).fromAsset(filePath).load(object : DotLottieResult {
@@ -47,12 +49,14 @@ object DotLottieUtils {
                         cont.resume(data)
                     }
                 }
+
                 override fun onError(throwable: Throwable) {
                     cont.resumeWithException(throwable)
                 }
             })
         }
     }
+
     suspend fun loadFromUrl(context: Context, url: String): String {
         return suspendCoroutine { cont ->
             DotLottieLoader.with(context).fromUrl(url).load(object : DotLottieResult {
@@ -63,12 +67,14 @@ object DotLottieUtils {
                         cont.resume(data)
                     }
                 }
+
                 override fun onError(throwable: Throwable) {
                     cont.resumeWithException(throwable)
                 }
             })
         }
     }
+
     suspend fun loadFromByteArray(context: Context, data: ByteArray): String? {
         return suspendCoroutine { cont ->
             val file = byteArrayToFile(context, data) ?: return@suspendCoroutine
@@ -80,12 +86,14 @@ object DotLottieUtils {
                         cont.resume(content)
                     }
                 }
+
                 override fun onError(throwable: Throwable) {
                     cont.resumeWithException(throwable)
                 }
             })
         }
     }
+
     private fun byteArrayToFile(context: Context, data: ByteArray): File? {
         return try {
             val filePath = File(context.cacheDir, "${UUID.randomUUID()}.lottie").apply {
