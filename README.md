@@ -80,8 +80,8 @@ dotLottieAnimationView.load(config)
 
 ```kotlin
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
-import java.awt.Color
-import java.lang.reflect.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 
 fun ExampleComposeComponent() {
     DotLottieAnimation(
@@ -103,8 +103,6 @@ fun ExampleComposeComponent() {
 ```kotlin
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import java.awt.Color
-import java.lang.reflect.Modifier
 
 fun ExampleComposeComponent() {
     val dotLottieController = remember { DotLottieController() }
