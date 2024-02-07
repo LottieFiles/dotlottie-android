@@ -1,4 +1,4 @@
-package com.lottiefiles.dotlottie.core.ui.components
+package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
 import android.view.Choreographer
@@ -18,135 +18,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.dotlottie.dlplayer.DotLottiePlayer
-import com.dotlottie.dlplayer.Observer
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
 
-class DotLottieController {
-    private var dlplayer: DotLottiePlayer? = null
-    private var observer: Observer? = null
-    private val _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
-    var eventListeners = mutableListOf<DotLottieEventListener>()
-        private set
-
-    val isPlaying: Boolean
-        get() = dlplayer?.isPlaying() ?: false
-    val isLoaded: Boolean
-        get() = dlplayer?.isLoaded() ?: false
-    val isComplete: Boolean
-        get() = dlplayer?.isComplete() ?: false
-    val isStopped: Boolean
-        get() = dlplayer?.isStopped() ?: false
-    val isPaused: Boolean
-        get() = dlplayer?.isPaused() ?: false
-    val playMode: Mode
-        get() = dlplayer?.config()?.mode ?: Mode.FORWARD
-    fun play() {
-        dlplayer?.play()
-    }
-    fun pause() {
-        dlplayer?.pause()
-    }
-    fun stop() {
-        dlplayer?.stop()
-    }
-
-    private fun subscribe() {
-        observer = object : Observer {
-            override fun onComplete() {
-                _isRunning.value = false
-                eventListeners.forEach(DotLottieEventListener::onComplete)
-            }
-            override fun onFrame(frameNo: Float) { eventListeners.forEach{ it.onFrame(frameNo) } }
-            override fun onPause() {
-                _isRunning.value = false
-                eventListeners.forEach(DotLottieEventListener::onPause)
-            }
-            override fun onStop() {
-                _isRunning.value = false
-                eventListeners.forEach(DotLottieEventListener::onStop)
-            }
-            override fun onPlay() {
-                _isRunning.value = true
-                eventListeners.forEach(DotLottieEventListener::onPlay)
-            }
-            override fun onLoad() {
-                _isRunning.value = dlplayer?.isPlaying() ?: false
-                eventListeners.forEach(DotLottieEventListener::onLoad)
-            }
-            override fun onLoop(loopCount: UInt) { eventListeners.forEach{ it.onLoop(loopCount) } }
-            override fun onRender(frameNo: Float) { eventListeners.forEach{ it.onRender(frameNo) } }
-        }
-        dlplayer?.subscribe(observer!!)
-    }
-    fun setPlayerInstance(player: DotLottiePlayer) {
-        dlplayer?.destroy()
-        dlplayer = player
-        subscribe()
-    }
-    // TODO: Resize
-    fun setFrame(frame: Float) {
-        dlplayer?.setFrame(frame)
-    }
-    fun setUseFrameInterpolation(enable: Boolean) {
-        dlplayer?.let {
-            val config = it.config()
-            config.useFrameInterpolation = enable;
-            it.setConfig(config)
-        }
-
-    }
-    fun setSegments(firstFrame: Float, lastFrame: Float) {
-        dlplayer?.let {
-            val config = it.config()
-            config.segments = listOf(firstFrame, lastFrame);
-            it.setConfig(config)
-        }
-    }
-    fun setLoop(loop: Boolean) {
-        dlplayer?.let {
-            val config = it.config()
-            config.loopAnimation = loop
-            it.setConfig(config)
-        }
-    }
-    fun freeze() {
-        dlplayer?.pause()
-        eventListeners.forEach(DotLottieEventListener::onFreeze)
-    }
-    fun unFreeze() {
-        dlplayer?.play()
-        eventListeners.forEach(DotLottieEventListener::onUnFreeze)
-    }
-    fun setSpeed(speed: Float) {
-        dlplayer?.let {
-            val config = it.config()
-            config.speed = speed
-            it.setConfig(config)
-        }
-    }
-    fun setPlayMode(mode: Mode) {
-        dlplayer?.let {
-            val config = it.config()
-            config.mode = mode
-            it.setConfig(config)
-        }
-    }
-    fun addEventListener(listener: DotLottieEventListener) {
-        eventListeners.add(listener)
-    }
-    fun removeEventListener(listener: DotLottieEventListener) {
-        eventListeners.remove(listener)
-    }
-}
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
@@ -202,6 +81,8 @@ fun DotLottieAnimation(
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance()  }
     val isRunning by controller.isRunning.collectAsState()
+    val _width by controller.height.collectAsState()
+    val _height by controller.width.collectAsState()
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -257,6 +138,17 @@ fun DotLottieAnimation(
             choreographer.postFrameCallback(frameCallback)
         } else {
             choreographer.removeFrameCallback(frameCallback)
+        }
+    }
+
+    LaunchedEffect(_width, _height) {
+        if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
+            bitmap?.recycle()
+            bitmap = Bitmap.createBitmap(_width.toInt(), _height.toInt(), Bitmap.Config.ARGB_8888)
+            dlPlayer.resize(_width, _height)
+            nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            imageBitmap = bitmap!!.asImageBitmap()
         }
     }
 

@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.ui.components.DotLottieAnimation
-import com.lottiefiles.dotlottie.core.ui.components.DotLottieController
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.example.ui.theme.ExampleTheme
 import kotlin.math.roundToInt
@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
                     val loop = remember { mutableStateOf(true) }
                     val speed = remember { mutableFloatStateOf(1f) }
                     val segments = remember { mutableStateOf(1f..100f) }
+                    val currentFrame = remember { mutableFloatStateOf(0f) }
+                    val totalFrame = remember { mutableFloatStateOf(0f) }
                     val events = object : DotLottieEventListener {
                         override fun onLoad() {
                             Log.i("DotLottie", "Loaded")
@@ -66,6 +68,18 @@ class MainActivity : ComponentActivity() {
                         override fun onComplete() {
                             Log.i("DotLottie", "Completed")
                         }
+
+                        override fun onUnFreeze() {
+                            Log.i("DotLottie", "UnFreeze")
+                        }
+
+                        override fun onFrame(frame: Float) {
+                            currentFrame.value = dotLottieController.currentFrame
+                            totalFrame.value = dotLottieController.totalFrames
+                        }
+                        override fun onFreeze() {
+                            Log.i("DotLottie", "Freeze")
+                        }
                     }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -80,9 +94,9 @@ class MainActivity : ComponentActivity() {
 //                                        asset = "swinging.json",
                                         src = "https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json",
 //                                        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie",
-                                        height = 1000u,
-                                        width = 1000u,
-                                        autoplay = false,
+                                        height = 600u,
+                                        width = 600u,
+                                        autoplay = true,
                                         loop = true,
                                         eventListeners = listOf(events),
                                         modifier = Modifier.background(Color.LightGray),
@@ -93,6 +107,9 @@ class MainActivity : ComponentActivity() {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(8.dp)) {
+                            Row(modifier = Modifier.padding(2.dp)) {
+                                Text(text = "%.2f / %.2f ".format(currentFrame.value, totalFrame.value))
+                            }
                             Row(modifier = Modifier.padding(2.dp)) {
                                 Button(onClick = {
                                     dotLottieController.play()
@@ -179,7 +196,9 @@ class MainActivity : ComponentActivity() {
                                     Text(text = "Frame 50")
                                 }
                             }
-                            Column(modifier = Modifier.border(border = BorderStroke(1.dp, Color.LightGray)).padding(10.dp, 4.dp)) {
+                            Column(modifier = Modifier
+                                .border(border = BorderStroke(1.dp, Color.LightGray))
+                                .padding(10.dp, 4.dp)) {
                                 Row {
                                     RangeSlider(value = segments.value, onValueChange = { segments.value = it }, valueRange = 1f..100f )
                                 }
@@ -190,6 +209,25 @@ class MainActivity : ComponentActivity() {
                                         dotLottieController.setSegments(segments.value.start.roundToInt().toFloat(), segments.value.endInclusive.roundToInt().toFloat())
                                     }) {
                                         Text(text = "Set Segment")
+                                    }
+                                }
+                            }
+                            Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Button(onClick = {
+                                    dotLottieController.resize(550u, 550u)
+                                }) {
+                                    Text(text = "Resize")
+                                }
+                                Button(onClick = {
+                                    dotLottieController.freeze()
+                                }) {
+                                    Text(text = "Freeze")
+                                }
+                                Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Button(onClick = {
+                                        dotLottieController.unFreeze()
+                                    }) {
+                                        Text(text = "Unfreeze")
                                     }
                                 }
                             }
