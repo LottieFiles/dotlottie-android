@@ -40,7 +40,7 @@ fun DotLottieAnimation(
     speed: Float = 1f,
     playMode: Mode = Mode.FORWARD,
     controller: DotLottieController = DotLottieController(),
-    eventListeners: List<DotLottieEventListener> = listOf(),
+    eventListeners: List<DotLottieEventListener> = emptyList(),
 ) {
     require(src.isNotBlank() || asset.isNotBlank() || data != null) {
         "You must provide at least one of src, asset, or data parameters."
