@@ -562,6 +562,12 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(
+        `ptr`: Pointer,
+        `no`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
         `ptr`: Pointer,
         `config`: RustBuffer.ByValue,
@@ -620,6 +626,11 @@ internal interface UniffiLib : Library {
     ): Unit
 
     fun uniffi_dotlottie_player_fn_method_observer_on_load(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_observer_on_load_error(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
@@ -913,6 +924,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_resize(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_seek(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame(): Short
@@ -930,6 +943,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_checksum_method_observer_on_frame(): Short
 
     fun uniffi_dotlottie_player_checksum_method_observer_on_load(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_observer_on_load_error(): Short
 
     fun uniffi_dotlottie_player_checksum_method_observer_on_loop(): Short
 
@@ -1027,6 +1042,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_resize() != 16787.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_seek() != 60656.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config() != 39472.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1052,6 +1070,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_observer_on_load() != 56735.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_observer_on_load_error() != 51239.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_observer_on_loop() != 7035.toShort()) {
@@ -1603,6 +1624,8 @@ public interface DotLottiePlayerInterface {
         `height`: UInt,
     ): Boolean
 
+    fun `seek`(`no`: Float): Boolean
+
     fun `setConfig`(`config`: Config)
 
     fun `setFrame`(`no`: Float): Boolean
@@ -1967,6 +1990,19 @@ open class DotLottiePlayer : FFIObject, DotLottiePlayerInterface {
             FfiConverterBoolean.lift(it)
         }
 
+    override fun `seek`(`no`: Float): Boolean =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(
+                    it,
+                    FfiConverterFloat.lower(`no`),
+                    _status,
+                )
+            }
+        }.let {
+            FfiConverterBoolean.lift(it)
+        }
+
     override fun `setConfig`(`config`: Config) =
         callWithPointer {
             uniffiRustCall { _status ->
@@ -2074,6 +2110,8 @@ public interface Observer {
 
     fun `onLoad`()
 
+    fun `onLoadError`()
+
     fun `onLoop`(`loopCount`: UInt)
 
     fun `onPause`()
@@ -2145,6 +2183,16 @@ open class ObserverImpl : FFIObject, Observer {
         callWithPointer {
             uniffiRustCall { _status ->
                 UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load(
+                    it,
+                    _status,
+                )
+            }
+        }
+
+    override fun `onLoadError`() =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load_error(
                     it,
                     _status,
                 )
@@ -2353,7 +2401,7 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
                 // Call the method, write to outBuf and return a status code
                 // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
                 try {
-                    this.`invokeOnLoop`(cb, argsData, argsLen, outBuf)
+                    this.`invokeOnLoadError`(cb, argsData, argsLen, outBuf)
                 } catch (e: Throwable) {
                     // Unexpected error
                     try {
@@ -2369,7 +2417,7 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
                 // Call the method, write to outBuf and return a status code
                 // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
                 try {
-                    this.`invokeOnPause`(cb, argsData, argsLen, outBuf)
+                    this.`invokeOnLoop`(cb, argsData, argsLen, outBuf)
                 } catch (e: Throwable) {
                     // Unexpected error
                     try {
@@ -2385,7 +2433,7 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
                 // Call the method, write to outBuf and return a status code
                 // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
                 try {
-                    this.`invokeOnPlay`(cb, argsData, argsLen, outBuf)
+                    this.`invokeOnPause`(cb, argsData, argsLen, outBuf)
                 } catch (e: Throwable) {
                     // Unexpected error
                     try {
@@ -2401,7 +2449,7 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
                 // Call the method, write to outBuf and return a status code
                 // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
                 try {
-                    this.`invokeOnRender`(cb, argsData, argsLen, outBuf)
+                    this.`invokeOnPlay`(cb, argsData, argsLen, outBuf)
                 } catch (e: Throwable) {
                     // Unexpected error
                     try {
@@ -2414,6 +2462,22 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
                 }
             }
             8 -> {
+                // Call the method, write to outBuf and return a status code
+                // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
+                try {
+                    this.`invokeOnRender`(cb, argsData, argsLen, outBuf)
+                } catch (e: Throwable) {
+                    // Unexpected error
+                    try {
+                        // Try to serialize the error into a string
+                        outBuf.setValue(FfiConverterString.lower(e.toString()))
+                    } catch (e: Throwable) {
+                        // If that fails, then it's time to give up and just return
+                    }
+                    UNIFFI_CALLBACK_UNEXPECTED_ERROR
+                }
+            }
+            9 -> {
                 // Call the method, write to outBuf and return a status code
                 // See docs of ForeignCallback in `uniffi_core/src/ffi/foreigncallbacks.rs` for info
                 try {
@@ -2494,6 +2558,23 @@ internal class UniffiCallbackInterfaceObserver : ForeignCallback {
     ): Int {
         fun makeCall(): Int {
             kotlinCallbackInterface.`onLoad`()
+            return UNIFFI_CALLBACK_SUCCESS
+        }
+
+        fun makeCallAndHandleError(): Int = makeCall()
+
+        return makeCallAndHandleError()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun `invokeOnLoadError`(
+        kotlinCallbackInterface: Observer,
+        argsData: Pointer,
+        argsLen: Int,
+        outBuf: RustBufferByReference,
+    ): Int {
+        fun makeCall(): Int {
+            kotlinCallbackInterface.`onLoadError`()
             return UNIFFI_CALLBACK_SUCCESS
         }
 

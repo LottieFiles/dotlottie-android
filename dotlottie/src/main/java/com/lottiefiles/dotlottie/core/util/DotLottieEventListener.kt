@@ -11,6 +11,7 @@ interface DotLottieEventListener : Observer {
     override fun onPlay() { }
     override fun onComplete() { }
     override fun onLoad() { }
+    override fun onLoadError() { }
     fun onLoadError(error: Throwable) {}
     fun onFreeze() {}
     fun onUnFreeze() {}
