@@ -121,6 +121,10 @@ class DotLottieController {
             override fun onRender(frameNo: Float) {
                 eventListeners.forEach { it.onRender(frameNo) }
             }
+
+            override fun onLoadError() {
+                eventListeners.forEach(DotLottieEventListener::onLoadError)
+            }
         }
         dlplayer?.subscribe(observer!!)
     }
