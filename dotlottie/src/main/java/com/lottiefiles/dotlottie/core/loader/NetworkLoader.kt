@@ -74,9 +74,10 @@ class NetworkLoader(context: Context, private val url: String) : AbstractLoader(
                 throw IOException("[NetworkLoader]: Failed to download file: $url")
             }
 
-            val isJson =
-                response.header("Content-Type", "")?.contains("application/json") ?: false
-            val content = if (isJson) {
+            val contentType = response.header("Content-Type", "") ?: "";
+            val isLottie =
+                contentType.contains("application/json") || contentType.contains("text/plain")
+            val content = if (isLottie) {
                 val text = response.body?.string()
                     ?: throw IOException("Response body is null: $url")
                 cacheJson(text)
