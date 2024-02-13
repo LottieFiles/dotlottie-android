@@ -249,7 +249,6 @@ class MainActivity : ComponentActivity() {
                                         DropdownMenuItem(text = { Text(text = it.id) }, onClick = {
                                             dropdownActive.value = it.id
                                             dropdownExpand.value = false
-                                            Log.i("DotLottie", "Loading: ${it.id}")
                                             dotLottieController.loadAnimation(it.id)
                                         })
                                     }

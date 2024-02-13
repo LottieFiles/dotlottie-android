@@ -198,12 +198,8 @@ class DotLottieController {
 
     fun loadAnimation(
         animationId: String,
-        width: UInt = this.width.value,
-        height: UInt = this.height.value
     ) {
-        this._width.value  = width
-        this._height.value = height
-        dlplayer?.loadAnimation(animationId, width, height)
+        dlplayer?.loadAnimation(animationId, this._width.value, this._height.value)
     }
 
     fun manifest(): Manifest? {

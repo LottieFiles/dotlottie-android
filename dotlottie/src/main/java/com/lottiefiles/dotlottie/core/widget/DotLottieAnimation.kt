@@ -8,6 +8,7 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.FloatRange
+import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
@@ -104,6 +105,16 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setLoop(loop: Boolean) {
         mLottieDrawable?.loop = loop
+    }
+
+    fun loadAnimation(
+        animationId: String,
+    ) {
+        mLottieDrawable?.loadAnimation(animationId)
+    }
+
+    fun manifest(): Manifest? {
+        return mLottieDrawable?.manifest()
     }
 
     fun freeze() {
