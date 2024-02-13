@@ -28,12 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
 
-/**
- * asset: string, .json / .lottie
- * src: string -> .json / .lottie
- * data?: string -> json / ByeteArray
- *
- */
 sealed class DotLottieSource {
     data class Url(val urlString: String) : DotLottieSource() // .json / .lottie
     data class Asset(val assetPath: String) : DotLottieSource() // .json / .lottie
@@ -45,10 +39,7 @@ fun DotLottieAnimation(
     modifier: Modifier = Modifier,
     width: UInt,
     height: UInt,
-    src: String = "",
     source: DotLottieSource,
-    asset: String = "",
-    data: Any? = null,
     autoplay: Boolean = false,
     loop: Boolean = false,
     useFrameInterpolation: Boolean = true,
