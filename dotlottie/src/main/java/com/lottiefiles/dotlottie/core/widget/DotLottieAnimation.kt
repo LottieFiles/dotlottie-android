@@ -10,6 +10,7 @@ import android.view.View
 import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -168,27 +169,11 @@ class DotLottieAnimation @JvmOverloads constructor(
         val config = mConfig ?: return
         coroutineScope.launch {
             try {
-                val assetFilePath = config.asset
-                val contentStr = when {
-                    config.asset.isJsonAsset() ||
-                            config.asset.isDotLottieAsset() -> DotLottieUtils.loadAsset(
-                        context,
-                        assetFilePath
-                    )
-
-                    config.srcUrl.isNotBlank() -> DotLottieUtils.loadFromUrl(context, config.srcUrl)
-                    config.data is String -> config.data
-                    config.data is ByteArray -> DotLottieUtils.loadFromByteArray(
-                        context,
-                        config.data
-                    )
-
-                    else -> error("Asset not found")
-                }
+                val content = DotLottieUtils.getContent(context, config.source)
                 mLottieDrawable = DotLottieDrawable(
                     height = height,
                     width = width,
-                    animationData = contentStr ?: error("Invalid content !"),
+                    animationData = content,
                     dotLottieEventListener = mDotLottieEventListener,
                     config = DLConfig(
                         autoplay = config.autoplay,
@@ -225,10 +210,10 @@ class DotLottieAnimation @JvmOverloads constructor(
         val assetFilePath = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: ""
         coroutineScope.launch {
             if (assetFilePath.isNotBlank()) {
-                val contentStr = DotLottieUtils.loadAsset(context, assetFilePath)
+                val content = DotLottieUtils.getContent(context, DotLottieSource.Asset(assetFilePath))
                 val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
                 mLottieDrawable = DotLottieDrawable(
-                    animationData = contentStr ?: error("Invalid content"),
+                    animationData = content,
                     width = width,
                     height = height,
                     dotLottieEventListener = mDotLottieEventListener,

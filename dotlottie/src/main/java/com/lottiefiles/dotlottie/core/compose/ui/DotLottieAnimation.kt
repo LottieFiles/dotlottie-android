@@ -1,6 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.sun.jna.Pointer
@@ -26,12 +28,25 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
 
+/**
+ * asset: string, .json / .lottie
+ * src: string -> .json / .lottie
+ * data?: string -> json / ByeteArray
+ *
+ */
+sealed class DotLottieSource {
+    data class Url(val urlString: String) : DotLottieSource() // .json / .lottie
+    data class Asset(val assetPath: String) : DotLottieSource() // .json / .lottie
+    data class Data(val data: ByteArray) : DotLottieSource()
+    data class Json(val jsonString: String) : DotLottieSource()
+}
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
     width: UInt,
     height: UInt,
     src: String = "",
+    source: DotLottieSource,
     asset: String = "",
     data: Any? = null,
     autoplay: Boolean = false,
@@ -42,10 +57,6 @@ fun DotLottieAnimation(
     controller: DotLottieController = DotLottieController(),
     eventListeners: List<DotLottieEventListener> = emptyList(),
 ) {
-    require(src.isNotBlank() || asset.isNotBlank() || data != null) {
-        "You must provide at least one of src, asset, or data parameters."
-    }
-
     val context = LocalContext.current
 
     val config = remember {
@@ -54,17 +65,8 @@ fun DotLottieAnimation(
             .speed(speed)
             .loop(loop)
             .playMode(playMode)
+            .source(source)
             .useFrameInterpolation(useFrameInterpolation)
-
-        if (src.isNotEmpty()) {
-            conf.src(src)
-        }
-        if (asset.isNotEmpty()) {
-            conf.fileName(asset)
-        }
-        if (data != null) {
-            conf.data(data)
-        }
 
         conf.build()
     }
@@ -113,26 +115,31 @@ fun DotLottieAnimation(
 
     LaunchedEffect(config, dlConfig) {
         try {
-            val animationData = DotLottieUtils.getContent(context, config)
-            if (animationData != null) {
-                dlPlayer.loadAnimationData(animationData, width, height)
-                nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-                bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
-                bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
-                imageBitmap = bitmap!!.asImageBitmap()
-                choreographer.postFrameCallback(frameCallback)
-                // Renders initial frame if not autoplaying
-                val startTime = System.currentTimeMillis()
-                val timeout = 500L // 500 milliseconds
-                while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                    if (System.currentTimeMillis() - startTime > 100L && !isRunning) {
-                        choreographer.removeFrameCallback(frameCallback)
-                        break
-                    }
-                    delay(16L)
+            when (val animationData = DotLottieUtils.getContent(context, source)) {
+                is DotLottieContent.Json -> {
+                    dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                }
+                is DotLottieContent.Binary -> {
+                    dlPlayer.loadDotlottieData(animationData.data, width, height)
                 }
             }
+            nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
+            imageBitmap = bitmap!!.asImageBitmap()
+            choreographer.postFrameCallback(frameCallback)
+            // Renders initial frame if not autoplaying
+            val startTime = System.currentTimeMillis()
+            val timeout = 500L // 500 milliseconds
+            while (isActive && System.currentTimeMillis() - startTime < timeout) {
+                if (System.currentTimeMillis() - startTime > 100L && !isRunning) {
+                    choreographer.removeFrameCallback(frameCallback)
+                    break
+                }
+                delay(16L)
+            }
         } catch (e: Exception) {
+            Log.i("DotLottie", "Error: ${e.message}")
             controller.eventListeners.forEach {
                 it.onLoadError(e)
             }

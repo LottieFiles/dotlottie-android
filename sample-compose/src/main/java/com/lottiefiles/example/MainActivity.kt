@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.example.ui.theme.ExampleTheme
 import kotlin.math.roundToInt
@@ -91,14 +92,14 @@ class MainActivity : ComponentActivity() {
                             Row {
                                 repeat(1) { // Example: Repeat 3 times
                                     DotLottieAnimation(
-//                                        asset = "swinging.json",
-                                        src = "https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json",
-//                                        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie",
                                         height = 600u,
                                         width = 600u,
                                         autoplay = true,
                                         loop = true,
                                         eventListeners = listOf(events),
+//                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
+                                        source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
+//                                        source = DotLottieSource.Asset("swinging.json"),
                                         modifier = Modifier.background(Color.LightGray),
                                         controller = dotLottieController)
                                 }
