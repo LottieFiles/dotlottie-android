@@ -68,8 +68,8 @@ val config = DotLottieConfig.Builder()
     .autoplay(true)
     .speed(1f)
     .loop(true)
-    .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie") // url of .json or .lottie
-    .fileName("file.json") // asset from the asset folder .json or .lottie
+    .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
+//    .source(DotLottieSource.Asset("file.json")) // asset from the asset folder .json or .lottie
     .useInterpolation(true)
     .playMode(Mode.Forward)
     .build()
@@ -82,13 +82,16 @@ dotLottieAnimationView.load(config)
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 fun ExampleComposeComponent() {
     DotLottieAnimation(
         width = 500u,
         height = 500u,
-        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie", // url of .json or .lottie
-        asset = "file.json",
+        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"), // from url .lottie / .json
+//        source = DotLottieSource.Asset("file.json"), // from asset .lottie / .json
+//        source = DotLottieSource.Json("{"v":"4.8.0","meta":{"g":"LottieFiles .........."), // lottie json string
+//        source = DotLottieSource.Data(ByteArray), // dotLottie data as ByteArray
         autoplay = true,
         loop = true,
         speed = 3f,
@@ -103,6 +106,7 @@ fun ExampleComposeComponent() {
 ```kotlin
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 fun ExampleComposeComponent() {
     val dotLottieController = remember { DotLottieController() }
@@ -119,7 +123,7 @@ fun ExampleComposeComponent() {
     }
     
     DotLottieAnimation(
-        src = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie", // url of .json or .lottie
+        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"), // url of .json or .lottie
         autoplay = false,
         loop = false,
         speed = 1f,

@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.sp
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.example.ui.theme.ExampleTheme
 import kotlin.math.log
 import kotlin.math.roundToInt

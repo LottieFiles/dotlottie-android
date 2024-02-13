@@ -1,7 +1,7 @@
 package com.lottiefiles.dotlottie.core.model
 
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 class Config private constructor(
     val autoplay: Boolean,

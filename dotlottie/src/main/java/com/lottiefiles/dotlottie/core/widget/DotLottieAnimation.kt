@@ -11,10 +11,10 @@ import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

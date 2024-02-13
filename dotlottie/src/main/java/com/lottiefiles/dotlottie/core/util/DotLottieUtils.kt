@@ -4,7 +4,6 @@ import DotLottieLoader
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.lifecycle.LifecycleOwner
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.loader.DotLottieResult
 import java.io.File
 import java.io.FileOutputStream
