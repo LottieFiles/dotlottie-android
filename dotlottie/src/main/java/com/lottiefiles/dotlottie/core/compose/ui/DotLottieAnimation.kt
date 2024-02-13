@@ -130,7 +130,6 @@ fun DotLottieAnimation(
                 delay(16L)
             }
         } catch (e: Exception) {
-            Log.i("DotLottie", "Error: ${e.message}")
             controller.eventListeners.forEach {
                 it.onLoadError(e)
             }
