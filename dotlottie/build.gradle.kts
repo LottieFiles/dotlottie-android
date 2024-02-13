@@ -60,7 +60,6 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
-    implementation(libs.dotlottieloader.android)
     implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -69,4 +68,6 @@ dependencies {
     implementation(libs.androidx.material)
     implementation(libs.androidx.ui.tooling.preview)
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    implementation(libs.okhttp)
 }

@@ -13,11 +13,13 @@ import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
+import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.sun.jna.Pointer
 
 class DotLottieDrawable(
-    private val animationData: String,
+    private val animationData: DotLottieContent,
     private var width: Int = 0,
     private var height: Int = 0,
     private val dotLottieEventListener: List<DotLottieEventListener>,
@@ -126,7 +128,19 @@ class DotLottieDrawable(
 
     private fun initialize() {
         dlPlayer = DotLottiePlayer(config)
-        dlPlayer!!.loadAnimationData(animationData, width.toUInt(), height.toUInt())
+        when (animationData) {
+            is DotLottieContent.Json -> {
+                dlPlayer!!.loadAnimationData(
+                    animationData.jsonString,
+                    width.toUInt(),
+                    height.toUInt()
+                )
+            }
+
+            is DotLottieContent.Binary -> {
+                dlPlayer!!.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
+            }
+        }
         bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
         dotLottieEventListener.forEach {
@@ -195,6 +209,16 @@ class DotLottieDrawable(
     fun setSegments(first: Float, second: Float) {
         config.segments = listOf(first, second)
         dlPlayer!!.setConfig(config)
+    }
+
+    fun loadAnimation(
+        animationId: String,
+    ) {
+        dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
+    }
+
+    fun manifest(): Manifest? {
+        return dlPlayer?.manifest()
     }
 
     fun pause() {

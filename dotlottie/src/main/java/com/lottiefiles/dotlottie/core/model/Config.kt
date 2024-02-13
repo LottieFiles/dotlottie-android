@@ -1,17 +1,16 @@
 package com.lottiefiles.dotlottie.core.model
 
 import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 
 class Config private constructor(
     val autoplay: Boolean,
     val useFrameInterpolator: Boolean,
     val speed: Float,
-    val asset: String,
     val playMode: Mode,
 //    val backgroundColor: Int,
     val loop: Boolean,
-    val srcUrl: String,
-    val data: Any?
+    val source: DotLottieSource,
 ){
 
     class Builder {
@@ -20,11 +19,9 @@ class Config private constructor(
         private var loop: Boolean = false
         private var useFrameInterpolator: Boolean = false
         private var speed: Float = 1f
-        private var asset: String = ""
-        private var srcUrl: String = ""
         private var backgroundColor: Int = 0x0000000
         private var playMode: Mode = Mode.FORWARD
-        private var data: Any? = null
+        private var source: DotLottieSource? = null
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -38,12 +35,8 @@ class Config private constructor(
             this.speed = speed
         }
 
-        fun fileName(asset: String) = apply {
-            this.asset = asset
-        }
-
-        fun src(url: String) = apply {
-            this.srcUrl = url
+        fun source(source: DotLottieSource) = apply {
+            this.source = source
         }
 
 //        fun backgroundColor(color: Int) = apply {
@@ -54,24 +47,21 @@ class Config private constructor(
             this.useFrameInterpolator = useFrameInterpolator
         }
 
-        fun data(data: Any) = apply {
-            this.data = data
-        }
 
         fun playMode(mode: Mode) = apply {
             this.playMode = mode
         }
 
         fun build(): Config {
+            require(source != null) { "`source` must be provided" }
+
             return Config(
                 autoplay = this.autoplay,
                 speed = this.speed,
                 playMode = this.playMode,
-                data = this.data,
-                asset = this.asset,
                 useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
-                srcUrl = this.srcUrl,
+                source = source!!,
 //                backgroundColor = this.backgroundColor
             )
         }

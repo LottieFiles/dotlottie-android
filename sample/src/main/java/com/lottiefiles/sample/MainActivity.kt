@@ -7,6 +7,7 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
 import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.sample.databinding.MainBinding
 
@@ -86,9 +87,9 @@ class MainActivity : ComponentActivity() {
             .autoplay(true)
             .speed(1f)
             .loop(true)
-            .fileName("swinging.json") // file name of json/.lottie
-//            .src("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json")
-//            .src("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie")
+            .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
+//            .source(DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"))
+//            .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
             .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
             .build()

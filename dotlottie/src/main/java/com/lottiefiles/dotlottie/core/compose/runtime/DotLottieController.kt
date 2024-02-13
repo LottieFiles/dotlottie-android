@@ -1,6 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -193,6 +194,16 @@ class DotLottieController {
             config.mode = mode
             it.setConfig(config)
         }
+    }
+
+    fun loadAnimation(
+        animationId: String,
+    ) {
+        dlplayer?.loadAnimation(animationId, this._width.value, this._height.value)
+    }
+
+    fun manifest(): Manifest? {
+        return dlplayer?.manifest()
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
