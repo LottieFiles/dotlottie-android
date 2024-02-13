@@ -17,6 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
@@ -35,6 +37,7 @@ import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.example.ui.theme.ExampleTheme
+import kotlin.math.log
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -53,6 +56,8 @@ class MainActivity : ComponentActivity() {
                     val segments = remember { mutableStateOf(1f..100f) }
                     val currentFrame = remember { mutableFloatStateOf(0f) }
                     val totalFrame = remember { mutableFloatStateOf(0f) }
+                    val dropdownExpand = remember { mutableStateOf(false) }
+                    val dropdownActive = remember { mutableStateOf("") }
                     val events = object : DotLottieEventListener {
                         override fun onLoad() {
                             Log.i("DotLottie", "Loaded")
@@ -99,6 +104,7 @@ class MainActivity : ComponentActivity() {
                                         eventListeners = listOf(events),
 //                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
                                         source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
+//                                        source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
 //                                        source = DotLottieSource.Asset("swinging.json"),
                                         modifier = Modifier.background(Color.LightGray),
                                         controller = dotLottieController)
@@ -230,6 +236,24 @@ class MainActivity : ComponentActivity() {
                                     }) {
                                         Text(text = "Unfreeze")
                                     }
+                                }
+                            }
+                            Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Button(onClick = { dropdownExpand.value = !dropdownExpand.value }) {
+                                    Text(text = "Animations")
+                                }
+                                DropdownMenu(expanded = dropdownExpand.value, onDismissRequest = {
+                                    dropdownExpand.value = false
+                                }) {
+                                    dotLottieController.manifest()?.animations?.forEach() {
+                                        DropdownMenuItem(text = { Text(text = it.id) }, onClick = {
+                                            dropdownActive.value = it.id
+                                            dropdownExpand.value = false
+                                            Log.i("DotLottie", "Loading: ${it.id}")
+                                            dotLottieController.loadAnimation(it.id)
+                                        })
+                                    }
+
                                 }
                             }
                         }

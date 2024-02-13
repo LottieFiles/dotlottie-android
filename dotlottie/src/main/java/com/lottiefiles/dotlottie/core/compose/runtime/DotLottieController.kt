@@ -201,6 +201,8 @@ class DotLottieController {
         width: UInt = this.width.value,
         height: UInt = this.height.value
     ) {
+        this._width.value  = width
+        this._height.value = height
         dlplayer?.loadAnimation(animationId, width, height)
     }
 
