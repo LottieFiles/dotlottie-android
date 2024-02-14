@@ -40,10 +40,12 @@ fun DotLottieAnimation(
     useFrameInterpolation: Boolean = true,
     speed: Float = 1f,
     playMode: Mode = Mode.FORWARD,
-    controller: DotLottieController = DotLottieController(),
+    controller: DotLottieController? = null,
     eventListeners: List<DotLottieEventListener> = emptyList(),
 ) {
     val context = LocalContext.current
+
+    val rController = remember { controller ?: DotLottieController() }
 
     val config = remember {
         val conf = Config.Builder()
@@ -74,9 +76,9 @@ fun DotLottieAnimation(
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
-    val isRunning by controller.isRunning.collectAsState()
-    val _width by controller.height.collectAsState()
-    val _height by controller.width.collectAsState()
+    val isRunning by rController.isRunning.collectAsState()
+    val _width by rController.height.collectAsState()
+    val _height by rController.width.collectAsState()
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -110,7 +112,7 @@ fun DotLottieAnimation(
                 }
             }
             // Register initial height/width to controller
-            controller.resize(width, height)
+            rController.resize(width, height)
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
@@ -129,7 +131,7 @@ fun DotLottieAnimation(
                 delay(16L)
             }
         } catch (e: Exception) {
-            controller.eventListeners.forEach {
+            rController.eventListeners.forEach {
                 it.onLoadError(e)
             }
         }
@@ -155,8 +157,8 @@ fun DotLottieAnimation(
     }
 
     DisposableEffect(UInt) {
-        controller.setPlayerInstance(dlPlayer)
-        eventListeners.forEach { controller.addEventListener(it) }
+        rController.setPlayerInstance(dlPlayer)
+        eventListeners.forEach { rController.addEventListener(it) }
 
         onDispose {
             choreographer.removeFrameCallback(frameCallback)
