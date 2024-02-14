@@ -22,17 +22,13 @@ import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
 
-sealed class DotLottieSource {
-    data class Url(val urlString: String) : DotLottieSource() // .json / .lottie
-    data class Asset(val assetPath: String) : DotLottieSource() // .json / .lottie
-    data class Data(val data: ByteArray) : DotLottieSource()
-    data class Json(val jsonString: String) : DotLottieSource()
-}
+
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,

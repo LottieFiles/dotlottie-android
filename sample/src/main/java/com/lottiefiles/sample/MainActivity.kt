@@ -7,8 +7,8 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import com.lottiefiles.dotlottie.core.model.Config
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.sample.databinding.MainBinding
 
 class MainActivity : ComponentActivity() {
