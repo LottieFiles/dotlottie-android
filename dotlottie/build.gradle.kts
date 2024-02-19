@@ -46,7 +46,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.LottieFiles"
             artifactId = "dotlottie-android"
-            version = "0.0.3"
+            version = "0.1.4"
             afterEvaluate {
                 from(components["release"])
             }
