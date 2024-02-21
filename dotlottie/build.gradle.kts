@@ -46,11 +46,14 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.LottieFiles"
             artifactId = "dotlottie-android"
-            version = "0.1.4"
+            version = "0.1.4-dev1"
             afterEvaluate {
                 from(components["release"])
             }
         }
+    }
+    repositories {
+        mavenLocal()
     }
 }
 
