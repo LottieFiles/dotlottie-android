@@ -58,7 +58,7 @@ publishing {
 }
 
 dependencies {
-    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("net.java.dev.jna:jna:5.14.0@aar")
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)
