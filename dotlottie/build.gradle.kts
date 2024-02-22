@@ -39,6 +39,9 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
+    packaging {
+        jniLibs.pickFirsts.add("**/libjnidispatch.so")
+    }
 }
 
 publishing {
@@ -46,16 +49,19 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.LottieFiles"
             artifactId = "dotlottie-android"
-            version = "0.1.4"
+            version = "0.1.5"
             afterEvaluate {
                 from(components["release"])
             }
         }
     }
+    repositories {
+        mavenLocal()
+    }
 }
 
 dependencies {
-    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("net.java.dev.jna:jna:5.14.0@aar")
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)
