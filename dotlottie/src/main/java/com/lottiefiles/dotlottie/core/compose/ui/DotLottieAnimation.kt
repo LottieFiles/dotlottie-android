@@ -82,8 +82,9 @@ fun DotLottieAnimation(
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
+            var isActive = true
             override fun doFrame(frameTimeNanos: Long) {
-                if (bufferBytes == null || bitmap == null) return
+                if (bufferBytes == null || bitmap == null || !isActive) return
 
                 val nextFrame = dlPlayer.requestFrame()
                 dlPlayer.setFrame(nextFrame)
@@ -161,6 +162,7 @@ fun DotLottieAnimation(
         eventListeners.forEach { rController.addEventListener(it) }
 
         onDispose {
+            frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
             dlPlayer.destroy()
             bitmap?.recycle()
