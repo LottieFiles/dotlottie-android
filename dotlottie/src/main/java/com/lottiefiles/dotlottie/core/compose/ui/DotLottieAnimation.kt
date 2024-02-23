@@ -1,7 +1,6 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
