@@ -12,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
@@ -39,6 +38,7 @@ fun DotLottieAnimation(
     loop: Boolean = false,
     useFrameInterpolation: Boolean = true,
     speed: Float = 1f,
+    segments: Pair<Float, Float>? = null,
     playMode: Mode = Mode.FORWARD,
     controller: DotLottieController? = null,
     eventListeners: List<DotLottieEventListener> = emptyList(),
@@ -47,25 +47,17 @@ fun DotLottieAnimation(
 
     val rController = remember { controller ?: DotLottieController() }
 
-    val config = remember {
-        val conf = Config.Builder()
-            .autoplay(autoplay)
-            .speed(speed)
-            .loop(loop)
-            .playMode(playMode)
-            .source(source)
-            .useFrameInterpolation(useFrameInterpolation)
-
-        conf.build()
-    }
     val dlConfig = remember {
         DLConfig(
-            autoplay = config.autoplay,
-            loopAnimation = config.loop,
-            mode = config.playMode,
-            speed = config.speed,
-            useFrameInterpolation = config.useFrameInterpolator,
-            segments = listOf(),
+            autoplay = autoplay,
+            loopAnimation = loop,
+            mode = playMode,
+            speed = speed,
+            useFrameInterpolation = useFrameInterpolation,
+            segments = if (segments != null) listOf(
+                segments.first,
+                segments.second
+            ) else emptyList(),
             backgroundColor = 0u,
         )
     }
@@ -97,23 +89,29 @@ fun DotLottieAnimation(
                         imageBitmap = bmp.asImageBitmap()
                     }
                 }
-                choreographer.postFrameCallback(this)
+
+                if (isRunning) {
+                    choreographer.postFrameCallback(this)
+                }
             }
         }
     }
 
-    LaunchedEffect(config, dlConfig) {
+    LaunchedEffect(dlConfig, source) {
         try {
             when (val animationData = DotLottieUtils.getContent(context, source)) {
                 is DotLottieContent.Json -> {
                     dlPlayer.loadAnimationData(animationData.jsonString, width, height)
                 }
+
                 is DotLottieContent.Binary -> {
                     dlPlayer.loadDotlottieData(animationData.data, width, height)
                 }
             }
             // Register initial height/width to controller
-            rController.resize(width, height)
+            if (!dlPlayer.isLoaded()) {
+                rController.resize(width, height)
+            }
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
@@ -144,6 +142,33 @@ fun DotLottieAnimation(
         } else {
             choreographer.removeFrameCallback(frameCallback)
         }
+    }
+
+    LaunchedEffect(loop, autoplay, playMode, useFrameInterpolation, speed, segments) {
+        val conf = dlPlayer.config()
+        conf.loopAnimation = loop
+        conf.autoplay = autoplay
+        conf.mode = playMode
+        conf.useFrameInterpolation = useFrameInterpolation
+        conf.speed = speed
+        if (segments != null) {
+            conf.segments = listOf(segments.first, segments.second)
+        } else {
+            conf.segments = emptyList()
+        }
+
+        dlPlayer.setConfig(conf)
+
+        // Start playing if player isCompleted
+        if (autoplay && loop && dlPlayer.isComplete()) {
+            dlPlayer.play()
+        }
+
+        choreographer.postFrameCallback(frameCallback)
+    }
+
+    LaunchedEffect(width, height) {
+        rController.resize(width, height)
     }
 
     LaunchedEffect(_width, _height) {
