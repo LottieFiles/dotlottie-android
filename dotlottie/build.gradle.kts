@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.LottieFiles"
-version = "0.0.3"
+version = "0.1.7"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
@@ -49,7 +49,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.LottieFiles"
             artifactId = "dotlottie-android"
-            version = "0.1.6"
+            version = version
             afterEvaluate {
                 from(components["release"])
             }
