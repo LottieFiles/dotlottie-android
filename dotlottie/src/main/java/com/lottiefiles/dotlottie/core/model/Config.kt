@@ -11,7 +11,6 @@ class Config private constructor(
 //    val backgroundColor: Int,
     val loop: Boolean,
     val marker: String,
-    val theme: String,
     val source: DotLottieSource,
 ) {
 
@@ -25,7 +24,6 @@ class Config private constructor(
         private var playMode: Mode = Mode.FORWARD
         private var source: DotLottieSource? = null
         private var marker: String = ""
-        private var theme: String = ""
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -56,10 +54,6 @@ class Config private constructor(
             this.playMode = mode
         }
 
-        fun theme(theme: String) = apply {
-            this.theme = theme
-        }
-
         fun marker(marker: String) = apply {
             this.marker = marker
         }
@@ -75,7 +69,6 @@ class Config private constructor(
                 loop = this.loop,
                 source = source!!,
                 marker = this.marker,
-                theme = this.theme,
 //                backgroundColor = this.backgroundColor
             )
         }
