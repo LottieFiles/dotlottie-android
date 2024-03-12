@@ -5,6 +5,7 @@
         <attr name="dotLottie_src" format="string" />
         <!-- Defines how many times the animation should repeat. The default value is 0. -->
         <attr name="dotLottie_loop" format="boolean" />
+        <attr name="dotLottie_marker" format="string" />
 <!--        <attr name="repeatCount" format="boolean">-->
 <!--            <enum name="infinite" value="true" />-->
 <!--        </attr>-->

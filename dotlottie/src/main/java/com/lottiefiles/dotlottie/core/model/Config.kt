@@ -10,8 +10,10 @@ class Config private constructor(
     val playMode: Mode,
 //    val backgroundColor: Int,
     val loop: Boolean,
+    val marker: String,
+    val theme: String,
     val source: DotLottieSource,
-){
+) {
 
     class Builder {
 
@@ -22,6 +24,8 @@ class Config private constructor(
         private var backgroundColor: Int = 0x0000000
         private var playMode: Mode = Mode.FORWARD
         private var source: DotLottieSource? = null
+        private var marker: String = ""
+        private var theme: String = ""
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -52,6 +56,14 @@ class Config private constructor(
             this.playMode = mode
         }
 
+        fun theme(theme: String) = apply {
+            this.theme = theme
+        }
+
+        fun marker(marker: String) = apply {
+            this.marker = marker
+        }
+
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
 
@@ -62,6 +74,8 @@ class Config private constructor(
                 useFrameInterpolator = this.useFrameInterpolator,
                 loop = this.loop,
                 source = source!!,
+                marker = this.marker,
+                theme = this.theme,
 //                backgroundColor = this.backgroundColor
             )
         }

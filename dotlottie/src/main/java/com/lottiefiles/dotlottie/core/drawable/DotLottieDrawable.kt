@@ -106,6 +106,13 @@ class DotLottieDrawable(
             dlPlayer!!.setConfig(config)
         }
 
+    var marker: String
+        get() = dlPlayer!!.config().marker
+        set(value) {
+            config.marker = value
+            dlPlayer!!.setConfig(config)
+        }
+
     @get:FloatRange(from = 0.0)
     var speed: Float
         get() = dlPlayer!!.config().speed
@@ -215,6 +222,10 @@ class DotLottieDrawable(
         animationId: String,
     ) {
         dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
+    }
+
+    fun loadTheme(themeId: String) {
+        dlPlayer?.loadTheme(themeId)
     }
 
     fun manifest(): Manifest? {
