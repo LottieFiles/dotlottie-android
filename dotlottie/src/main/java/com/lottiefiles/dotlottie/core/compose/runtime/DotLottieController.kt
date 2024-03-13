@@ -188,6 +188,18 @@ class DotLottieController {
         }
     }
 
+    fun setMarker(marker: String) {
+        dlplayer?.let {
+            val config = it.config()
+            config.marker = marker
+            it.setConfig(config)
+        }
+    }
+
+    fun loadTheme(themeId: String) {
+        dlplayer?.loadTheme(themeId)
+    }
+
     fun setPlayMode(mode: Mode) {
         dlplayer?.let {
             val config = it.config()

@@ -52,6 +52,8 @@ class MainActivity : ComponentActivity() {
                 ) {
 //                    DefaultAnimationDemo()
                     AnimationWithReactiveProps()
+//                    MarkerExample()
+//                    ThemeExample()
                 }
             }
         }
@@ -402,6 +404,66 @@ fun AnimationWithReactiveProps() {
                     }
                 }) {
                     Text(text = if (segments.value != null) "Reset Segments" else "Set Segments 10 to 50")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MarkerExample() {
+    val marker = remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row {
+            DotLottieAnimation(
+                width = 500u,
+                height = 500u,
+                source = DotLottieSource.Asset("markers.json"),
+                autoplay = true,
+                marker = marker.value,
+                loop = true,
+            )
+        }
+        Row {
+            Column {
+                Button(onClick = {
+                    marker.value = "bird"
+                }) {
+                    Text(text = "Play `bird`")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ThemeExample() {
+    val theme = remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row {
+            DotLottieAnimation(
+                width = 500u,
+                height = 500u,
+                source = DotLottieSource.Asset("theming_example.lottie"),
+                autoplay = true,
+                themeId = theme.value,
+                loop = true,
+            )
+        }
+        Row {
+            Column {
+                Button(onClick = {
+                    theme.value = "theme"
+                }) {
+                    Text(text = "Load `theme`")
                 }
             }
         }

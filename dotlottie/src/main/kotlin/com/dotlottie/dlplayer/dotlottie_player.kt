@@ -520,6 +520,18 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme(
+        `ptr`: Pointer,
+        `themeId`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme_data(
+        `ptr`: Pointer,
+        `themeData`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
@@ -531,6 +543,11 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): RustBuffer.ByValue
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
@@ -908,11 +925,17 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_dotlottie_data(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme_data(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_loop_count(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest_string(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_markers(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_pause(): Short
 
@@ -1018,6 +1041,12 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_dotlottie_data() != 3402.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme() != 58256.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme_data() != 49777.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_loop_count() != 14780.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1025,6 +1054,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_manifest_string() != 60193.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_markers() != 29800.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_pause() != 16452.toShort()) {
@@ -1605,11 +1637,17 @@ public interface DotLottiePlayerInterface {
         `height`: UInt,
     ): Boolean
 
+    fun `loadTheme`(`themeId`: String): Boolean
+
+    fun `loadThemeData`(`themeData`: String): Boolean
+
     fun `loopCount`(): UInt
 
     fun `manifest`(): Manifest?
 
     fun `manifestString`(): String
+
+    fun `markers`(): List<Marker>
 
     fun `pause`(): Boolean
 
@@ -1889,6 +1927,32 @@ open class DotLottiePlayer : FFIObject, DotLottiePlayerInterface {
             FfiConverterBoolean.lift(it)
         }
 
+    override fun `loadTheme`(`themeId`: String): Boolean =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme(
+                    it,
+                    FfiConverterString.lower(`themeId`),
+                    _status,
+                )
+            }
+        }.let {
+            FfiConverterBoolean.lift(it)
+        }
+
+    override fun `loadThemeData`(`themeData`: String): Boolean =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme_data(
+                    it,
+                    FfiConverterString.lower(`themeData`),
+                    _status,
+                )
+            }
+        }.let {
+            FfiConverterBoolean.lift(it)
+        }
+
     override fun `loopCount`(): UInt =
         callWithPointer {
             uniffiRustCall { _status ->
@@ -1923,6 +1987,18 @@ open class DotLottiePlayer : FFIObject, DotLottiePlayerInterface {
             }
         }.let {
             FfiConverterString.lift(it)
+        }
+
+    override fun `markers`(): List<Marker> =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(
+                    it,
+                    _status,
+                )
+            }
+        }.let {
+            FfiConverterSequenceTypeMarker.lift(it)
         }
 
     override fun `pause`(): Boolean =
@@ -2728,6 +2804,7 @@ data class Config(
     var `useFrameInterpolation`: Boolean,
     var `segments`: List<Float>,
     var `backgroundColor`: UInt,
+    var `marker`: String,
 ) {
     companion object
 }
@@ -2742,6 +2819,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
             FfiConverterBoolean.read(buf),
             FfiConverterSequenceFloat.read(buf),
             FfiConverterUInt.read(buf),
+            FfiConverterString.read(buf),
         )
     }
 
@@ -2753,7 +2831,8 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
                 FfiConverterFloat.allocationSize(value.`speed`) +
                 FfiConverterBoolean.allocationSize(value.`useFrameInterpolation`) +
                 FfiConverterSequenceFloat.allocationSize(value.`segments`) +
-                FfiConverterUInt.allocationSize(value.`backgroundColor`)
+                FfiConverterUInt.allocationSize(value.`backgroundColor`) +
+                FfiConverterString.allocationSize(value.`marker`)
         )
 
     override fun write(
@@ -2767,6 +2846,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
         FfiConverterBoolean.write(value.`useFrameInterpolation`, buf)
         FfiConverterSequenceFloat.write(value.`segments`, buf)
         FfiConverterUInt.write(value.`backgroundColor`, buf)
+        FfiConverterString.write(value.`marker`, buf)
     }
 }
 
@@ -2778,7 +2858,7 @@ data class Manifest(
     var `generator`: String?,
     var `keywords`: String?,
     var `revision`: UInt?,
-    var `themes`: ManifestThemes?,
+    var `themes`: List<ManifestTheme>?,
     var `states`: List<String>?,
     var `version`: String?,
 ) {
@@ -2795,7 +2875,7 @@ public object FfiConverterTypeManifest : FfiConverterRustBuffer<Manifest> {
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalUInt.read(buf),
-            FfiConverterOptionalTypeManifestThemes.read(buf),
+            FfiConverterOptionalSequenceTypeManifestTheme.read(buf),
             FfiConverterOptionalSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
@@ -2810,7 +2890,7 @@ public object FfiConverterTypeManifest : FfiConverterRustBuffer<Manifest> {
                 FfiConverterOptionalString.allocationSize(value.`generator`) +
                 FfiConverterOptionalString.allocationSize(value.`keywords`) +
                 FfiConverterOptionalUInt.allocationSize(value.`revision`) +
-                FfiConverterOptionalTypeManifestThemes.allocationSize(value.`themes`) +
+                FfiConverterOptionalSequenceTypeManifestTheme.allocationSize(value.`themes`) +
                 FfiConverterOptionalSequenceString.allocationSize(value.`states`) +
                 FfiConverterOptionalString.allocationSize(value.`version`)
         )
@@ -2826,7 +2906,7 @@ public object FfiConverterTypeManifest : FfiConverterRustBuffer<Manifest> {
         FfiConverterOptionalString.write(value.`generator`, buf)
         FfiConverterOptionalString.write(value.`keywords`, buf)
         FfiConverterOptionalUInt.write(value.`revision`, buf)
-        FfiConverterOptionalTypeManifestThemes.write(value.`themes`, buf)
+        FfiConverterOptionalSequenceTypeManifestTheme.write(value.`themes`, buf)
         FfiConverterOptionalSequenceString.write(value.`states`, buf)
         FfiConverterOptionalString.write(value.`version`, buf)
     }
@@ -2900,7 +2980,7 @@ public object FfiConverterTypeManifestAnimation : FfiConverterRustBuffer<Manifes
 
 data class ManifestTheme(
     var `id`: String,
-    var `values`: List<String>,
+    var `animations`: List<String>,
 ) {
     companion object
 }
@@ -2916,7 +2996,7 @@ public object FfiConverterTypeManifestTheme : FfiConverterRustBuffer<ManifestThe
     override fun allocationSize(value: ManifestTheme) =
         (
             FfiConverterString.allocationSize(value.`id`) +
-                FfiConverterSequenceString.allocationSize(value.`values`)
+                FfiConverterSequenceString.allocationSize(value.`animations`)
         )
 
     override fun write(
@@ -2924,33 +3004,41 @@ public object FfiConverterTypeManifestTheme : FfiConverterRustBuffer<ManifestThe
         buf: ByteBuffer,
     ) {
         FfiConverterString.write(value.`id`, buf)
-        FfiConverterSequenceString.write(value.`values`, buf)
+        FfiConverterSequenceString.write(value.`animations`, buf)
     }
 }
 
-data class ManifestThemes(
-    var `value`: List<ManifestTheme>?,
+data class Marker(
+    var `name`: String,
+    var `time`: Float,
+    var `duration`: Float,
 ) {
     companion object
 }
 
-public object FfiConverterTypeManifestThemes : FfiConverterRustBuffer<ManifestThemes> {
-    override fun read(buf: ByteBuffer): ManifestThemes {
-        return ManifestThemes(
-            FfiConverterOptionalSequenceTypeManifestTheme.read(buf),
+public object FfiConverterTypeMarker : FfiConverterRustBuffer<Marker> {
+    override fun read(buf: ByteBuffer): Marker {
+        return Marker(
+            FfiConverterString.read(buf),
+            FfiConverterFloat.read(buf),
+            FfiConverterFloat.read(buf),
         )
     }
 
-    override fun allocationSize(value: ManifestThemes) =
+    override fun allocationSize(value: Marker) =
         (
-            FfiConverterOptionalSequenceTypeManifestTheme.allocationSize(value.`value`)
+            FfiConverterString.allocationSize(value.`name`) +
+                FfiConverterFloat.allocationSize(value.`time`) +
+                FfiConverterFloat.allocationSize(value.`duration`)
         )
 
     override fun write(
-        value: ManifestThemes,
+        value: Marker,
         buf: ByteBuffer,
     ) {
-        FfiConverterOptionalSequenceTypeManifestTheme.write(value.`value`, buf)
+        FfiConverterString.write(value.`name`, buf)
+        FfiConverterFloat.write(value.`time`, buf)
+        FfiConverterFloat.write(value.`duration`, buf)
     }
 }
 
@@ -3127,35 +3215,6 @@ public object FfiConverterOptionalTypeManifest : FfiConverterRustBuffer<Manifest
     }
 }
 
-public object FfiConverterOptionalTypeManifestThemes : FfiConverterRustBuffer<ManifestThemes?> {
-    override fun read(buf: ByteBuffer): ManifestThemes? {
-        if (buf.get().toInt() == 0) {
-            return null
-        }
-        return FfiConverterTypeManifestThemes.read(buf)
-    }
-
-    override fun allocationSize(value: ManifestThemes?): Int {
-        if (value == null) {
-            return 1
-        } else {
-            return 1 + FfiConverterTypeManifestThemes.allocationSize(value)
-        }
-    }
-
-    override fun write(
-        value: ManifestThemes?,
-        buf: ByteBuffer,
-    ) {
-        if (value == null) {
-            buf.put(0)
-        } else {
-            buf.put(1)
-            FfiConverterTypeManifestThemes.write(value, buf)
-        }
-    }
-}
-
 public object FfiConverterOptionalSequenceString : FfiConverterRustBuffer<List<String>?> {
     override fun read(buf: ByteBuffer): List<String>? {
         if (buf.get().toInt() == 0) {
@@ -3310,6 +3369,31 @@ public object FfiConverterSequenceTypeManifestTheme : FfiConverterRustBuffer<Lis
         buf.putInt(value.size)
         value.forEach {
             FfiConverterTypeManifestTheme.write(it, buf)
+        }
+    }
+}
+
+public object FfiConverterSequenceTypeMarker : FfiConverterRustBuffer<List<Marker>> {
+    override fun read(buf: ByteBuffer): List<Marker> {
+        val len = buf.getInt()
+        return List<Marker>(len) {
+            FfiConverterTypeMarker.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<Marker>): Int {
+        val sizeForLength = 4
+        val sizeForItems = value.map { FfiConverterTypeMarker.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(
+        value: List<Marker>,
+        buf: ByteBuffer,
+    ) {
+        buf.putInt(value.size)
+        value.forEach {
+            FfiConverterTypeMarker.write(it, buf)
         }
     }
 }

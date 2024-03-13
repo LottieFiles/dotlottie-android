@@ -37,6 +37,8 @@ fun DotLottieAnimation(
     autoplay: Boolean = false,
     loop: Boolean = false,
     useFrameInterpolation: Boolean = true,
+    themeId: String? = null,
+    marker: String? = null,
     speed: Float = 1f,
     segments: Pair<Float, Float>? = null,
     playMode: Mode = Mode.FORWARD,
@@ -59,6 +61,7 @@ fun DotLottieAnimation(
                 segments.second
             ) else emptyList(),
             backgroundColor = 0u,
+            marker = marker ?: "",
         )
     }
 
@@ -144,19 +147,30 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(loop, autoplay, playMode, useFrameInterpolation, speed, segments) {
+    LaunchedEffect(
+        loop,
+        autoplay,
+        playMode,
+        useFrameInterpolation,
+        speed,
+        segments,
+        themeId,
+        marker
+    ) {
         val conf = dlPlayer.config()
         conf.loopAnimation = loop
         conf.autoplay = autoplay
         conf.mode = playMode
         conf.useFrameInterpolation = useFrameInterpolation
         conf.speed = speed
+        conf.marker = marker ?: ""
         if (segments != null) {
             conf.segments = listOf(segments.first, segments.second)
         } else {
             conf.segments = emptyList()
         }
 
+        dlPlayer.loadTheme(themeId ?: "")
         dlPlayer.setConfig(conf)
 
         // Start playing if player isCompleted

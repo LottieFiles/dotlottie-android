@@ -86,6 +86,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     val useFrameInterpolation: Boolean
         get() = mLottieDrawable?.useFrameInterpolation ?: error("DotLottieDrawable is null")
 
+    val marker: String
+        get() = mLottieDrawable?.marker ?: error("DotLottieDrawable is null")
+
 
     /***
      * Method
@@ -127,6 +130,14 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setSpeed(speed: Float) {
         mLottieDrawable?.speed = speed
+    }
+
+    fun setMarker(marker: String) {
+        mLottieDrawable?.marker = marker
+    }
+
+    fun loadTheme(themeId: String) {
+        mLottieDrawable?.loadTheme(themeId)
     }
 
     fun play() {
@@ -193,7 +204,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         speed = config.speed,
                         useFrameInterpolation = config.useFrameInterpolator,
                         backgroundColor = Color.TRANSPARENT.toUInt(),
-                        segments = listOf()
+                        segments = listOf(),
+                        marker = config.marker
                     )
                 )
 
@@ -221,7 +233,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         val assetFilePath = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: ""
         coroutineScope.launch {
             if (assetFilePath.isNotBlank()) {
-                val content = DotLottieUtils.getContent(context, DotLottieSource.Asset(assetFilePath))
+                val content =
+                    DotLottieUtils.getContent(context, DotLottieSource.Asset(assetFilePath))
                 val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
                 mLottieDrawable = DotLottieDrawable(
                     animationData = content,
@@ -244,7 +257,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                             true
                         ),
                         backgroundColor = Color.TRANSPARENT.toUInt(),
-                        segments = listOf()
+                        segments = listOf(),
+                        marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
