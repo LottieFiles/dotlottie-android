@@ -1,7 +1,11 @@
 package com.lottiefiles.dotlottie.core.model
 
+import com.dotlottie.dlplayer.Fit
+import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.lottiefiles.dotlottie.core.util.LayoutUtil
 
 class Config private constructor(
     val autoplay: Boolean,
@@ -11,6 +15,7 @@ class Config private constructor(
 //    val backgroundColor: Int,
     val loop: Boolean,
     val marker: String,
+    val layout: Layout,
     val source: DotLottieSource,
 ) {
 
@@ -24,6 +29,7 @@ class Config private constructor(
         private var playMode: Mode = Mode.FORWARD
         private var source: DotLottieSource? = null
         private var marker: String = ""
+        private var layout: Layout = createDefaultLayout()
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -58,6 +64,14 @@ class Config private constructor(
             this.marker = marker
         }
 
+        fun layout(fit: Fit, alignment: LayoutUtil.Alignment) = apply {
+            this.layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
+        }
+
+        fun layout(fit: Fit, alignment: Pair<Float, Float>) = apply {
+            this.layout = Layout(fit, listOf(alignment.first, alignment.second))
+        }
+
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
 
@@ -69,6 +83,7 @@ class Config private constructor(
                 loop = this.loop,
                 source = source!!,
                 marker = this.marker,
+                layout = this.layout,
 //                backgroundColor = this.backgroundColor
             )
         }
