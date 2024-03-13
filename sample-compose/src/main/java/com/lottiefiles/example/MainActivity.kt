@@ -454,7 +454,7 @@ fun ThemeExample() {
                 height = 500u,
                 source = DotLottieSource.Asset("theming_example.lottie"),
                 autoplay = true,
-                theme = theme.value,
+                themeId = theme.value,
                 loop = true,
             )
         }

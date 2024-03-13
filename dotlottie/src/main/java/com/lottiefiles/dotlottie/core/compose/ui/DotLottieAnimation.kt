@@ -37,7 +37,7 @@ fun DotLottieAnimation(
     autoplay: Boolean = false,
     loop: Boolean = false,
     useFrameInterpolation: Boolean = true,
-    theme: String? = null,
+    themeId: String? = null,
     marker: String? = null,
     speed: Float = 1f,
     segments: Pair<Float, Float>? = null,
@@ -154,7 +154,7 @@ fun DotLottieAnimation(
         useFrameInterpolation,
         speed,
         segments,
-        theme,
+        themeId,
         marker
     ) {
         val conf = dlPlayer.config()
@@ -170,11 +170,7 @@ fun DotLottieAnimation(
             conf.segments = emptyList()
         }
 
-        if (theme != null) {
-            dlPlayer.loadTheme(theme)
-        } else {
-            // @TODO: Unload theme. Feature missing in Thorvg
-        }
+        dlPlayer.loadTheme(themeId ?: "")
         dlPlayer.setConfig(conf)
 
         // Start playing if player isCompleted
