@@ -679,6 +679,8 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
+    fun uniffi_dotlottie_player_fn_func_create_default_layout(uniffi_out_err: UniffiRustCallStatus): RustBuffer.ByValue
+
     fun ffi_dotlottie_player_rustbuffer_alloc(
         `size`: Int,
         uniffi_out_err: UniffiRustCallStatus,
@@ -895,6 +897,8 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
+    fun uniffi_dotlottie_player_checksum_func_create_default_layout(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_ptr(): Short
@@ -996,6 +1000,9 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
+    if (lib.uniffi_dotlottie_player_checksum_func_create_default_layout() != 41529.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len() != 33793.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2804,6 +2811,7 @@ data class Config(
     var `useFrameInterpolation`: Boolean,
     var `segments`: List<Float>,
     var `backgroundColor`: UInt,
+    var `layout`: Layout,
     var `marker`: String,
 ) {
     companion object
@@ -2819,6 +2827,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
             FfiConverterBoolean.read(buf),
             FfiConverterSequenceFloat.read(buf),
             FfiConverterUInt.read(buf),
+            FfiConverterTypeLayout.read(buf),
             FfiConverterString.read(buf),
         )
     }
@@ -2832,6 +2841,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
                 FfiConverterBoolean.allocationSize(value.`useFrameInterpolation`) +
                 FfiConverterSequenceFloat.allocationSize(value.`segments`) +
                 FfiConverterUInt.allocationSize(value.`backgroundColor`) +
+                FfiConverterTypeLayout.allocationSize(value.`layout`) +
                 FfiConverterString.allocationSize(value.`marker`)
         )
 
@@ -2846,7 +2856,38 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
         FfiConverterBoolean.write(value.`useFrameInterpolation`, buf)
         FfiConverterSequenceFloat.write(value.`segments`, buf)
         FfiConverterUInt.write(value.`backgroundColor`, buf)
+        FfiConverterTypeLayout.write(value.`layout`, buf)
         FfiConverterString.write(value.`marker`, buf)
+    }
+}
+
+data class Layout(
+    var `fit`: Fit,
+    var `align`: List<Float>,
+) {
+    companion object
+}
+
+public object FfiConverterTypeLayout : FfiConverterRustBuffer<Layout> {
+    override fun read(buf: ByteBuffer): Layout {
+        return Layout(
+            FfiConverterTypeFit.read(buf),
+            FfiConverterSequenceFloat.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: Layout) =
+        (
+            FfiConverterTypeFit.allocationSize(value.`fit`) +
+                FfiConverterSequenceFloat.allocationSize(value.`align`)
+        )
+
+    override fun write(
+        value: Layout,
+        buf: ByteBuffer,
+    ) {
+        FfiConverterTypeFit.write(value.`fit`, buf)
+        FfiConverterSequenceFloat.write(value.`align`, buf)
     }
 }
 
@@ -3039,6 +3080,36 @@ public object FfiConverterTypeMarker : FfiConverterRustBuffer<Marker> {
         FfiConverterString.write(value.`name`, buf)
         FfiConverterFloat.write(value.`time`, buf)
         FfiConverterFloat.write(value.`duration`, buf)
+    }
+}
+
+enum class Fit {
+    CONTAIN,
+    FILL,
+    COVER,
+    FIT_WIDTH,
+    FIT_HEIGHT,
+    NONE,
+    ;
+
+    companion object
+}
+
+public object FfiConverterTypeFit : FfiConverterRustBuffer<Fit> {
+    override fun read(buf: ByteBuffer) =
+        try {
+            Fit.values()[buf.getInt() - 1]
+        } catch (e: IndexOutOfBoundsException) {
+            throw RuntimeException("invalid enum value, something is very wrong!!", e)
+        }
+
+    override fun allocationSize(value: Fit) = 4
+
+    override fun write(
+        value: Fit,
+        buf: ByteBuffer,
+    ) {
+        buf.putInt(value.ordinal + 1)
     }
 }
 
@@ -3396,4 +3467,12 @@ public object FfiConverterSequenceTypeMarker : FfiConverterRustBuffer<List<Marke
             FfiConverterTypeMarker.write(it, buf)
         }
     }
+}
+
+fun `createDefaultLayout`(): Layout {
+    return FfiConverterTypeLayout.lift(
+        uniffiRustCall { _status ->
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_layout(_status)
+        },
+    )
 }

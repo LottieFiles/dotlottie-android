@@ -1,10 +1,13 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Fit
+import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -196,9 +199,27 @@ class DotLottieController {
         }
     }
 
+    fun setLayout(fit: Fit, alignment: LayoutUtil.Alignment) {
+        dlplayer?.let {
+            val config = it.config()
+            config.layout =
+                Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
+            it.setConfig(config)
+        }
+    }
+
+    fun setLayout(fit: Fit, alignment: Pair<Float, Float>) {
+        dlplayer?.let {
+            val config = it.config()
+            config.layout = Layout(fit, listOf(alignment.first, alignment.second))
+            it.setConfig(config)
+        }
+    }
+
     fun loadTheme(themeId: String) {
         dlplayer?.loadTheme(themeId)
     }
+
 
     fun setPlayMode(mode: Mode) {
         dlplayer?.let {
