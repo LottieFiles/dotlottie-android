@@ -8,6 +8,8 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.FloatRange
+import com.dotlottie.dlplayer.Fit
+import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.R
@@ -16,6 +18,7 @@ import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
+import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -136,6 +139,18 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.marker = marker
     }
 
+    fun setLayout(fit: Fit, alignment: LayoutUtil.Alignment) {
+        mLottieDrawable?.let {
+            it.layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
+        }
+    }
+
+    fun setLayout(fit: Fit, alignment: Pair<Float, Float>) {
+        mLottieDrawable?.let {
+            it.layout = Layout(fit, listOf(alignment.first, alignment.second))
+        }
+    }
+
     fun loadTheme(themeId: String) {
         mLottieDrawable?.loadTheme(themeId)
     }
@@ -205,7 +220,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         useFrameInterpolation = config.useFrameInterpolator,
                         backgroundColor = Color.TRANSPARENT.toUInt(),
                         segments = listOf(),
-                        marker = config.marker
+                        marker = config.marker,
+                        layout = Layout(Fit.FILL, listOf(0.5f, 0.5f)),
                     )
                 )
 
@@ -259,6 +275,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         backgroundColor = Color.TRANSPARENT.toUInt(),
                         segments = listOf(),
                         marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
+                        layout = Layout(Fit.FILL, listOf(0.5f, 0.5f)),
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation

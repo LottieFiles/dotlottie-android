@@ -13,6 +13,7 @@ import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
+import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
@@ -110,6 +111,13 @@ class DotLottieDrawable(
         get() = dlPlayer!!.config().marker
         set(value) {
             config.marker = value
+            dlPlayer!!.setConfig(config)
+        }
+
+    var layout: Layout
+        get() = dlPlayer!!.config().layout
+        set(value) {
+            config.layout = value
             dlPlayer!!.setConfig(config)
         }
 

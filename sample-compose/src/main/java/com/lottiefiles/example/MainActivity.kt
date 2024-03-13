@@ -33,11 +33,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.example.ui.theme.ExampleTheme
 import kotlin.math.roundToInt
 
@@ -51,9 +53,10 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
 //                    DefaultAnimationDemo()
-                    AnimationWithReactiveProps()
+//                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
+                    LayoutExample()
                 }
             }
         }
@@ -464,6 +467,80 @@ fun ThemeExample() {
                     theme.value = "theme"
                 }) {
                     Text(text = "Load `theme`")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LayoutExample() {
+    val expandFit = remember { mutableStateOf(false) }
+    val expandAlignment = remember { mutableStateOf(false) }
+    val fit = remember { mutableStateOf(Fit.CONTAIN) }
+    val alignment = remember { mutableStateOf(LayoutUtil.Alignment.Center) }
+    val controller = remember { DotLottieController() }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row {
+            DotLottieAnimation(
+                width = 1000u,
+                height = 500u,
+                source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
+                autoplay = true,
+                loop = true,
+                layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
+                modifier = Modifier.background(Color.LightGray),
+                controller = controller,
+            )
+        }
+        Row {
+            Column {
+                Button(onClick = {
+                    expandAlignment.value = true;
+                }) {
+                    Text(text = "Alignment:: ${alignment.value}")
+                }
+                DropdownMenu(
+                    expanded = expandAlignment.value,
+                    onDismissRequest = { expandAlignment.value = false }) {
+                    LayoutUtil.Alignment.entries.forEach {
+                        DropdownMenuItem(
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                expandAlignment.value = false
+                                alignment.value = it
+                            }
+                        )
+                    }
+                }
+
+                Button(onClick = {
+                    expandFit.value = true;
+                }) {
+                    Text(text = "Fit:: ${fit.value}")
+                }
+                DropdownMenu(
+                    expanded = expandFit.value,
+                    onDismissRequest = { expandFit.value = false }) {
+                    Fit.entries.forEach {
+                        DropdownMenuItem(
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                expandFit.value = false
+                                fit.value = it
+                            }
+                        )
+                    }
+                }
+
+                Button(onClick = {
+                    controller.setLayout(Fit.CONTAIN, LayoutUtil.Alignment.Center)
+                }) {
+                    Text(text = "FIT::CONTAIN, ALIGN::CENTER")
                 }
             }
         }

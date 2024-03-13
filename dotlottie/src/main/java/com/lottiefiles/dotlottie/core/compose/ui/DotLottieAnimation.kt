@@ -17,6 +17,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Layout
+import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
@@ -43,6 +45,7 @@ fun DotLottieAnimation(
     segments: Pair<Float, Float>? = null,
     playMode: Mode = Mode.FORWARD,
     controller: DotLottieController? = null,
+    layout: Layout = createDefaultLayout(),
     eventListeners: List<DotLottieEventListener> = emptyList(),
 ) {
     val context = LocalContext.current
@@ -62,6 +65,7 @@ fun DotLottieAnimation(
             ) else emptyList(),
             backgroundColor = 0u,
             marker = marker ?: "",
+            layout = layout,
         )
     }
 
@@ -155,7 +159,8 @@ fun DotLottieAnimation(
         speed,
         segments,
         themeId,
-        marker
+        marker,
+        layout,
     ) {
         val conf = dlPlayer.config()
         conf.loopAnimation = loop
@@ -164,6 +169,7 @@ fun DotLottieAnimation(
         conf.useFrameInterpolation = useFrameInterpolation
         conf.speed = speed
         conf.marker = marker ?: ""
+        conf.layout = layout
         if (segments != null) {
             conf.segments = listOf(segments.first, segments.second)
         } else {
