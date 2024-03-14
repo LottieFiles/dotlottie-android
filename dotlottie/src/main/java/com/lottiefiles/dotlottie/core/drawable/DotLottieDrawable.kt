@@ -15,6 +15,7 @@ import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
+import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.sun.jna.Pointer
@@ -113,6 +114,9 @@ class DotLottieDrawable(
             config.marker = value
             dlPlayer!!.setConfig(config)
         }
+
+    val markers: List<Marker>
+        get() = dlPlayer!!.markers()
 
     var layout: Layout
         get() = dlPlayer!!.config().layout

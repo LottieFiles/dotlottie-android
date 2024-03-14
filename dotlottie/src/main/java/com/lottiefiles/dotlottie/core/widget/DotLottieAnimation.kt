@@ -11,6 +11,7 @@ import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
+import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.R
@@ -93,6 +94,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     val marker: String
         get() = mLottieDrawable?.marker ?: error("DotLottieDrawable is null")
 
+    val markers: List<Marker>
+        get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
 
     /***
      * Method
