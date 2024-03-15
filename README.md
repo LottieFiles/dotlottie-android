@@ -164,7 +164,9 @@ fun ExampleComposeComponent() {
 - `DotLottieAnimation.setPlayMode(Mode)` : Defining the first and last frame
 - `DotLottieAnimation.setBackgroundColor(Int)` : Set the animation background
 - `DotLottieAnimation.setUseFrameInterpolation(Boolean)` : When enabled it renders frames in between.
-
+- `DotLottieAnimation.setMarker(String)` : Sets the lottie named marker to play.
+- `DotLottieAnimation.setLayout(Fit, LayoutUtil.Alignment)` : Sets the animation layout configuration.
+- `DotLottieAnimation.loadTheme(String)` : Loads a new theme from the .lottie file, using its ID as specified in the manifest.json file of the .lottie file.
 
 #### Events
 

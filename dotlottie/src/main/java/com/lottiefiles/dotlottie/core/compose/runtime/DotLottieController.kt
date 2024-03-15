@@ -4,6 +4,7 @@ import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
+import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -74,6 +75,9 @@ class DotLottieController {
 
     val useFrameInterpolation: Boolean
         get() = dlplayer?.config()?.useFrameInterpolation ?: false
+
+    val markers: List<Marker>
+        get() = dlplayer?.markers() ?: emptyList()
 
     fun play() {
         dlplayer?.play()

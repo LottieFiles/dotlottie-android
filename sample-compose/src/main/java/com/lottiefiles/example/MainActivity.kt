@@ -416,6 +416,8 @@ fun AnimationWithReactiveProps() {
 @Composable
 fun MarkerExample() {
     val marker = remember { mutableStateOf<String?>(null) }
+    val expandMarkers = remember { mutableStateOf(false) }
+    val controller = remember { DotLottieController() }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -429,14 +431,29 @@ fun MarkerExample() {
                 autoplay = true,
                 marker = marker.value,
                 loop = true,
+                controller = controller,
             )
         }
         Row {
             Column {
                 Button(onClick = {
-                    marker.value = "bird"
+                    expandMarkers.value = true
                 }) {
-                    Text(text = "Play `bird`")
+                    Text(text = "Markers:: ${marker.value ?: "None"}")
+                }
+                DropdownMenu(
+                    expanded = expandMarkers.value,
+                    onDismissRequest = { expandMarkers.value = false }) {
+                    controller.markers.forEach {
+                        DropdownMenuItem(
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                expandMarkers.value = false
+                                marker.value = it.name
+                            }
+                        )
+                    }
+
                 }
             }
         }
