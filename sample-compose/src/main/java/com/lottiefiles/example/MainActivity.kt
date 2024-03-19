@@ -10,8 +10,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -124,8 +127,6 @@ fun DefaultAnimationDemo() {
                 Row {
                     repeat(1) { // Example: Repeat 3 times
                         DotLottieAnimation(
-                            height = 600u,
-                            width = 600u,
                             autoplay = true,
                             loop = true,
                             eventListeners = listOf(events),
@@ -133,7 +134,9 @@ fun DefaultAnimationDemo() {
                             source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
 //                                        source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
 //                                        source = DotLottieSource.Asset("swinging.json"),
-                            modifier = Modifier.background(Color.LightGray),
+                            modifier = Modifier
+                                .background(Color.LightGray)
+                                .size(200.dp),
                             controller = dotLottieController
                         )
                     }
@@ -273,7 +276,7 @@ fun DefaultAnimationDemo() {
             }
             Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = {
-                    dotLottieController.resize(550u, 550u)
+                    dotLottieController.resize(50u, 50u)
                 }) {
                     Text(text = "Resize")
                 }
@@ -322,8 +325,7 @@ fun AnimationWithReactiveProps() {
     val currentFrame = remember { mutableFloatStateOf(0f) }
     val speed = remember { mutableFloatStateOf(1f) }
     val useFrameInterpolation = remember { mutableStateOf(true) }
-    val width = remember { mutableStateOf(500u) }
-    val height = remember { mutableStateOf(500u) }
+    val size = remember { mutableStateOf(200.dp) }
     val source =
         remember { mutableStateOf("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") }
     val segments = remember { mutableStateOf<Pair<Float, Float>?>(null) }
@@ -335,8 +337,6 @@ fun AnimationWithReactiveProps() {
     ) {
         Row {
             DotLottieAnimation(
-                width = width.value,
-                height = height.value,
                 source = DotLottieSource.Url(source.value),
                 autoplay = autoplay.value,
                 useFrameInterpolation = useFrameInterpolation.value,
@@ -347,7 +347,8 @@ fun AnimationWithReactiveProps() {
                     override fun onFrame(frame: Float) {
                         currentFrame.floatValue = frame
                     }
-                })
+                }),
+                modifier = Modifier.size(size.value)
             )
         }
         Row {
@@ -381,8 +382,7 @@ fun AnimationWithReactiveProps() {
                 }
 
                 Button(onClick = {
-                    width.value += 50u
-                    height.value += 50u
+                    size.value += 50.dp
                 }) {
                     Text(text = "Resize")
                 }
@@ -425,8 +425,6 @@ fun MarkerExample() {
     ) {
         Row {
             DotLottieAnimation(
-                width = 500u,
-                height = 500u,
                 source = DotLottieSource.Asset("markers.json"),
                 autoplay = true,
                 marker = marker.value,
@@ -470,8 +468,6 @@ fun ThemeExample() {
     ) {
         Row {
             DotLottieAnimation(
-                width = 500u,
-                height = 500u,
                 source = DotLottieSource.Asset("theming_example.lottie"),
                 autoplay = true,
                 themeId = theme.value,
@@ -504,13 +500,14 @@ fun LayoutExample() {
     ) {
         Row {
             DotLottieAnimation(
-                width = 1000u,
-                height = 500u,
                 source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
                 autoplay = true,
                 loop = true,
                 layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
-                modifier = Modifier.background(Color.LightGray),
+                modifier = Modifier
+                    .background(Color.LightGray)
+                    .fillMaxWidth()
+                    .aspectRatio(1.6f),
                 controller = controller,
             )
         }

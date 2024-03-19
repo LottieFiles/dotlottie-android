@@ -86,8 +86,6 @@ import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 fun ExampleComposeComponent() {
     DotLottieAnimation(
-        width = 500u,
-        height = 500u,
         source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"), // from url .lottie / .json
 //        source = DotLottieSource.Asset("file.json"), // from asset .lottie / .json
 //        source = DotLottieSource.Json("{"v":"4.8.0","meta":{"g":"LottieFiles .........."), // lottie json string
