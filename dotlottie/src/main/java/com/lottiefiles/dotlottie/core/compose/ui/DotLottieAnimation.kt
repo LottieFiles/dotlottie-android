@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -14,8 +15,12 @@ import androidx.compose.ui.platform.LocalContext
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import androidx.compose.runtime.*
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
@@ -33,8 +38,6 @@ import java.nio.ByteBuffer
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
-    width: UInt,
-    height: UInt,
     source: DotLottieSource,
     autoplay: Boolean = false,
     loop: Boolean = false,
@@ -78,6 +81,7 @@ fun DotLottieAnimation(
     val isRunning by rController.isRunning.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
+    var layoutSize by remember { mutableStateOf<Size?>(null) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -104,8 +108,18 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(dlConfig, source) {
+    LaunchedEffect(dlConfig, source, layoutSize?.height, layoutSize?.width) {
+        if (layoutSize == null || layoutSize?.height == 0.0f || layoutSize?.width == 0.0f) return@LaunchedEffect
+
         try {
+            val height = layoutSize!!.height.toUInt()
+            val width = layoutSize!!.width.toUInt()
+
+            // Register initial height/width to controller
+            if (!dlPlayer.isLoaded()) {
+                rController.resize(width, height)
+            }
+
             when (val animationData = DotLottieUtils.getContent(context, source)) {
                 is DotLottieContent.Json -> {
                     dlPlayer.loadAnimationData(animationData.jsonString, width, height)
@@ -114,10 +128,6 @@ fun DotLottieAnimation(
                 is DotLottieContent.Binary -> {
                     dlPlayer.loadDotlottieData(animationData.data, width, height)
                 }
-            }
-            // Register initial height/width to controller
-            if (!dlPlayer.isLoaded()) {
-                rController.resize(width, height)
             }
 
             // Set local and native buffer
@@ -187,10 +197,6 @@ fun DotLottieAnimation(
         choreographer.postFrameCallback(frameCallback)
     }
 
-    LaunchedEffect(width, height) {
-        rController.resize(width, height)
-    }
-
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
             bitmap?.recycle()
@@ -214,9 +220,20 @@ fun DotLottieAnimation(
         }
     }
 
-    Box() {
+
+    Box(
+        modifier = modifier
+            .defaultMinSize(200.dp, 200.dp)
+            .onGloballyPositioned { layoutCoordinates ->
+                layoutSize = layoutCoordinates.size.toSize()
+            }
+    ) {
         imageBitmap?.let {
-            Image(bitmap = it, contentDescription = null, modifier = modifier)
+            Image(
+                bitmap = it,
+                contentDescription = null,
+                modifier = Modifier.matchParentSize()
+            )
         }
     }
 }
