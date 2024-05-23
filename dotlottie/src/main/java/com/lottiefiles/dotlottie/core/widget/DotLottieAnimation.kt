@@ -78,8 +78,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     val playMode: Mode
         get() = mLottieDrawable?.playMode ?: error("DotLottieDrawable is null")
 
-    val segments: Pair<Float, Float>
-        get() = mLottieDrawable?.segments ?: error("DotLottieDrawable is null")
+    val segment: Pair<Float, Float>
+        get() = mLottieDrawable?.segment ?: error("DotLottieDrawable is null")
 
     val duration: Float
         get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
@@ -109,8 +109,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.useFrameInterpolation = enable
     }
 
-    fun setSegments(firstFrame: Float, lastFrame: Float) {
-        mLottieDrawable?.setSegments(firstFrame, lastFrame)
+    fun setSegment(firstFrame: Float, lastFrame: Float) {
+        mLottieDrawable?.setSegment(firstFrame, lastFrame)
     }
 
     fun setLoop(loop: Boolean) {
@@ -223,7 +223,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         speed = config.speed,
                         useFrameInterpolation = config.useFrameInterpolator,
                         backgroundColor = Color.TRANSPARENT.toUInt(),
-                        segments = listOf(),
+                        segment = listOf(),
                         marker = config.marker,
                         layout = config.layout,
                     )
@@ -277,7 +277,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                             true
                         ),
                         backgroundColor = Color.TRANSPARENT.toUInt(),
-                        segments = listOf(),
+                        segment = listOf(),
                         marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
                         layout = createDefaultLayout(),
                     )

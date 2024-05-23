@@ -73,7 +73,7 @@ fun DefaultAnimationDemo() {
     val useFrameInterpolation = remember { mutableStateOf(true) }
     val loop = remember { mutableStateOf(true) }
     val speed = remember { mutableFloatStateOf(1f) }
-    val segments = remember { mutableStateOf(1f..100f) }
+    val segment = remember { mutableStateOf(1f..100f) }
     val currentFrame = remember { mutableFloatStateOf(0f) }
     val totalFrame = remember { mutableFloatStateOf(0f) }
     val dropdownExpand = remember { mutableStateOf(false) }
@@ -256,18 +256,18 @@ fun DefaultAnimationDemo() {
             ) {
                 Row {
                     RangeSlider(
-                        value = segments.value,
-                        onValueChange = { segments.value = it },
+                        value = segment.value,
+                        onValueChange = { segment.value = it },
                         valueRange = 1f..100f
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "${segments.value.start.roundToInt()} - ${segments.value.endInclusive.roundToInt()}")
+                    Text(text = "${segment.value.start.roundToInt()} - ${segment.value.endInclusive.roundToInt()}")
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        dotLottieController.setSegments(
-                            segments.value.start.roundToInt().toFloat(),
-                            segments.value.endInclusive.roundToInt().toFloat()
+                        dotLottieController.setSegment(
+                            segment.value.start.roundToInt().toFloat(),
+                            segment.value.endInclusive.roundToInt().toFloat()
                         )
                     }) {
                         Text(text = "Set Segment")
@@ -328,7 +328,7 @@ fun AnimationWithReactiveProps() {
     val size = remember { mutableStateOf(200.dp) }
     val source =
         remember { mutableStateOf("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") }
-    val segments = remember { mutableStateOf<Pair<Float, Float>?>(null) }
+    val segment = remember { mutableStateOf<Pair<Float, Float>?>(null) }
 
 
     Column(
@@ -342,7 +342,7 @@ fun AnimationWithReactiveProps() {
                 useFrameInterpolation = useFrameInterpolation.value,
                 loop = loop.value,
                 speed = speed.floatValue,
-                segments = segments.value,
+                segment = segment.value,
                 eventListeners = listOf(object : DotLottieEventListener {
                     override fun onFrame(frame: Float) {
                         currentFrame.floatValue = frame
@@ -400,13 +400,13 @@ fun AnimationWithReactiveProps() {
                 }
 
                 Button(onClick = {
-                    if (segments.value != null) {
-                        segments.value = null
+                    if (segment.value != null) {
+                        segment.value = null
                     } else {
-                        segments.value = 10f to 50f
+                        segment.value = 10f to 50f
                     }
                 }) {
-                    Text(text = if (segments.value != null) "Reset Segments" else "Set Segments 10 to 50")
+                    Text(text = if (segment.value != null) "Reset Segment" else "Set Segments 10 to 50")
                 }
             }
         }

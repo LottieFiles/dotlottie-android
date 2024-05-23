@@ -52,10 +52,10 @@ class DotLottieDrawable(
     var loopCount: UInt = 0u
         get() = dlPlayer!!.loopCount()
 
-    val segments: Pair<Float, Float>?
+    val segment: Pair<Float, Float>?
         get() {
-            if (dlPlayer!!.config().segments.isEmpty()) return null
-            return Pair(dlPlayer!!.config().segments[0], dlPlayer!!.config().segments[1])
+            if (dlPlayer!!.config().segment.isEmpty()) return null
+            return Pair(dlPlayer!!.config().segment[0], dlPlayer!!.config().segment[1])
         }
 
     // TODO: Implement repeatCount
@@ -225,8 +225,8 @@ class DotLottieDrawable(
         invalidateSelf()
     }
 
-    fun setSegments(first: Float, second: Float) {
-        config.segments = listOf(first, second)
+    fun setSegment(first: Float, second: Float) {
+        config.segment = listOf(first, second)
         dlPlayer!!.setConfig(config)
     }
 

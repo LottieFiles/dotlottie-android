@@ -144,7 +144,7 @@ fun ExampleComposeComponent() {
 - `DotLottieAnimation.duration` : Get the animation duration in millis
 - `DotLottieAnimation.speed` : Get the animation speed
 - `DotLottieAnimation.autoplay` : Get the animation speed
-- `DotLottieAnimation.segments` : Get the first and last frame
+- `DotLottieAnimation.segment` : Get the first and last frame
 
 - `DotLottieAnimation.isPlaying` : Check if the animation is playing
 - `DotLottieAnimation.isStopped` : Check if the animation is stopped
@@ -158,7 +158,7 @@ fun ExampleComposeComponent() {
 - `DotLottieAnimation.pause()` : Pause the animation
 - `DotLottieAnimation.stop()` : Stop the animation
 - `DotLottieAnimation.load(Config)` : Setup the initial configuration
-- `DotLottieAnimation.setSegments(Float, Float)` : Defining the first and last frame
+- `DotLottieAnimation.setSegment(Float, Float)` : Defining the first and last frame
 - `DotLottieAnimation.setPlayMode(Mode)` : Defining the first and last frame
 - `DotLottieAnimation.setBackgroundColor(Int)` : Set the animation background
 - `DotLottieAnimation.setUseFrameInterpolation(Boolean)` : When enabled it renders frames in between.
