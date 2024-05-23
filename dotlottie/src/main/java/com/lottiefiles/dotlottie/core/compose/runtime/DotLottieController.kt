@@ -61,10 +61,10 @@ class DotLottieController {
     val playMode: Mode
         get() = dlplayer?.config()?.mode ?: Mode.FORWARD
 
-    val segments: Pair<Float, Float>?
+    val segment: Pair<Float, Float>?
         get() {
-            if (dlplayer?.config()?.segments!!.isEmpty() || dlplayer?.config()?.segments?.size != 2) return null
-            return Pair(dlplayer?.config()?.segments!![0], dlplayer!!.config().segments[1])
+            if (dlplayer?.config()?.segment!!.isEmpty() || dlplayer?.config()?.segment?.size != 2) return null
+            return Pair(dlplayer?.config()?.segment!![0], dlplayer!!.config().segment[1])
         }
 
     val duration: Float
@@ -161,10 +161,10 @@ class DotLottieController {
 
     }
 
-    fun setSegments(firstFrame: Float, lastFrame: Float) {
+    fun setSegment(firstFrame: Float, lastFrame: Float) {
         dlplayer?.let {
             val config = it.config()
-            config.segments = listOf(firstFrame, lastFrame);
+            config.segment = listOf(firstFrame, lastFrame);
             it.setConfig(config)
         }
     }

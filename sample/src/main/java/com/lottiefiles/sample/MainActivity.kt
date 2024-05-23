@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
             val start = binding.edStartFrame.text.toString().toFloatOrNull()
             val end = binding.edEndFrame.text.toString().toFloatOrNull()
             if (start != null && end != null) {
-                binding.dotLottieView.setSegments(start, end)
+                binding.dotLottieView.setSegment(start, end)
             }
         }
 

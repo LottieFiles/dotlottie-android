@@ -45,7 +45,7 @@ fun DotLottieAnimation(
     themeId: String? = null,
     marker: String? = null,
     speed: Float = 1f,
-    segments: Pair<Float, Float>? = null,
+    segment: Pair<Float, Float>? = null,
     playMode: Mode = Mode.FORWARD,
     controller: DotLottieController? = null,
     layout: Layout = createDefaultLayout(),
@@ -62,9 +62,9 @@ fun DotLottieAnimation(
             mode = playMode,
             speed = speed,
             useFrameInterpolation = useFrameInterpolation,
-            segments = if (segments != null) listOf(
-                segments.first,
-                segments.second
+            segment = if (segment != null) listOf(
+                segment.first,
+                segment.second
             ) else emptyList(),
             backgroundColor = 0u,
             marker = marker ?: "",
@@ -167,7 +167,7 @@ fun DotLottieAnimation(
         playMode,
         useFrameInterpolation,
         speed,
-        segments,
+        segment,
         themeId,
         marker,
         layout,
@@ -180,10 +180,10 @@ fun DotLottieAnimation(
         conf.speed = speed
         conf.marker = marker ?: ""
         conf.layout = layout
-        if (segments != null) {
-            conf.segments = listOf(segments.first, segments.second)
+        if (segment != null) {
+            conf.segment = listOf(segment.first, segment.second)
         } else {
-            conf.segments = emptyList()
+            conf.segment = emptyList()
         }
 
         dlPlayer.loadTheme(themeId ?: "")
