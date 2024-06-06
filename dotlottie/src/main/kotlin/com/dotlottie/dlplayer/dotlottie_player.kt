@@ -1039,6 +1039,11 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Float
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
         `ptr`: Pointer,
         `config`: RustBuffer.ByValue,
@@ -1048,6 +1053,15 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
         `ptr`: Pointer,
         `no`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(
+        `ptr`: Pointer,
+        `x`: Int,
+        `y`: Int,
+        `w`: Int,
+        `h`: Int,
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
@@ -1415,9 +1429,13 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_seek(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_segment_duration(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_stop(): Short
 
@@ -1555,10 +1573,16 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_seek() != 60656.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_segment_duration() != 38024.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config() != 39472.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame() != 44086.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport() != 29505.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_stop() != 25240.toShort()) {
@@ -1686,6 +1710,29 @@ public object FfiConverterUInt : FfiConverter<UInt, Int> {
         buf: ByteBuffer,
     ) {
         buf.putInt(value.toInt())
+    }
+}
+
+public object FfiConverterInt : FfiConverter<Int, Int> {
+    override fun lift(value: Int): Int {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Int {
+        return buf.getInt()
+    }
+
+    override fun lower(value: Int): Int {
+        return value
+    }
+
+    override fun allocationSize(value: Int) = 4UL
+
+    override fun write(
+        value: Int,
+        buf: ByteBuffer,
+    ) {
+        buf.putInt(value)
     }
 }
 
@@ -2078,9 +2125,18 @@ public interface DotLottiePlayerInterface {
 
     fun `seek`(`no`: kotlin.Float): kotlin.Boolean
 
+    fun `segmentDuration`(): kotlin.Float
+
     fun `setConfig`(`config`: Config)
 
     fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean
+
+    fun `setViewport`(
+        `x`: kotlin.Int,
+        `y`: kotlin.Int,
+        `w`: kotlin.Int,
+        `h`: kotlin.Int,
+    ): kotlin.Boolean
 
     fun `stop`(): kotlin.Boolean
 
@@ -2592,6 +2648,19 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
         )
     }
 
+    override fun `segmentDuration`(): kotlin.Float {
+        return FfiConverterFloat.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(
+                        it,
+                        _status,
+                    )
+                }
+            },
+        )
+    }
+
     override fun `setConfig`(`config`: Config) =
         callWithPointer {
             uniffiRustCall { _status ->
@@ -2610,6 +2679,28 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
                         it,
                         FfiConverterFloat.lower(`no`),
+                        _status,
+                    )
+                }
+            },
+        )
+    }
+
+    override fun `setViewport`(
+        `x`: kotlin.Int,
+        `y`: kotlin.Int,
+        `w`: kotlin.Int,
+        `h`: kotlin.Int,
+    ): kotlin.Boolean {
+        return FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(
+                        it,
+                        FfiConverterInt.lower(`x`),
+                        FfiConverterInt.lower(`y`),
+                        FfiConverterInt.lower(`w`),
+                        FfiConverterInt.lower(`h`),
                         _status,
                     )
                 }
