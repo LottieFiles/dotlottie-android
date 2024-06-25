@@ -13,11 +13,14 @@ import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.StateMachineObserver
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
+import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
 
 class DotLottieDrawable(
@@ -31,6 +34,7 @@ class DotLottieDrawable(
     private var nativeBuffer: Pointer? = null
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
+    private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
 
     var freeze: Boolean = false
         set(value) {
@@ -247,6 +251,47 @@ class DotLottieDrawable(
     fun pause() {
         dlPlayer!!.pause()
         mHandler.removeCallbacks(mNextFrameRunnable)
+    }
+
+
+    fun startStateMachine(): Boolean {
+        val result = dlPlayer?.startStateMachine() ?: false
+        if (result) {
+            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onStateEntered(enteringState: String) {
+                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
+                }
+
+                override fun onStateExit(leavingState: String) {
+                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
+                }
+
+                override fun onTransition(previousState: String, newState: String) {
+                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
+                }
+            })
+        }
+        return result
+    }
+
+    fun stopStateMachine(): Boolean {
+        return dlPlayer?.stopStateMachine() ?: false
+    }
+
+    fun loadStateMachine(stateMachineId: String): Boolean {
+        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+    }
+
+    fun postEvent(event: Event): Boolean {
+        return dlPlayer?.postEvent(event) ?: false
+    }
+
+    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.add(listener)
+    }
+
+    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.remove(listener)
     }
 
     override fun draw(canvas: Canvas) {

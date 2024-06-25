@@ -8,11 +8,13 @@ import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.FloatRange
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
@@ -21,6 +23,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -332,6 +335,31 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun removeEventListener(listener: DotLottieEventListener) {
         mDotLottieEventListener.remove(listener)
+    }
+
+
+    fun startStateMachine(): Boolean {
+        return mLottieDrawable?.startStateMachine() ?: false
+    }
+
+    fun stopStateMachine(): Boolean {
+        return mLottieDrawable?.stopStateMachine() ?: false
+    }
+
+    fun loadStateMachine(stateMachineId: String): Boolean {
+        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
+    }
+
+    fun postEvent(event: Event): Boolean {
+        return mLottieDrawable?.postEvent(event) ?: false
+    }
+
+    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+        mLottieDrawable?.addStateMachineEventListener(listener)
+    }
+
+    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+        mLottieDrawable?.removeStateMachineEventListener(listener)
     }
 
     companion object {

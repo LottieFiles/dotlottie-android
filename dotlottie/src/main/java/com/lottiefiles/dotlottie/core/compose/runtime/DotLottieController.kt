@@ -1,24 +1,37 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
+import com.dotlottie.dlplayer.StateMachineObserver
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
+enum class DotLottiePlayerState {
+    PLAYING,
+    PAUSED,
+    STOPPED,
+    COMPLETED,
+    INITIAL,
+    LOADED,
+    ERROR,
+}
 
 class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
     private var observer: Observer? = null
 
-    private val _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+    private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
+    val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
 
     private val _width = MutableStateFlow(0u)
     val width: StateFlow<UInt> = _width.asStateFlow()
@@ -26,6 +39,8 @@ class DotLottieController {
     private val _height = MutableStateFlow(0u)
     val height: StateFlow<UInt> = _height.asStateFlow()
 
+    var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+        private set
     var eventListeners = mutableListOf<DotLottieEventListener>()
         private set
 
@@ -94,7 +109,7 @@ class DotLottieController {
     private fun subscribe() {
         observer = object : Observer {
             override fun onComplete() {
-                _isRunning.value = false
+                _currentState.value = DotLottiePlayerState.COMPLETED
                 eventListeners.forEach(DotLottieEventListener::onComplete)
             }
 
@@ -103,22 +118,22 @@ class DotLottieController {
             }
 
             override fun onPause() {
-                _isRunning.value = false
+                _currentState.value = DotLottiePlayerState.PAUSED
                 eventListeners.forEach(DotLottieEventListener::onPause)
             }
 
             override fun onStop() {
-                _isRunning.value = false
+                _currentState.value = DotLottiePlayerState.STOPPED
                 eventListeners.forEach(DotLottieEventListener::onStop)
             }
 
             override fun onPlay() {
-                _isRunning.value = true
+                _currentState.value = DotLottiePlayerState.PLAYING
                 eventListeners.forEach(DotLottieEventListener::onPlay)
             }
 
             override fun onLoad() {
-                _isRunning.value = dlplayer?.isPlaying() ?: false
+                _currentState.value = DotLottiePlayerState.LOADED
                 eventListeners.forEach(DotLottieEventListener::onLoad)
             }
 
@@ -131,10 +146,51 @@ class DotLottieController {
             }
 
             override fun onLoadError() {
+                _currentState.value = DotLottiePlayerState.ERROR
                 eventListeners.forEach(DotLottieEventListener::onLoadError)
             }
         }
         dlplayer?.subscribe(observer!!)
+    }
+
+    fun startStateMachine(): Boolean {
+        val result = dlplayer?.startStateMachine() ?: false
+        if (result) {
+            dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onStateEntered(enteringState: String) {
+                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
+                }
+
+                override fun onStateExit(leavingState: String) {
+                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
+                }
+
+                override fun onTransition(previousState: String, newState: String) {
+                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
+                }
+            })
+        }
+        return result
+    }
+
+    fun stopStateMachine(): Boolean {
+        return dlplayer?.stopStateMachine() ?: false
+    }
+
+    fun loadStateMachine(stateMachineId: String): Boolean {
+        return dlplayer?.loadStateMachine(stateMachineId) ?: false
+    }
+
+    fun postEvent(event: Event): Boolean {
+        return dlplayer?.postEvent(event) ?: false
+    }
+
+    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.add(listener)
+    }
+
+    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.remove(listener)
     }
 
     fun setPlayerInstance(player: DotLottiePlayer) {
