@@ -117,11 +117,6 @@ fun DefaultAnimationDemo() {
             Log.i("DotLottie", "Freeze")
         }
     }
-
-    LaunchedEffect(UInt) {
-        Log.i("DotLottie", "Loading $dotLottieController")
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
