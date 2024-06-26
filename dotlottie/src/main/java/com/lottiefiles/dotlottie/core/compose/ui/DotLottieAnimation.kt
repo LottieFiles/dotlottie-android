@@ -78,7 +78,7 @@ fun DotLottieAnimation(
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
-    val isRunning by rController.isRunning.collectAsState()
+    val currentSate by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
@@ -101,7 +101,7 @@ fun DotLottieAnimation(
                     }
                 }
 
-                if (isRunning) {
+                if (dlPlayer.isPlaying()) {
                     choreographer.postFrameCallback(this)
                 }
             }
@@ -140,7 +140,7 @@ fun DotLottieAnimation(
             val startTime = System.currentTimeMillis()
             val timeout = 500L // 500 milliseconds
             while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                if (System.currentTimeMillis() - startTime > 100L && !isRunning) {
+                if (System.currentTimeMillis() - startTime > 100L && !dlPlayer.isPlaying()) {
                     choreographer.removeFrameCallback(frameCallback)
                     break
                 }
@@ -153,8 +153,8 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(isRunning) {
-        if (isRunning) {
+    LaunchedEffect(dlPlayer.isPlaying(), currentSate) {
+        if (dlPlayer.isPlaying()) {
             choreographer.postFrameCallback(frameCallback)
         } else {
             choreographer.removeFrameCallback(frameCallback)

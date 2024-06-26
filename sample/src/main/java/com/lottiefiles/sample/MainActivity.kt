@@ -37,18 +37,18 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onStop() {
-            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-                binding.dotLottieView.currentFrame,
-                binding.dotLottieView.totalFrames,
-            )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                binding.dotLottieView.currentFrame,
+//                binding.dotLottieView.totalFrames,
+//            )
             Log.d(TAG, "onStop")
         }
 
         override fun onFrame(frame: Float) {
-            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
-                frame,
-                binding.dotLottieView.totalFrames,
-            )
+//            binding.tvFrame.text = "Frame : %.2f / %.2f".format(
+//                frame,
+//                binding.dotLottieView.totalFrames,
+//            )
         }
 
         override fun onLoop() {
@@ -105,14 +105,16 @@ class MainActivity : ComponentActivity() {
         }
 
         binding.btnPlay.setOnClickListener { v: View ->
-            val isPausedOrStopped = binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
+            val isPausedOrStopped =
+                binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
             if (isPausedOrStopped) {
                 binding.dotLottieView.play()
             }
         }
 
         binding.btnPause.setOnClickListener { v: View ->
-            val isPausedOrStopped = binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
+            val isPausedOrStopped =
+                binding.dotLottieView.isPaused || binding.dotLottieView.isStopped
             if (isPausedOrStopped) return@setOnClickListener
             binding.dotLottieView.pause()
         }

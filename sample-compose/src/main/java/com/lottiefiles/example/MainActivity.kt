@@ -27,6 +27,7 @@ import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
@@ -43,6 +45,7 @@ import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.example.ui.theme.ExampleTheme
 import kotlin.math.roundToInt
 
@@ -59,7 +62,8 @@ class MainActivity : ComponentActivity() {
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
-                    LayoutExample()
+//                    LayoutExample()
+                    StateMachineExample()
                 }
             }
         }
@@ -105,8 +109,8 @@ fun DefaultAnimationDemo() {
         }
 
         override fun onFrame(frame: Float) {
-            currentFrame.value = dotLottieController.currentFrame
-            totalFrame.value = dotLottieController.totalFrames
+            currentFrame.value = frame
+//            totalFrame.value = dotLottieController.totalFrames
         }
 
         override fun onFreeze() {
@@ -130,13 +134,14 @@ fun DefaultAnimationDemo() {
                             autoplay = true,
                             loop = true,
                             eventListeners = listOf(events),
-                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
-//                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
+//                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
+                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
 //                                        source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
 //                                        source = DotLottieSource.Asset("swinging.json"),
                             modifier = Modifier
                                 .background(Color.LightGray)
                                 .size(200.dp),
+                            controller = dotLottieController
                         )
                     }
                 }
@@ -170,6 +175,7 @@ fun DefaultAnimationDemo() {
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = {
+                    Log.i("DotLottie", "Pause $dotLottieController")
                     dotLottieController.pause()
                 }) {
                     Text(text = "Pause")
@@ -554,6 +560,79 @@ fun LayoutExample() {
                     controller.setLayout(Fit.CONTAIN, LayoutUtil.Alignment.Center)
                 }) {
                     Text(text = "FIT::CONTAIN, ALIGN::CENTER")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StateMachineExample() {
+    val fit = remember { mutableStateOf(Fit.CONTAIN) }
+    val alignment = remember { mutableStateOf(LayoutUtil.Alignment.Center) }
+    val controller = remember { DotLottieController() }
+
+    val stateListener = remember {
+        object : StateMachineEventListener {
+            override fun onTransition(previousState: String, newState: String) {
+                Log.i("DotLottie", "Transition: $previousState -> $newState")
+            }
+
+            override fun onStateExit(leavingState: String) {
+                Log.i("DotLottie", "Exit: $leavingState")
+            }
+
+            override fun onStateEntered(enteringState: String) {
+                Log.i("DotLottie", "Enter: $enteringState")
+            }
+        }
+    }
+
+    LaunchedEffect(UInt) {
+        controller.addStateMachineEventListener(stateListener)
+    }
+
+
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row {
+            DotLottieAnimation(
+                source = DotLottieSource.Asset("exploding_pigeon.lottie"),
+                autoplay = true,
+                loop = false,
+                layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
+                modifier = Modifier
+                    .background(Color.LightGray)
+                    .fillMaxWidth()
+                    .aspectRatio(1.6f),
+                controller = controller,
+            )
+        }
+        Row {
+            Column {
+
+                Button(onClick = {
+                    val result = controller.loadStateMachine("pigeon_fsm")
+                    if (result) {
+                        controller.startStateMachine()
+                    }
+                }) {
+                    Text(text = "sate machine")
+                }
+
+                Button(onClick = {
+                    controller.postEvent(Event.String("explosion"))
+                }) {
+                    Text(text = "Explosion")
+                }
+
+                Button(onClick = {
+                    controller.stopStateMachine()
+                }) {
+                    Text(text = "Stop")
                 }
             }
         }
