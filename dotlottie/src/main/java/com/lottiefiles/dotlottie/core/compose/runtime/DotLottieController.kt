@@ -156,6 +156,10 @@ class DotLottieController {
     fun startStateMachine(): Boolean {
         val result = dlplayer?.startStateMachine() ?: false
         if (result) {
+            if (this.isPlaying) {
+                this.play()
+            }
+
             dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
@@ -181,8 +185,19 @@ class DotLottieController {
         return dlplayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        return dlplayer?.postEvent(event) ?: false
+    fun postEvent(event: Event): Number {
+        val result = dlplayer?.postEvent(event)
+
+        if result == 2 {
+            this.play()
+        } else if result == 3 {
+            this.pause()
+        } else if result == 4 {
+            // Draw the new frame
+//            dlplayer?.draw()
+        }
+
+        return result
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {

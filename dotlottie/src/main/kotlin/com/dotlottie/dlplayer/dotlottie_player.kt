@@ -45,9 +45,13 @@ open class RustBuffer : Structure() {
 
     @JvmField var data: Pointer? = null
 
-    class ByValue : RustBuffer(), Structure.ByValue
+    class ByValue :
+        RustBuffer(),
+        Structure.ByValue
 
-    class ByReference : RustBuffer(), Structure.ByReference
+    class ByReference :
+        RustBuffer(),
+        Structure.ByReference
 
     internal fun setValue(other: RustBuffer) {
         capacity = other.capacity
@@ -135,7 +139,9 @@ open class ForeignBytes : Structure() {
 
     @JvmField var data: Pointer? = null
 
-    class ByValue : ForeignBytes(), Structure.ByValue
+    class ByValue :
+        ForeignBytes(),
+        Structure.ByValue
 }
 
 // The FfiConverter interface handles converter types to and from the FFI
@@ -227,19 +233,15 @@ internal open class UniffiRustCallStatus : Structure() {
 
     @JvmField var error_buf: RustBuffer.ByValue = RustBuffer.ByValue()
 
-    class ByValue : UniffiRustCallStatus(), Structure.ByValue
+    class ByValue :
+        UniffiRustCallStatus(),
+        Structure.ByValue
 
-    fun isSuccess(): Boolean {
-        return code == UNIFFI_CALL_SUCCESS
-    }
+    fun isSuccess(): Boolean = code == UNIFFI_CALL_SUCCESS
 
-    fun isError(): Boolean {
-        return code == UNIFFI_CALL_ERROR
-    }
+    fun isError(): Boolean = code == UNIFFI_CALL_ERROR
 
-    fun isPanic(): Boolean {
-        return code == UNIFFI_CALL_UNEXPECTED_ERROR
-    }
+    fun isPanic(): Boolean = code == UNIFFI_CALL_UNEXPECTED_ERROR
 
     companion object {
         fun create(
@@ -254,7 +256,9 @@ internal open class UniffiRustCallStatus : Structure() {
     }
 }
 
-class InternalException(message: String) : Exception(message)
+class InternalException(
+    message: String,
+) : kotlin.Exception(message)
 
 // Each top-level error class has a companion object that can lift the error from the call status's rust buffer
 interface UniffiRustCallStatusErrorHandler<E> {
@@ -266,7 +270,7 @@ interface UniffiRustCallStatusErrorHandler<E> {
 // synchronize itself
 
 // Call a rust function that returns a Result<>.  Pass in the Error class companion that corresponds to the Err
-private inline fun <U, E : Exception> uniffiRustCallWithError(
+private inline fun <U, E : kotlin.Exception> uniffiRustCallWithError(
     errorHandler: UniffiRustCallStatusErrorHandler<E>,
     callback: (UniffiRustCallStatus) -> U,
 ): U {
@@ -277,7 +281,7 @@ private inline fun <U, E : Exception> uniffiRustCallWithError(
 }
 
 // Check UniffiRustCallStatus and throw an error if the call wasn't successful
-private fun <E : Exception> uniffiCheckCallStatus(
+private fun <E : kotlin.Exception> uniffiCheckCallStatus(
     errorHandler: UniffiRustCallStatusErrorHandler<E>,
     status: UniffiRustCallStatus,
 ) {
@@ -308,9 +312,8 @@ object UniffiNullRustCallStatusErrorHandler : UniffiRustCallStatusErrorHandler<I
 }
 
 // Call a rust function that returns a plain value
-private inline fun <U> uniffiRustCall(callback: (UniffiRustCallStatus) -> U): U {
-    return uniffiRustCallWithError(UniffiNullRustCallStatusErrorHandler, callback)
-}
+private inline fun <U> uniffiRustCall(callback: (UniffiRustCallStatus) -> U): U =
+    uniffiRustCallWithError(UniffiNullRustCallStatusErrorHandler, callback)
 
 internal inline fun <T> uniffiTraitInterfaceCall(
     callStatus: UniffiRustCallStatus,
@@ -319,7 +322,7 @@ internal inline fun <T> uniffiTraitInterfaceCall(
 ) {
     try {
         writeReturn(makeCall())
-    } catch (e: Exception) {
+    } catch (e: kotlin.Exception) {
         callStatus.code = UNIFFI_CALL_UNEXPECTED_ERROR
         callStatus.error_buf = FfiConverterString.lower(e.toString())
     }
@@ -333,7 +336,7 @@ internal inline fun <T, reified E : Throwable> uniffiTraitInterfaceCallWithError
 ) {
     try {
         writeReturn(makeCall())
-    } catch (e: Exception) {
+    } catch (e: kotlin.Exception) {
         if (e is E) {
             callStatus.code = UNIFFI_CALL_ERROR
             callStatus.error_buf = lowerError(e)
@@ -349,7 +352,9 @@ internal inline fun <T, reified E : Throwable> uniffiTraitInterfaceCallWithError
 // This is used pass an opaque 64-bit handle representing a foreign object to the Rust code.
 internal class UniffiHandleMap<T : Any> {
     private val map = ConcurrentHashMap<Long, T>()
-    private val counter = java.util.concurrent.atomic.AtomicLong(0)
+    private val counter =
+        java.util.concurrent.atomic
+            .AtomicLong(0)
 
     val size: Int
         get() = map.size
@@ -362,14 +367,10 @@ internal class UniffiHandleMap<T : Any> {
     }
 
     // Get an object from the handle map
-    fun get(handle: Long): T {
-        return map.get(handle) ?: throw InternalException("UniffiHandleMap.get: Invalid handle")
-    }
+    fun get(handle: Long): T = map.get(handle) ?: throw InternalException("UniffiHandleMap.get: Invalid handle")
 
     // Remove an entry from the handlemap and get the Kotlin object back
-    fun remove(handle: Long): T {
-        return map.remove(handle) ?: throw InternalException("UniffiHandleMap: Invalid handle")
-    }
+    fun remove(handle: Long): T = map.remove(handle) ?: throw InternalException("UniffiHandleMap: Invalid handle")
 }
 
 // Contains loading, initialization code,
@@ -383,9 +384,8 @@ private fun findLibraryName(componentName: String): String {
     return "uniffi_dotlottie_player"
 }
 
-private inline fun <reified Lib : Library> loadIndirect(componentName: String): Lib {
-    return Native.load<Lib>(findLibraryName(componentName), Lib::class.java)
-}
+private inline fun <reified Lib : Library> loadIndirect(componentName: String): Lib =
+    Native.load<Lib>(findLibraryName(componentName), Lib::class.java)
 
 // Define FFI callback types
 internal interface UniffiRustFutureContinuationCallback : com.sun.jna.Callback {
@@ -411,7 +411,8 @@ internal open class UniffiForeignFuture(
     class UniffiByValue(
         `handle`: Long = 0.toLong(),
         `free`: UniffiForeignFutureFree? = null,
-    ) : UniffiForeignFuture(`handle`, `free`), Structure.ByValue
+    ) : UniffiForeignFuture(`handle`, `free`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFuture) {
         `handle` = other.`handle`
@@ -427,7 +428,8 @@ internal open class UniffiForeignFutureStructU8(
     class UniffiByValue(
         `returnValue`: Byte = 0.toByte(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructU8(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructU8(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructU8) {
         `returnValue` = other.`returnValue`
@@ -450,7 +452,8 @@ internal open class UniffiForeignFutureStructI8(
     class UniffiByValue(
         `returnValue`: Byte = 0.toByte(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructI8(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructI8(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructI8) {
         `returnValue` = other.`returnValue`
@@ -473,7 +476,8 @@ internal open class UniffiForeignFutureStructU16(
     class UniffiByValue(
         `returnValue`: Short = 0.toShort(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructU16(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructU16(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructU16) {
         `returnValue` = other.`returnValue`
@@ -496,7 +500,8 @@ internal open class UniffiForeignFutureStructI16(
     class UniffiByValue(
         `returnValue`: Short = 0.toShort(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructI16(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructI16(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructI16) {
         `returnValue` = other.`returnValue`
@@ -519,7 +524,8 @@ internal open class UniffiForeignFutureStructU32(
     class UniffiByValue(
         `returnValue`: Int = 0,
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructU32(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructU32(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructU32) {
         `returnValue` = other.`returnValue`
@@ -542,7 +548,8 @@ internal open class UniffiForeignFutureStructI32(
     class UniffiByValue(
         `returnValue`: Int = 0,
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructI32(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructI32(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructI32) {
         `returnValue` = other.`returnValue`
@@ -565,7 +572,8 @@ internal open class UniffiForeignFutureStructU64(
     class UniffiByValue(
         `returnValue`: Long = 0.toLong(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructU64(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructU64(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructU64) {
         `returnValue` = other.`returnValue`
@@ -588,7 +596,8 @@ internal open class UniffiForeignFutureStructI64(
     class UniffiByValue(
         `returnValue`: Long = 0.toLong(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructI64(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructI64(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructI64) {
         `returnValue` = other.`returnValue`
@@ -611,7 +620,8 @@ internal open class UniffiForeignFutureStructF32(
     class UniffiByValue(
         `returnValue`: Float = 0.0f,
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructF32(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructF32(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructF32) {
         `returnValue` = other.`returnValue`
@@ -634,7 +644,8 @@ internal open class UniffiForeignFutureStructF64(
     class UniffiByValue(
         `returnValue`: Double = 0.0,
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructF64(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructF64(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructF64) {
         `returnValue` = other.`returnValue`
@@ -657,7 +668,8 @@ internal open class UniffiForeignFutureStructPointer(
     class UniffiByValue(
         `returnValue`: Pointer = Pointer.NULL,
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructPointer(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructPointer(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructPointer) {
         `returnValue` = other.`returnValue`
@@ -680,7 +692,8 @@ internal open class UniffiForeignFutureStructRustBuffer(
     class UniffiByValue(
         `returnValue`: RustBuffer.ByValue = RustBuffer.ByValue(),
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructRustBuffer(`returnValue`, `callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructRustBuffer(`returnValue`, `callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructRustBuffer) {
         `returnValue` = other.`returnValue`
@@ -701,7 +714,8 @@ internal open class UniffiForeignFutureStructVoid(
 ) : Structure() {
     class UniffiByValue(
         `callStatus`: UniffiRustCallStatus.ByValue = UniffiRustCallStatus.ByValue(),
-    ) : UniffiForeignFutureStructVoid(`callStatus`), Structure.ByValue
+    ) : UniffiForeignFutureStructVoid(`callStatus`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiForeignFutureStructVoid) {
         `callStatus` = other.`callStatus`
@@ -882,7 +896,8 @@ internal open class UniffiVTableCallbackInterfaceStateMachineObserver(
         `onStateExit`: UniffiCallbackInterfaceStateMachineObserverMethod1? = null,
         `onTransition`: UniffiCallbackInterfaceStateMachineObserverMethod2? = null,
         `uniffiFree`: UniffiCallbackInterfaceFree? = null,
-    ) : UniffiVTableCallbackInterfaceStateMachineObserver(`onStateEntered`, `onStateExit`, `onTransition`, `uniffiFree`), Structure.ByValue
+    ) : UniffiVTableCallbackInterfaceStateMachineObserver(`onStateEntered`, `onStateExit`, `onTransition`, `uniffiFree`),
+        Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceStateMachineObserver) {
         `onStateEntered` = other.`onStateEntered`
@@ -934,6 +949,11 @@ internal interface UniffiLib : Library {
     ): RustBuffer.ByValue
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): RustBuffer.ByValue
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
@@ -1031,6 +1051,12 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_state_machine_data(
+        `ptr`: Pointer,
+        `stateMachine`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme(
         `ptr`: Pointer,
         `themeId`: RustBuffer.ByValue,
@@ -1077,7 +1103,7 @@ internal interface UniffiLib : Library {
         `ptr`: Pointer,
         `event`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
-    ): Byte
+    ): Int
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
         `ptr`: Pointer,
@@ -1116,6 +1142,27 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
         `ptr`: Pointer,
         `no`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_boolean_context(
+        `ptr`: Pointer,
+        `key`: RustBuffer.ByValue,
+        `value`: Byte,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_numeric_context(
+        `ptr`: Pointer,
+        `key`: RustBuffer.ByValue,
+        `value`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_string_context(
+        `ptr`: Pointer,
+        `key`: RustBuffer.ByValue,
+        `value`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
@@ -1498,6 +1545,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_active_theme_id(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_animation_size(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_ptr(): Short
@@ -1530,6 +1579,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_state_machine(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_state_machine_data(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme_data(): Short
@@ -1561,6 +1612,12 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_config(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_boolean_context(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_numeric_context(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_string_context(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport(): Short
 
@@ -1635,6 +1692,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_active_theme_id() != 60173.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_animation_size() != 49812.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_buffer_len() != 33793.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1683,6 +1743,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_state_machine() != 2360.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_state_machine_data() != 481.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_theme() != 58256.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1707,7 +1770,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_play() != 54931.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event() != 18408.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event() != 24946.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_render() != 34602.toShort()) {
@@ -1729,6 +1792,15 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame() != 44086.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_boolean_context() != 53110.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_numeric_context() != 60196.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_state_machine_string_context() != 11860.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport() != 29505.toShort()) {
@@ -1819,7 +1891,8 @@ interface Disposable {
 
     companion object {
         fun destroy(vararg args: Any?) {
-            args.filterIsInstance<Disposable>()
+            args
+                .filterIsInstance<Disposable>()
                 .forEach(Disposable::destroy)
         }
     }
@@ -1841,17 +1914,11 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
 object NoPointer
 
 public object FfiConverterByte : FfiConverter<Byte, Byte> {
-    override fun lift(value: Byte): Byte {
-        return value
-    }
+    override fun lift(value: Byte): Byte = value
 
-    override fun read(buf: ByteBuffer): Byte {
-        return buf.get()
-    }
+    override fun read(buf: ByteBuffer): Byte = buf.get()
 
-    override fun lower(value: Byte): Byte {
-        return value
-    }
+    override fun lower(value: Byte): Byte = value
 
     override fun allocationSize(value: Byte) = 1UL
 
@@ -1864,17 +1931,11 @@ public object FfiConverterByte : FfiConverter<Byte, Byte> {
 }
 
 public object FfiConverterUInt : FfiConverter<UInt, Int> {
-    override fun lift(value: Int): UInt {
-        return value.toUInt()
-    }
+    override fun lift(value: Int): UInt = value.toUInt()
 
-    override fun read(buf: ByteBuffer): UInt {
-        return lift(buf.getInt())
-    }
+    override fun read(buf: ByteBuffer): UInt = lift(buf.getInt())
 
-    override fun lower(value: UInt): Int {
-        return value.toInt()
-    }
+    override fun lower(value: UInt): Int = value.toInt()
 
     override fun allocationSize(value: UInt) = 4UL
 
@@ -1887,17 +1948,11 @@ public object FfiConverterUInt : FfiConverter<UInt, Int> {
 }
 
 public object FfiConverterInt : FfiConverter<Int, Int> {
-    override fun lift(value: Int): Int {
-        return value
-    }
+    override fun lift(value: Int): Int = value
 
-    override fun read(buf: ByteBuffer): Int {
-        return buf.getInt()
-    }
+    override fun read(buf: ByteBuffer): Int = buf.getInt()
 
-    override fun lower(value: Int): Int {
-        return value
-    }
+    override fun lower(value: Int): Int = value
 
     override fun allocationSize(value: Int) = 4UL
 
@@ -1910,17 +1965,11 @@ public object FfiConverterInt : FfiConverter<Int, Int> {
 }
 
 public object FfiConverterULong : FfiConverter<ULong, Long> {
-    override fun lift(value: Long): ULong {
-        return value.toULong()
-    }
+    override fun lift(value: Long): ULong = value.toULong()
 
-    override fun read(buf: ByteBuffer): ULong {
-        return lift(buf.getLong())
-    }
+    override fun read(buf: ByteBuffer): ULong = lift(buf.getLong())
 
-    override fun lower(value: ULong): Long {
-        return value.toLong()
-    }
+    override fun lower(value: ULong): Long = value.toLong()
 
     override fun allocationSize(value: ULong) = 8UL
 
@@ -1933,17 +1982,11 @@ public object FfiConverterULong : FfiConverter<ULong, Long> {
 }
 
 public object FfiConverterFloat : FfiConverter<Float, Float> {
-    override fun lift(value: Float): Float {
-        return value
-    }
+    override fun lift(value: Float): Float = value
 
-    override fun read(buf: ByteBuffer): Float {
-        return buf.getFloat()
-    }
+    override fun read(buf: ByteBuffer): Float = buf.getFloat()
 
-    override fun lower(value: Float): Float {
-        return value
-    }
+    override fun lower(value: Float): Float = value
 
     override fun allocationSize(value: Float) = 4UL
 
@@ -1956,17 +1999,11 @@ public object FfiConverterFloat : FfiConverter<Float, Float> {
 }
 
 public object FfiConverterBoolean : FfiConverter<Boolean, Byte> {
-    override fun lift(value: Byte): Boolean {
-        return value.toInt() != 0
-    }
+    override fun lift(value: Byte): Boolean = value.toInt() != 0
 
-    override fun read(buf: ByteBuffer): Boolean {
-        return lift(buf.get())
-    }
+    override fun read(buf: ByteBuffer): Boolean = lift(buf.get())
 
-    override fun lower(value: Boolean): Byte {
-        return if (value) 1.toByte() else 0.toByte()
-    }
+    override fun lower(value: Boolean): Byte = if (value) 1.toByte() else 0.toByte()
 
     override fun allocationSize(value: Boolean) = 1UL
 
@@ -2043,9 +2080,7 @@ public object FfiConverterByteArray : FfiConverterRustBuffer<ByteArray> {
         return byteArr
     }
 
-    override fun allocationSize(value: ByteArray): ULong {
-        return 4UL + value.size.toULong()
-    }
+    override fun allocationSize(value: ByteArray): ULong = 4UL + value.size.toULong()
 
     override fun write(
         value: ByteArray,
@@ -2174,7 +2209,9 @@ interface UniffiCleaner {
 
 // The fallback Jna cleaner, which is available for both Android, and the JVM.
 private class UniffiJnaCleaner : UniffiCleaner {
-    private val cleaner = com.sun.jna.internal.Cleaner.getCleaner()
+    private val cleaner =
+        com.sun.jna.internal.Cleaner
+            .getCleaner()
 
     override fun register(
         value: Any,
@@ -2206,7 +2243,9 @@ private fun UniffiCleaner.Companion.create(): UniffiCleaner =
     }
 
 private class JavaLangRefCleaner : UniffiCleaner {
-    val cleaner = java.lang.ref.Cleaner.create()
+    val cleaner =
+        java.lang.ref.Cleaner
+            .create()
 
     override fun register(
         value: Any,
@@ -2224,6 +2263,8 @@ public interface DotLottiePlayerInterface {
     fun `activeAnimationId`(): kotlin.String
 
     fun `activeThemeId`(): kotlin.String
+
+    fun `animationSize`(): List<kotlin.Float>
 
     fun `bufferLen`(): kotlin.ULong
 
@@ -2273,6 +2314,8 @@ public interface DotLottiePlayerInterface {
 
     fun `loadStateMachine`(`str`: kotlin.String): kotlin.Boolean
 
+    fun `loadStateMachineData`(`stateMachine`: kotlin.String): kotlin.Boolean
+
     fun `loadTheme`(`themeId`: kotlin.String): kotlin.Boolean
 
     fun `loadThemeData`(`themeData`: kotlin.String): kotlin.Boolean
@@ -2289,7 +2332,7 @@ public interface DotLottiePlayerInterface {
 
     fun `play`(): kotlin.Boolean
 
-    fun `postEvent`(`event`: Event): kotlin.Boolean
+    fun `postEvent`(`event`: Event): kotlin.Int
 
     fun `render`(): kotlin.Boolean
 
@@ -2307,6 +2350,21 @@ public interface DotLottiePlayerInterface {
     fun `setConfig`(`config`: Config)
 
     fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean
+
+    fun `setStateMachineBooleanContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Boolean,
+    ): kotlin.Boolean
+
+    fun `setStateMachineNumericContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Float,
+    ): kotlin.Boolean
+
+    fun `setStateMachineStringContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.String,
+    ): kotlin.Boolean
 
     fun `setViewport`(
         `x`: kotlin.Int,
@@ -2336,7 +2394,10 @@ public interface DotLottiePlayerInterface {
     companion object
 }
 
-open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface {
+open class DotLottiePlayer :
+    Disposable,
+    AutoCloseable,
+    DotLottiePlayerInterface {
     constructor(pointer: Pointer) {
         this.pointer = pointer
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
@@ -2409,7 +2470,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
 
     // Use a static inner class instead of a closure so as not to accidentally
     // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
+    private class UniffiCleanAction(
+        private val pointer: Pointer?,
+    ) : Runnable {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
@@ -2419,14 +2482,13 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
         }
     }
 
-    fun uniffiClonePointer(): Pointer {
-        return uniffiRustCall { status ->
+    fun uniffiClonePointer(): Pointer =
+        uniffiRustCall { status ->
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_dotlottieplayer(pointer!!, status)
         }
-    }
 
-    override fun `activeAnimationId`(): kotlin.String {
-        return FfiConverterString.lift(
+    override fun `activeAnimationId`(): kotlin.String =
+        FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(
@@ -2436,10 +2498,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `activeThemeId`(): kotlin.String {
-        return FfiConverterString.lift(
+    override fun `activeThemeId`(): kotlin.String =
+        FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(
@@ -2449,10 +2510,21 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `bufferLen`(): kotlin.ULong {
-        return FfiConverterULong.lift(
+    override fun `animationSize`(): List<kotlin.Float> =
+        FfiConverterSequenceFloat.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(
+                        it,
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `bufferLen`(): kotlin.ULong =
+        FfiConverterULong.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(
@@ -2462,10 +2534,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `bufferPtr`(): kotlin.ULong {
-        return FfiConverterULong.lift(
+    override fun `bufferPtr`(): kotlin.ULong =
+        FfiConverterULong.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(
@@ -2475,7 +2546,6 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `clear`() =
         callWithPointer {
@@ -2487,8 +2557,8 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
             }
         }
 
-    override fun `config`(): Config {
-        return FfiConverterTypeConfig.lift(
+    override fun `config`(): Config =
+        FfiConverterTypeConfig.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_config(
@@ -2498,10 +2568,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `currentFrame`(): kotlin.Float {
-        return FfiConverterFloat.lift(
+    override fun `currentFrame`(): kotlin.Float =
+        FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(
@@ -2511,10 +2580,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `duration`(): kotlin.Float {
-        return FfiConverterFloat.lift(
+    override fun `duration`(): kotlin.Float =
+        FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(
@@ -2524,10 +2592,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `isComplete`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `isComplete`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(
@@ -2537,10 +2604,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `isLoaded`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `isLoaded`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(
@@ -2550,10 +2616,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `isPaused`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `isPaused`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(
@@ -2563,10 +2628,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `isPlaying`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `isPlaying`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(
@@ -2576,10 +2640,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `isStopped`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `isStopped`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
@@ -2589,14 +2652,13 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `loadAnimation`(
         `animationId`: kotlin.String,
         `width`: kotlin.UInt,
         `height`: kotlin.UInt,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(
@@ -2609,14 +2671,13 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `loadAnimationData`(
         `animationData`: kotlin.String,
         `width`: kotlin.UInt,
         `height`: kotlin.UInt,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(
@@ -2629,14 +2690,13 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `loadAnimationPath`(
         `animationPath`: kotlin.String,
         `width`: kotlin.UInt,
         `height`: kotlin.UInt,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(
@@ -2649,14 +2709,13 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `loadDotlottieData`(
         `fileData`: kotlin.ByteArray,
         `width`: kotlin.UInt,
         `height`: kotlin.UInt,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(
@@ -2669,10 +2728,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `loadStateMachine`(`str`: kotlin.String): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `loadStateMachine`(`str`: kotlin.String): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_state_machine(
@@ -2683,10 +2741,22 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `loadTheme`(`themeId`: kotlin.String): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `loadStateMachineData`(`stateMachine`: kotlin.String): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_state_machine_data(
+                        it,
+                        FfiConverterString.lower(`stateMachine`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `loadTheme`(`themeId`: kotlin.String): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme(
@@ -2697,10 +2767,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `loadThemeData`(`themeData`: kotlin.String): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `loadThemeData`(`themeData`: kotlin.String): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_load_theme_data(
@@ -2711,10 +2780,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `loopCount`(): kotlin.UInt {
-        return FfiConverterUInt.lift(
+    override fun `loopCount`(): kotlin.UInt =
+        FfiConverterUInt.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
@@ -2724,10 +2792,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `manifest`(): Manifest? {
-        return FfiConverterOptionalTypeManifest.lift(
+    override fun `manifest`(): Manifest? =
+        FfiConverterOptionalTypeManifest.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(
@@ -2737,10 +2804,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `manifestString`(): kotlin.String {
-        return FfiConverterString.lift(
+    override fun `manifestString`(): kotlin.String =
+        FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
@@ -2750,10 +2816,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `markers`(): List<Marker> {
-        return FfiConverterSequenceTypeMarker.lift(
+    override fun `markers`(): List<Marker> =
+        FfiConverterSequenceTypeMarker.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(
@@ -2763,10 +2828,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `pause`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `pause`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(
@@ -2776,10 +2840,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `play`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `play`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_play(
@@ -2789,10 +2852,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `postEvent`(`event`: Event): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `postEvent`(`event`: Event): kotlin.Int =
+        FfiConverterInt.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_event(
@@ -2803,10 +2865,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `render`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `render`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
@@ -2816,10 +2877,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `requestFrame`(): kotlin.Float {
-        return FfiConverterFloat.lift(
+    override fun `requestFrame`(): kotlin.Float =
+        FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(
@@ -2829,13 +2889,12 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `resize`(
         `width`: kotlin.UInt,
         `height`: kotlin.UInt,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(
@@ -2847,10 +2906,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `seek`(`no`: kotlin.Float): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `seek`(`no`: kotlin.Float): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(
@@ -2861,10 +2919,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `segmentDuration`(): kotlin.Float {
-        return FfiConverterFloat.lift(
+    override fun `segmentDuration`(): kotlin.Float =
+        FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(
@@ -2874,7 +2931,6 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `setConfig`(`config`: Config) =
         callWithPointer {
@@ -2887,8 +2943,8 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
             }
         }
 
-    override fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(
@@ -2899,15 +2955,65 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
+
+    override fun `setStateMachineBooleanContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Boolean,
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_boolean_context(
+                        it,
+                        FfiConverterString.lower(`key`),
+                        FfiConverterBoolean.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `setStateMachineNumericContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Float,
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_numeric_context(
+                        it,
+                        FfiConverterString.lower(`key`),
+                        FfiConverterFloat.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `setStateMachineStringContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.String,
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_state_machine_string_context(
+                        it,
+                        FfiConverterString.lower(`key`),
+                        FfiConverterString.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
 
     override fun `setViewport`(
         `x`: kotlin.Int,
         `y`: kotlin.Int,
         `w`: kotlin.Int,
         `h`: kotlin.Int,
-    ): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(
@@ -2921,10 +3027,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `startStateMachine`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `startStateMachine`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_start_state_machine(
@@ -2934,10 +3039,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `stateMachineFrameworkSetup`(): List<kotlin.String> {
-        return FfiConverterSequenceString.lift(
+    override fun `stateMachineFrameworkSetup`(): List<kotlin.String> =
+        FfiConverterSequenceString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_framework_setup(
@@ -2947,10 +3051,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `stateMachineSubscribe`(`observer`: StateMachineObserver): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `stateMachineSubscribe`(`observer`: StateMachineObserver): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_subscribe(
@@ -2961,10 +3064,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `stateMachineUnsubscribe`(`observer`: StateMachineObserver): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `stateMachineUnsubscribe`(`observer`: StateMachineObserver): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_unsubscribe(
@@ -2975,10 +3077,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `stop`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `stop`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(
@@ -2988,10 +3089,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
-    override fun `stopStateMachine`(): kotlin.Boolean {
-        return FfiConverterBoolean.lift(
+    override fun `stopStateMachine`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop_state_machine(
@@ -3001,7 +3101,6 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `subscribe`(`observer`: Observer) =
         callWithPointer {
@@ -3014,8 +3113,8 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
             }
         }
 
-    override fun `totalFrames`(): kotlin.Float {
-        return FfiConverterFloat.lift(
+    override fun `totalFrames`(): kotlin.Float =
+        FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
@@ -3025,7 +3124,6 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
                 }
             },
         )
-    }
 
     override fun `unsubscribe`(`observer`: Observer) =
         callWithPointer {
@@ -3042,13 +3140,9 @@ open class DotLottiePlayer : Disposable, AutoCloseable, DotLottiePlayerInterface
 }
 
 public object FfiConverterTypeDotLottiePlayer : FfiConverter<DotLottiePlayer, Pointer> {
-    override fun lower(value: DotLottiePlayer): Pointer {
-        return value.uniffiClonePointer()
-    }
+    override fun lower(value: DotLottiePlayer): Pointer = value.uniffiClonePointer()
 
-    override fun lift(value: Pointer): DotLottiePlayer {
-        return DotLottiePlayer(value)
-    }
+    override fun lift(value: Pointer): DotLottiePlayer = DotLottiePlayer(value)
 
     override fun read(buf: ByteBuffer): DotLottiePlayer {
         // The Rust code always writes pointers as 8 bytes, and will
@@ -3187,7 +3281,10 @@ public interface Observer {
     companion object
 }
 
-open class ObserverImpl : Disposable, AutoCloseable, Observer {
+open class ObserverImpl :
+    Disposable,
+    AutoCloseable,
+    Observer {
     constructor(pointer: Pointer) {
         this.pointer = pointer
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
@@ -3251,7 +3348,9 @@ open class ObserverImpl : Disposable, AutoCloseable, Observer {
 
     // Use a static inner class instead of a closure so as not to accidentally
     // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
+    private class UniffiCleanAction(
+        private val pointer: Pointer?,
+    ) : Runnable {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
@@ -3261,11 +3360,10 @@ open class ObserverImpl : Disposable, AutoCloseable, Observer {
         }
     }
 
-    fun uniffiClonePointer(): Pointer {
-        return uniffiRustCall { status ->
+    fun uniffiClonePointer(): Pointer =
+        uniffiRustCall { status ->
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_observer(pointer!!, status)
         }
-    }
 
     override fun `onComplete`() =
         callWithPointer {
@@ -3379,9 +3477,7 @@ public abstract class FfiConverterCallbackInterface<CallbackInterface : Any> : F
         handleMap.remove(handle)
     }
 
-    override fun lift(value: Long): CallbackInterface {
-        return handleMap.get(value)
-    }
+    override fun lift(value: Long): CallbackInterface = handleMap.get(value)
 
     override fun read(buf: ByteBuffer) = lift(buf.getLong())
 
@@ -3406,9 +3502,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onComplete`()
-            }
+            val makeCall = { uniffiObj.`onComplete`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3422,10 +3516,9 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onFrame`(
-                    FfiConverterFloat.lift(`frameNo`),
-                )
+            val makeCall = {  uniffiObj.`onFrame`(
+                FfiConverterFloat.lift(`frameNo`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3439,9 +3532,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onLoad`()
-            }
+            val makeCall = { uniffiObj.`onLoad`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3454,9 +3545,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onLoadError`()
-            }
+            val makeCall = { uniffiObj.`onLoadError`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3470,10 +3559,9 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onLoop`(
-                    FfiConverterUInt.lift(`loopCount`),
-                )
+            val makeCall = {  uniffiObj.`onLoop`(
+                FfiConverterUInt.lift(`loopCount`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3487,9 +3575,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onPause`()
-            }
+            val makeCall = { uniffiObj.`onPause`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3502,9 +3588,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onPlay`()
-            }
+            val makeCall = { uniffiObj.`onPlay`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3518,10 +3602,9 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onRender`(
-                    FfiConverterFloat.lift(`frameNo`),
-                )
+            val makeCall = {  uniffiObj.`onRender`(
+                FfiConverterFloat.lift(`frameNo`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3535,9 +3618,7 @@ internal object uniffiCallbackInterfaceObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onStop`()
-            }
+            val makeCall = { uniffiObj.`onStop`() }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
         }
@@ -3573,13 +3654,9 @@ internal object uniffiCallbackInterfaceObserver {
 public object FfiConverterTypeObserver : FfiConverter<Observer, Pointer> {
     internal val handleMap = UniffiHandleMap<Observer>()
 
-    override fun lower(value: Observer): Pointer {
-        return Pointer(handleMap.insert(value))
-    }
+    override fun lower(value: Observer): Pointer = Pointer(handleMap.insert(value))
 
-    override fun lift(value: Pointer): Observer {
-        return ObserverImpl(value)
-    }
+    override fun lift(value: Pointer): Observer = ObserverImpl(value)
 
     override fun read(buf: ByteBuffer): Observer {
         // The Rust code always writes pointers as 8 bytes, and will
@@ -3709,7 +3786,10 @@ public interface StateMachineObserver {
     companion object
 }
 
-open class StateMachineObserverImpl : Disposable, AutoCloseable, StateMachineObserver {
+open class StateMachineObserverImpl :
+    Disposable,
+    AutoCloseable,
+    StateMachineObserver {
     constructor(pointer: Pointer) {
         this.pointer = pointer
         this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(pointer))
@@ -3773,7 +3853,9 @@ open class StateMachineObserverImpl : Disposable, AutoCloseable, StateMachineObs
 
     // Use a static inner class instead of a closure so as not to accidentally
     // capture `this` as part of the cleanable's action.
-    private class UniffiCleanAction(private val pointer: Pointer?) : Runnable {
+    private class UniffiCleanAction(
+        private val pointer: Pointer?,
+    ) : Runnable {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
@@ -3783,11 +3865,10 @@ open class StateMachineObserverImpl : Disposable, AutoCloseable, StateMachineObs
         }
     }
 
-    fun uniffiClonePointer(): Pointer {
-        return uniffiRustCall { status ->
+    fun uniffiClonePointer(): Pointer =
+        uniffiRustCall { status ->
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_statemachineobserver(pointer!!, status)
         }
-    }
 
     override fun `onStateEntered`(`enteringState`: kotlin.String) =
         callWithPointer {
@@ -3838,10 +3919,9 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onStateEntered`(
-                    FfiConverterString.lift(`enteringState`),
-                )
+            val makeCall = {  uniffiObj.`onStateEntered`(
+                FfiConverterString.lift(`enteringState`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3856,10 +3936,9 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onStateExit`(
-                    FfiConverterString.lift(`leavingState`),
-                )
+            val makeCall = {  uniffiObj.`onStateExit`(
+                FfiConverterString.lift(`leavingState`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3875,11 +3954,10 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = { ->
-                uniffiObj.`onTransition`(
-                    FfiConverterString.lift(`previousState`),
-                    FfiConverterString.lift(`newState`),
-                )
+            val makeCall = {  uniffiObj.`onTransition`(
+                FfiConverterString.lift(`previousState`),
+                FfiConverterString.lift(`newState`),
+            )
             }
             val writeReturn = { _: Unit -> Unit }
             uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
@@ -3910,13 +3988,9 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
 public object FfiConverterTypeStateMachineObserver : FfiConverter<StateMachineObserver, Pointer> {
     internal val handleMap = UniffiHandleMap<StateMachineObserver>()
 
-    override fun lower(value: StateMachineObserver): Pointer {
-        return Pointer(handleMap.insert(value))
-    }
+    override fun lower(value: StateMachineObserver): Pointer = Pointer(handleMap.insert(value))
 
-    override fun lift(value: Pointer): StateMachineObserver {
-        return StateMachineObserverImpl(value)
-    }
+    override fun lift(value: Pointer): StateMachineObserver = StateMachineObserverImpl(value)
 
     override fun read(buf: ByteBuffer): StateMachineObserver {
         // The Rust code always writes pointers as 8 bytes, and will
@@ -3951,8 +4025,8 @@ data class Config(
 }
 
 public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
-    override fun read(buf: ByteBuffer): Config {
-        return Config(
+    override fun read(buf: ByteBuffer): Config =
+        Config(
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterTypeMode.read(buf),
@@ -3963,7 +4037,6 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
             FfiConverterTypeLayout.read(buf),
             FfiConverterString.read(buf),
         )
-    }
 
     override fun allocationSize(value: Config) =
         (
@@ -4002,12 +4075,11 @@ data class Layout(
 }
 
 public object FfiConverterTypeLayout : FfiConverterRustBuffer<Layout> {
-    override fun read(buf: ByteBuffer): Layout {
-        return Layout(
+    override fun read(buf: ByteBuffer): Layout =
+        Layout(
             FfiConverterTypeFit.read(buf),
             FfiConverterSequenceFloat.read(buf),
         )
-    }
 
     override fun allocationSize(value: Layout) =
         (
@@ -4040,8 +4112,8 @@ data class Manifest(
 }
 
 public object FfiConverterTypeManifest : FfiConverterRustBuffer<Manifest> {
-    override fun read(buf: ByteBuffer): Manifest {
-        return Manifest(
+    override fun read(buf: ByteBuffer): Manifest =
+        Manifest(
             FfiConverterOptionalString.read(buf),
             FfiConverterSequenceTypeManifestAnimation.read(buf),
             FfiConverterOptionalString.read(buf),
@@ -4053,7 +4125,6 @@ public object FfiConverterTypeManifest : FfiConverterRustBuffer<Manifest> {
             FfiConverterOptionalSequenceString.read(buf),
             FfiConverterOptionalString.read(buf),
         )
-    }
 
     override fun allocationSize(value: Manifest) =
         (
@@ -4103,8 +4174,8 @@ data class ManifestAnimation(
 }
 
 public object FfiConverterTypeManifestAnimation : FfiConverterRustBuffer<ManifestAnimation> {
-    override fun read(buf: ByteBuffer): ManifestAnimation {
-        return ManifestAnimation(
+    override fun read(buf: ByteBuffer): ManifestAnimation =
+        ManifestAnimation(
             FfiConverterOptionalBoolean.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalByte.read(buf),
@@ -4117,7 +4188,6 @@ public object FfiConverterTypeManifestAnimation : FfiConverterRustBuffer<Manifes
             FfiConverterOptionalFloat.read(buf),
             FfiConverterOptionalString.read(buf),
         )
-    }
 
     override fun allocationSize(value: ManifestAnimation) =
         (
@@ -4160,12 +4230,11 @@ data class ManifestTheme(
 }
 
 public object FfiConverterTypeManifestTheme : FfiConverterRustBuffer<ManifestTheme> {
-    override fun read(buf: ByteBuffer): ManifestTheme {
-        return ManifestTheme(
+    override fun read(buf: ByteBuffer): ManifestTheme =
+        ManifestTheme(
             FfiConverterString.read(buf),
             FfiConverterSequenceString.read(buf),
         )
-    }
 
     override fun allocationSize(value: ManifestTheme) =
         (
@@ -4191,13 +4260,12 @@ data class Marker(
 }
 
 public object FfiConverterTypeMarker : FfiConverterRustBuffer<Marker> {
-    override fun read(buf: ByteBuffer): Marker {
-        return Marker(
+    override fun read(buf: ByteBuffer): Marker =
+        Marker(
             FfiConverterString.read(buf),
             FfiConverterFloat.read(buf),
             FfiConverterFloat.read(buf),
         )
-    }
 
     override fun allocationSize(value: Marker) =
         (
@@ -4267,12 +4335,19 @@ sealed class Event {
 
     object OnComplete : Event()
 
+    data class SetNumericContext(
+        val `key`: kotlin.String,
+        val `value`: kotlin.Float,
+    ) : Event() {
+        companion object
+    }
+
     companion object
 }
 
 public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
-    override fun read(buf: ByteBuffer): Event {
-        return when (buf.getInt()) {
+    override fun read(buf: ByteBuffer): Event =
+        when (buf.getInt()) {
             1 ->
                 Event.Bool(
                     FfiConverterBoolean.read(buf),
@@ -4307,9 +4382,13 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
                 )
             8 -> Event.OnPointerExit
             9 -> Event.OnComplete
+            10 ->
+                Event.SetNumericContext(
+                    FfiConverterString.read(buf),
+                    FfiConverterFloat.read(buf),
+                )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
-    }
 
     override fun allocationSize(value: Event) =
         when (value) {
@@ -4378,6 +4457,14 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
                     4UL
                 )
             }
+            is Event.SetNumericContext -> {
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                (
+                    4UL +
+                        FfiConverterString.allocationSize(value.`key`) +
+                        FfiConverterFloat.allocationSize(value.`value`)
+                )
+            }
         }
 
     override fun write(
@@ -4430,6 +4517,12 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
             }
             is Event.OnComplete -> {
                 buf.putInt(9)
+                Unit
+            }
+            is Event.SetNumericContext -> {
+                buf.putInt(10)
+                FfiConverterString.write(value.`key`, buf)
+                FfiConverterFloat.write(value.`value`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -4851,22 +4944,20 @@ public object FfiConverterSequenceTypeMarker : FfiConverterRustBuffer<List<Marke
     }
 }
 
-fun `createDefaultConfig`(): Config {
-    return FfiConverterTypeConfig.lift(
+fun `createDefaultConfig`(): Config =
+    FfiConverterTypeConfig.lift(
         uniffiRustCall { _status ->
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_config(
                 _status,
             )
         },
     )
-}
 
-fun `createDefaultLayout`(): Layout {
-    return FfiConverterTypeLayout.lift(
+fun `createDefaultLayout`(): Layout =
+    FfiConverterTypeLayout.lift(
         uniffiRustCall { _status ->
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_layout(
                 _status,
             )
         },
     )
-}
