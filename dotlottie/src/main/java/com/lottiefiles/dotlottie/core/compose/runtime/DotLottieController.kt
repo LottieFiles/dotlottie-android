@@ -185,14 +185,14 @@ class DotLottieController {
         return dlplayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Number {
+    fun postEvent(event: Event): Int? {
         val result = dlplayer?.postEvent(event)
 
-        if result == 2 {
+        if (result == 2) {
             this.play()
-        } else if result == 3 {
+        } else if (result == 3) {
             this.pause()
-        } else if result == 4 {
+        } else if (result == 4) {
             // Draw the new frame
 //            dlplayer?.draw()
         }

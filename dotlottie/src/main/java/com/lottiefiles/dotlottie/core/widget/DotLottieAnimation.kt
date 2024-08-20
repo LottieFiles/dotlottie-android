@@ -350,8 +350,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        return mLottieDrawable?.postEvent(event) ?: false
+    fun postEvent(event: Event): Int {
+        return mLottieDrawable?.postEvent(event) ?: 0
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {

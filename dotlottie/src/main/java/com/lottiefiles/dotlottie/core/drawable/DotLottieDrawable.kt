@@ -322,8 +322,8 @@ class DotLottieDrawable(
         return dlPlayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        return dlPlayer?.postEvent(event) ?: false
+    fun postEvent(event: Event): Int {
+        return dlPlayer?.postEvent(event) ?: 0
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
