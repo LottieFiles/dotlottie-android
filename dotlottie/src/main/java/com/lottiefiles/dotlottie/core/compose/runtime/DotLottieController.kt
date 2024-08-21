@@ -186,31 +186,27 @@ class DotLottieController {
         return dlplayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        val result = dlplayer?.postEvent(event)
+    fun postEvent(event: Event): Int {
+        val result = dlplayer?.postEvent(event) ?: 0
         when (result) {
             1 -> {
                 eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
-                return false
             }
 
             2 -> {
                 this.play()
-                return true
             }
 
             3 -> {
                 this.pause()
-                return true
             }
 
             4 -> {
                 _currentState.value = DotLottiePlayerState.DRAW
-                return true
             }
         }
 
-        return false
+        return result
     }
 
     fun setStateMachineNumericContext(key: String, value: Float): Boolean {
