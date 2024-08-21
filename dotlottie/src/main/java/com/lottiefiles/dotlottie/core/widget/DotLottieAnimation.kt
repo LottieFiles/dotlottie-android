@@ -17,6 +17,7 @@ import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.R
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -360,6 +361,18 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun removeStateMachineEventListener(listener: StateMachineEventListener) {
         mLottieDrawable?.removeStateMachineEventListener(listener)
+    }
+
+    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
+        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
+    }
+
+    fun setStateMachineStringContext(key: String, value: String): Boolean {
+        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
+    }
+
+    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
+        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
     }
 
     companion object {
