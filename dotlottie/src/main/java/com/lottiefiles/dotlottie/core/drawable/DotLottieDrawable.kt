@@ -18,6 +18,7 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
@@ -149,6 +150,47 @@ class DotLottieDrawable(
         }
     }
 
+    private fun subscribe() {
+        val observer = object : Observer {
+            override fun onComplete() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+            }
+
+            override fun onFrame(frameNo: Float) {
+                dotLottieEventListener.forEach { it.onFrame(frameNo) }
+            }
+
+            override fun onPause() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onPause)
+            }
+
+            override fun onStop() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onStop)
+            }
+
+            override fun onPlay() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
+            }
+
+            override fun onLoad() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+            }
+
+            override fun onLoop(loopCount: UInt) {
+                dotLottieEventListener.forEach { it.onLoop(loopCount.toInt()) }
+            }
+
+            override fun onRender(frameNo: Float) {
+                dotLottieEventListener.forEach { it.onRender(frameNo) }
+            }
+
+            override fun onLoadError() {
+                dotLottieEventListener.forEach(DotLottieEventListener::onLoadError)
+            }
+        }
+        dlPlayer?.subscribe(observer)
+    }
+
     private fun initialize() {
         dlPlayer = DotLottiePlayer(config)
         when (animationData) {
@@ -166,9 +208,7 @@ class DotLottieDrawable(
         }
         bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
-        dotLottieEventListener.forEach {
-            dlPlayer!!.subscribe(it)
-        }
+        this.subscribe()
     }
 
     fun release() {
