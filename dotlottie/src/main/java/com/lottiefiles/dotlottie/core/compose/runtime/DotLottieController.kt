@@ -138,7 +138,7 @@ class DotLottieController {
             }
 
             override fun onLoop(loopCount: UInt) {
-                eventListeners.forEach { it.onLoop(loopCount) }
+                eventListeners.forEach { it.onLoop(loopCount.toInt()) }
             }
 
             override fun onRender(frameNo: Float) {

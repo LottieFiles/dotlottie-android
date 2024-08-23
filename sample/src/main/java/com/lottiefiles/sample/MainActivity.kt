@@ -51,8 +51,8 @@ class MainActivity : ComponentActivity() {
 //            )
         }
 
-        override fun onLoop() {
-            Log.d(TAG, "On Loop")
+        override fun onLoop(loopCount: Int) {
+            Log.d(TAG, "On Loop -> $loopCount")
         }
 
         override fun onComplete() {
