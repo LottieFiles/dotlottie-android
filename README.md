@@ -240,3 +240,4 @@ android {
   }
 }
 ```
+Refer to the [Android documentation](https://developer.android.com/ndk/guides/abis) for more information on ABI management.
