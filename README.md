@@ -83,6 +83,7 @@ import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.dotlottie.dlplayer.Mode
 
 fun ExampleComposeComponent() {
     DotLottieAnimation(
@@ -94,8 +95,8 @@ fun ExampleComposeComponent() {
         loop = true,
         speed = 3f,
         useFrameInterpolation = false,
-        playMode = Mode.Forward,
-        modifier = Modifier.background(Color.LIGHT_GRAY)
+        playMode = Mode.FORWARD,
+        modifier = Modifier.background(Color.LightGray)
     )
 }
 ```
@@ -105,6 +106,7 @@ fun ExampleComposeComponent() {
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.dotlottie.dlplayer.Mode
 
 fun ExampleComposeComponent() {
     val dotLottieController = remember { DotLottieController() }
@@ -126,7 +128,7 @@ fun ExampleComposeComponent() {
         loop = false,
         speed = 1f,
         useFrameInterpolation = false,
-        playMode = Mode.Forward,
+        playMode = Mode.FORWARD,
         controller = dotLottieController
     )
 }
