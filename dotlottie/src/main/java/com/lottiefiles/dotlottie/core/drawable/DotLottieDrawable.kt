@@ -20,6 +20,7 @@ import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.StateMachineObserver
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
@@ -322,8 +323,27 @@ class DotLottieDrawable(
         return dlPlayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        return dlPlayer?.postEvent(event) ?: false
+    fun postEvent(event: Event): Int {
+        val result = dlPlayer?.postEvent(event) ?: 0
+        when (result) {
+            1 -> {
+                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
+            }
+
+            2 -> {
+                this.play()
+            }
+
+            3 -> {
+                this.pause()
+            }
+
+            4 -> {
+                invalidateSelf()
+            }
+        }
+
+        return result
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
@@ -332,6 +352,18 @@ class DotLottieDrawable(
 
     fun removeStateMachineEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
+    }
+
+    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
+        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
+    }
+
+    fun setStateMachineStringContext(key: String, value: String): Boolean {
+        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
+    }
+
+    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
+        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
     }
 
     override fun draw(canvas: Canvas) {

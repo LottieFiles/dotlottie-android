@@ -24,6 +24,7 @@ enum class DotLottiePlayerState {
     INITIAL,
     LOADED,
     ERROR,
+    DRAW,
 }
 
 class DotLottieController {
@@ -156,6 +157,10 @@ class DotLottieController {
     fun startStateMachine(): Boolean {
         val result = dlplayer?.startStateMachine() ?: false
         if (result) {
+            if (this.isPlaying) {
+                this.play()
+            }
+
             dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
@@ -181,8 +186,39 @@ class DotLottieController {
         return dlplayer?.loadStateMachine(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Boolean {
-        return dlplayer?.postEvent(event) ?: false
+    fun postEvent(event: Event): Int {
+        val result = dlplayer?.postEvent(event) ?: 0
+        when (result) {
+            1 -> {
+                eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
+            }
+
+            2 -> {
+                this.play()
+            }
+
+            3 -> {
+                this.pause()
+            }
+
+            4 -> {
+                _currentState.value = DotLottiePlayerState.DRAW
+            }
+        }
+
+        return result
+    }
+
+    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
+        return dlplayer?.setStateMachineNumericContext(key, value) ?: false
+    }
+
+    fun setStateMachineStringContext(key: String, value: String): Boolean {
+        return dlplayer?.setStateMachineStringContext(key, value) ?: false
+    }
+
+    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
+        return dlplayer?.setStateMachineBooleanContext(key, value) ?: false
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {

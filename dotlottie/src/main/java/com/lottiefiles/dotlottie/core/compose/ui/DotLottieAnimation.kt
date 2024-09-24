@@ -25,6 +25,7 @@ import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -154,7 +155,7 @@ fun DotLottieAnimation(
     }
 
     LaunchedEffect(dlPlayer.isPlaying(), currentSate) {
-        if (dlPlayer.isPlaying()) {
+        if (dlPlayer.isPlaying() || currentSate == DotLottiePlayerState.DRAW) {
             choreographer.postFrameCallback(frameCallback)
         } else {
             choreographer.removeFrameCallback(frameCallback)
