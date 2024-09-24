@@ -229,7 +229,7 @@ The jniLibs in this library support the following ABIs:
 - armeabi-v7a
 - arm64-v8a
 - x86_64
-- x86 (Coming soon)
+- x86
 
 Our Jitpack release is a universal AAR that includes all supported ABIs. To reduce the size of your APK, you can exclude the ABIs that you do not require by configuring the abiFilters in your build.gradle.kts as shown below:
 ```kotlin
