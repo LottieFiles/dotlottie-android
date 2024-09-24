@@ -988,6 +988,12 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_layer_bounds(
+        `ptr`: Pointer,
+        `layerName`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): RustBuffer.ByValue
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
@@ -1099,11 +1105,74 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_bool_event(
+        `ptr`: Pointer,
+        `value`: Byte,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_event(
         `ptr`: Pointer,
         `event`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Int
+<<<<<<< HEAD
+=======
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_numeric_event(
+        `ptr`: Pointer,
+        `value`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_down_event(
+        `ptr`: Pointer,
+        `x`: Float,
+        `y`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_enter_event(
+        `ptr`: Pointer,
+        `x`: Float,
+        `y`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_exit_event(
+        `ptr`: Pointer,
+        `x`: Float,
+        `y`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_move_event(
+        `ptr`: Pointer,
+        `x`: Float,
+        `y`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_up_event(
+        `ptr`: Pointer,
+        `x`: Float,
+        `y`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_set_numeric_context(
+        `ptr`: Pointer,
+        `key`: RustBuffer.ByValue,
+        `value`: Float,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_string_event(
+        `ptr`: Pointer,
+        `value`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Int
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
         `ptr`: Pointer,
@@ -1559,6 +1628,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_duration(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_layer_bounds(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_loaded(): Short
@@ -1597,7 +1668,25 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_play(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_bool_event(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_numeric_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_down_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_enter_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_exit_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_move_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_up_event(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_set_numeric_context(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_string_event(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_render(): Short
 
@@ -1713,6 +1802,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_duration() != 3831.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_layer_bounds() != 55811.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete() != 51890.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1770,7 +1862,38 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_play() != 54931.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+<<<<<<< HEAD
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event() != 24946.toShort()) {
+=======
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_bool_event() != 20630.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event() != 24946.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_numeric_event() != 64080.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_down_event() != 5857.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_enter_event() != 56477.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_exit_event() != 55689.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_move_event() != 59697.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_pointer_up_event() != 47331.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_set_numeric_context() != 35196.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_string_event() != 56440.toShort()) {
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_render() != 34602.toShort()) {
@@ -2278,6 +2401,8 @@ public interface DotLottiePlayerInterface {
 
     fun `duration`(): kotlin.Float
 
+    fun `getLayerBounds`(`layerName`: kotlin.String): List<kotlin.Float>
+
     fun `isComplete`(): kotlin.Boolean
 
     fun `isLoaded`(): kotlin.Boolean
@@ -2332,7 +2457,47 @@ public interface DotLottiePlayerInterface {
 
     fun `play`(): kotlin.Boolean
 
+<<<<<<< HEAD
     fun `postEvent`(`event`: Event): kotlin.Int
+=======
+    fun `postBoolEvent`(`value`: kotlin.Boolean): kotlin.Int
+
+    fun `postEvent`(`event`: Event): kotlin.Int
+
+    fun `postNumericEvent`(`value`: kotlin.Float): kotlin.Int
+
+    fun `postPointerDownEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postPointerEnterEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postPointerExitEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postPointerMoveEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postPointerUpEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postSetNumericContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Float,
+    ): kotlin.Int
+
+    fun `postStringEvent`(`value`: kotlin.String): kotlin.Int
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
 
     fun `render`(): kotlin.Boolean
 
@@ -2593,6 +2758,22 @@ open class DotLottiePlayer :
             },
         )
 
+<<<<<<< HEAD
+=======
+    override fun `getLayerBounds`(`layerName`: kotlin.String): List<kotlin.Float> =
+        FfiConverterSequenceFloat.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_get_layer_bounds(
+                        it,
+                        FfiConverterString.lower(`layerName`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `isComplete`(): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
@@ -2853,6 +3034,22 @@ open class DotLottiePlayer :
             },
         )
 
+<<<<<<< HEAD
+=======
+    override fun `postBoolEvent`(`value`: kotlin.Boolean): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_bool_event(
+                        it,
+                        FfiConverterBoolean.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `postEvent`(`event`: Event): kotlin.Int =
         FfiConverterInt.lift(
             callWithPointer {
@@ -2866,6 +3063,137 @@ open class DotLottiePlayer :
             },
         )
 
+<<<<<<< HEAD
+=======
+    override fun `postNumericEvent`(`value`: kotlin.Float): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_numeric_event(
+                        it,
+                        FfiConverterFloat.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postPointerDownEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_down_event(
+                        it,
+                        FfiConverterFloat.lower(`x`),
+                        FfiConverterFloat.lower(`y`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postPointerEnterEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_enter_event(
+                        it,
+                        FfiConverterFloat.lower(`x`),
+                        FfiConverterFloat.lower(`y`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postPointerExitEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_exit_event(
+                        it,
+                        FfiConverterFloat.lower(`x`),
+                        FfiConverterFloat.lower(`y`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postPointerMoveEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_move_event(
+                        it,
+                        FfiConverterFloat.lower(`x`),
+                        FfiConverterFloat.lower(`y`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postPointerUpEvent`(
+        `x`: kotlin.Float,
+        `y`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_pointer_up_event(
+                        it,
+                        FfiConverterFloat.lower(`x`),
+                        FfiConverterFloat.lower(`y`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postSetNumericContext`(
+        `key`: kotlin.String,
+        `value`: kotlin.Float,
+    ): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_set_numeric_context(
+                        it,
+                        FfiConverterString.lower(`key`),
+                        FfiConverterFloat.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `postStringEvent`(`value`: kotlin.String): kotlin.Int =
+        FfiConverterInt.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_post_string_event(
+                        it,
+                        FfiConverterString.lower(`value`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+>>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `render`(): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
@@ -4331,7 +4659,12 @@ sealed class Event {
         companion object
     }
 
-    object OnPointerExit : Event()
+    data class OnPointerExit(
+        val `x`: kotlin.Float,
+        val `y`: kotlin.Float,
+    ) : Event() {
+        companion object
+    }
 
     object OnComplete : Event()
 
@@ -4380,7 +4713,11 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
                     FfiConverterFloat.read(buf),
                     FfiConverterFloat.read(buf),
                 )
-            8 -> Event.OnPointerExit
+            8 ->
+                Event.OnPointerExit(
+                    FfiConverterFloat.read(buf),
+                    FfiConverterFloat.read(buf),
+                )
             9 -> Event.OnComplete
             10 ->
                 Event.SetNumericContext(
@@ -4448,7 +4785,9 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
             is Event.OnPointerExit -> {
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 (
-                    4UL
+                    4UL +
+                        FfiConverterFloat.allocationSize(value.`x`) +
+                        FfiConverterFloat.allocationSize(value.`y`)
                 )
             }
             is Event.OnComplete -> {
@@ -4513,6 +4852,8 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event> {
             }
             is Event.OnPointerExit -> {
                 buf.putInt(8)
+                FfiConverterFloat.write(value.`x`, buf)
+                FfiConverterFloat.write(value.`y`, buf)
                 Unit
             }
             is Event.OnComplete -> {
