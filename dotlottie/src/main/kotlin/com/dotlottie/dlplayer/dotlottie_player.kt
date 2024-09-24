@@ -1116,8 +1116,6 @@ internal interface UniffiLib : Library {
         `event`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Int
-<<<<<<< HEAD
-=======
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_post_numeric_event(
         `ptr`: Pointer,
@@ -1172,7 +1170,6 @@ internal interface UniffiLib : Library {
         `value`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Int
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
         `ptr`: Pointer,
@@ -1862,9 +1859,6 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_play() != 54931.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-<<<<<<< HEAD
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_event() != 24946.toShort()) {
-=======
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_bool_event() != 20630.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1893,7 +1887,6 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_post_string_event() != 56440.toShort()) {
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_render() != 34602.toShort()) {
@@ -2457,9 +2450,6 @@ public interface DotLottiePlayerInterface {
 
     fun `play`(): kotlin.Boolean
 
-<<<<<<< HEAD
-    fun `postEvent`(`event`: Event): kotlin.Int
-=======
     fun `postBoolEvent`(`value`: kotlin.Boolean): kotlin.Int
 
     fun `postEvent`(`event`: Event): kotlin.Int
@@ -2497,7 +2487,6 @@ public interface DotLottiePlayerInterface {
     ): kotlin.Int
 
     fun `postStringEvent`(`value`: kotlin.String): kotlin.Int
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
 
     fun `render`(): kotlin.Boolean
 
@@ -2758,8 +2747,6 @@ open class DotLottiePlayer :
             },
         )
 
-<<<<<<< HEAD
-=======
     override fun `getLayerBounds`(`layerName`: kotlin.String): List<kotlin.Float> =
         FfiConverterSequenceFloat.lift(
             callWithPointer {
@@ -2773,7 +2760,6 @@ open class DotLottiePlayer :
             },
         )
 
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `isComplete`(): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
@@ -3034,8 +3020,6 @@ open class DotLottiePlayer :
             },
         )
 
-<<<<<<< HEAD
-=======
     override fun `postBoolEvent`(`value`: kotlin.Boolean): kotlin.Int =
         FfiConverterInt.lift(
             callWithPointer {
@@ -3049,7 +3033,6 @@ open class DotLottiePlayer :
             },
         )
 
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `postEvent`(`event`: Event): kotlin.Int =
         FfiConverterInt.lift(
             callWithPointer {
@@ -3063,8 +3046,6 @@ open class DotLottiePlayer :
             },
         )
 
-<<<<<<< HEAD
-=======
     override fun `postNumericEvent`(`value`: kotlin.Float): kotlin.Int =
         FfiConverterInt.lift(
             callWithPointer {
@@ -3193,7 +3174,6 @@ open class DotLottiePlayer :
             },
         )
 
->>>>>>> 79972b0 (feat: 🎸 added x86 support)
     override fun `render`(): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
