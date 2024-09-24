@@ -83,6 +83,7 @@ import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.dotlottie.dlplayer.Mode
 
 fun ExampleComposeComponent() {
     DotLottieAnimation(
@@ -94,8 +95,8 @@ fun ExampleComposeComponent() {
         loop = true,
         speed = 3f,
         useFrameInterpolation = false,
-        playMode = Mode.Forward,
-        modifier = Modifier.background(Color.LIGHT_GRAY)
+        playMode = Mode.FORWARD,
+        modifier = Modifier.background(Color.LightGray)
     )
 }
 ```
@@ -105,6 +106,7 @@ fun ExampleComposeComponent() {
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.dotlottie.dlplayer.Mode
 
 fun ExampleComposeComponent() {
     val dotLottieController = remember { DotLottieController() }
@@ -126,7 +128,7 @@ fun ExampleComposeComponent() {
         loop = false,
         speed = 1f,
         useFrameInterpolation = false,
-        playMode = Mode.Forward,
+        playMode = Mode.FORWARD,
         controller = dotLottieController
     )
 }
@@ -222,4 +224,22 @@ Attache the listener to the component, you can add one or
 dotLottieAnimationView.addEventListener(eventListener)
 ```
 
+## Supported ABIs
+The jniLibs in this library support the following ABIs:
+- armeabi-v7a
+- arm64-v8a
+- x86_64
+- x86 (Coming soon)
 
+Our Jitpack release is a universal AAR that includes all supported ABIs. To reduce the size of your APK, you can exclude the ABIs that you do not require by configuring the abiFilters in your build.gradle.kts as shown below:
+```kotlin
+android {
+  defaultConfig {
+    ndk {
+      abiFilters.add("arm64-v8a")
+      abiFilters.add("armeabi-v7a")
+    }
+  }
+}
+```
+Refer to the [Android documentation](https://developer.android.com/ndk/guides/abis) for more information on ABI management.
