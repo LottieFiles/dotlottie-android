@@ -28,7 +28,7 @@ repositories {
 
 ```kotlin
 dependencies {
-    implementation("com.github.LottieFiles:dotlottie-android:0.3.0")
+    implementation("com.github.LottieFiles:dotlottie-android:0.5.0")
 }
 
 ```
@@ -64,7 +64,9 @@ Set up the initial animation configuration
 
 #### Traditional UI 
 ```kotlin
-val config = DotLottieConfig.Builder()
+import com.lottiefiles.dotlottie.core.model.Config
+
+val config = Config.Builder()
     .autoplay(true)
     .speed(1f)
     .loop(true)
