@@ -162,6 +162,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun loadTheme(themeId: String) {
         mLottieDrawable?.loadTheme(themeId)
     }
+    fun loadThemeData(themeData: String) {
+        mLottieDrawable?.loadThemeData(themeData)
+    }
 
     fun play() {
         mLottieDrawable?.play()
