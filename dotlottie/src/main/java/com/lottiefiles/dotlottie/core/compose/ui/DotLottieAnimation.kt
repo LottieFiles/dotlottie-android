@@ -1,6 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
+import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -136,6 +137,8 @@ fun DotLottieAnimation(
             bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
             bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
             imageBitmap = bitmap!!.asImageBitmap()
+            // Apply theme on initial load
+            dlPlayer.loadTheme(themeId ?: "")
             choreographer.postFrameCallback(frameCallback)
             // Renders initial frame if not autoplaying
             val startTime = System.currentTimeMillis()

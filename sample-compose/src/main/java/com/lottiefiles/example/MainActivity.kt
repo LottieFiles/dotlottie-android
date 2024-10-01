@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
+//                    ThemeDataExample()
 //                    LayoutExample()
                     StateMachineExample()
                 }

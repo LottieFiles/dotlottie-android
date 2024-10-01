@@ -285,6 +285,10 @@ class DotLottieDrawable(
         dlPlayer?.loadTheme(themeId)
     }
 
+    fun loadThemeData(themeData: String) {
+        dlPlayer?.loadThemeData(themeData)
+    }
+
     fun manifest(): Manifest? {
         return dlPlayer?.manifest()
     }
