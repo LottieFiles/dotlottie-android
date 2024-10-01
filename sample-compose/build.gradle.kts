@@ -53,6 +53,7 @@ android {
 
 dependencies {
     implementation(project(":dotlottie"))
+    implementation("androidx.palette:palette-ktx:1.0.0")
     implementation(libs.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     implementation(libs.activity.compose)

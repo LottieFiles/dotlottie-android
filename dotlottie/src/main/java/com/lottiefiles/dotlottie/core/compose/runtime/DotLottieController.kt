@@ -316,6 +316,9 @@ class DotLottieController {
         dlplayer?.loadTheme(themeId)
     }
 
+    fun loadThemeData(themeData: String) {
+        dlplayer?.loadThemeData(themeData)
+    }
 
     fun setPlayMode(mode: Mode) {
         dlplayer?.let {
