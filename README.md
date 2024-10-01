@@ -167,6 +167,7 @@ fun ExampleComposeComponent() {
 - `DotLottieAnimation.setMarker(String)` : Sets the lottie named marker to play.
 - `DotLottieAnimation.setLayout(Fit, LayoutUtil.Alignment)` : Sets the animation layout configuration.
 - `DotLottieAnimation.loadTheme(String)` : Loads a new theme from the .lottie file, using its ID as specified in the manifest.json file of the .lottie file.
+- `DotLottieAnimation.loadThemeData(String)` : Loads a new theme using theme data.
 
 #### Events
 
