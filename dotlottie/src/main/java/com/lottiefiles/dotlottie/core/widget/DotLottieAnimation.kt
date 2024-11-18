@@ -159,11 +159,16 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
-    fun loadTheme(themeId: String) {
-        mLottieDrawable?.loadTheme(themeId)
+    fun setTheme(themeId: String) {
+        mLottieDrawable?.setTheme(themeId)
     }
-    fun loadThemeData(themeData: String) {
-        mLottieDrawable?.loadThemeData(themeData)
+
+    fun setThemeData(themeData: String) {
+        mLottieDrawable?.setThemeData(themeData)
+    }
+
+    fun resetTheme() {
+        mLottieDrawable?.resetTheme()
     }
 
     fun play() {
@@ -233,6 +238,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         segment = listOf(),
                         marker = config.marker,
                         layout = config.layout,
+                        themeId = config.themeId,
                     )
                 )
 
@@ -287,6 +293,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         segment = listOf(),
                         marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
                         layout = createDefaultLayout(),
+                        themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId) ?: ""
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation

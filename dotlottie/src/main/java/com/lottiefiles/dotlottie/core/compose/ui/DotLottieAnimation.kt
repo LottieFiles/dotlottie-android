@@ -71,6 +71,7 @@ fun DotLottieAnimation(
             backgroundColor = 0u,
             marker = marker ?: "",
             layout = layout,
+            themeId = themeId ?: ""
         )
     }
 
@@ -138,7 +139,6 @@ fun DotLottieAnimation(
             bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
             imageBitmap = bitmap!!.asImageBitmap()
             // Apply theme on initial load
-            dlPlayer.loadTheme(themeId ?: "")
             choreographer.postFrameCallback(frameCallback)
             // Renders initial frame if not autoplaying
             val startTime = System.currentTimeMillis()
@@ -184,13 +184,14 @@ fun DotLottieAnimation(
         conf.speed = speed
         conf.marker = marker ?: ""
         conf.layout = layout
+        conf.themeId = themeId ?: ""
+
         if (segment != null) {
             conf.segment = listOf(segment.first, segment.second)
         } else {
             conf.segment = emptyList()
         }
 
-        dlPlayer.loadTheme(themeId ?: "")
         dlPlayer.setConfig(conf)
 
         // Start playing if player isCompleted
