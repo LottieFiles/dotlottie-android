@@ -17,6 +17,7 @@ class Config private constructor(
     val marker: String,
     val layout: Layout,
     val source: DotLottieSource,
+    val themeId: String = ""
 ) {
 
     class Builder {
@@ -30,6 +31,7 @@ class Config private constructor(
         private var source: DotLottieSource? = null
         private var marker: String = ""
         private var layout: Layout = createDefaultLayout()
+        private var themeId: String = ""
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -72,6 +74,10 @@ class Config private constructor(
             this.layout = Layout(fit, listOf(alignment.first, alignment.second))
         }
 
+        fun themeId(themeId: String) = apply {
+            this.themeId = themeId
+        }
+
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
 
@@ -84,6 +90,7 @@ class Config private constructor(
                 source = source!!,
                 marker = this.marker,
                 layout = this.layout,
+                themeId = this.themeId
 //                backgroundColor = this.backgroundColor
             )
         }

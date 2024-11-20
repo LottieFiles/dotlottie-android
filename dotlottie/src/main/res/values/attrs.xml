@@ -6,9 +6,9 @@
         <!-- Defines how many times the animation should repeat. The default value is 0. -->
         <attr name="dotLottie_loop" format="boolean" />
         <attr name="dotLottie_marker" format="string" />
-<!--        <attr name="repeatCount" format="boolean">-->
-<!--            <enum name="infinite" value="true" />-->
-<!--        </attr>-->
+        <!--        <attr name="repeatCount" format="boolean">-->
+        <!--            <enum name="infinite" value="true" />-->
+        <!--        </attr>-->
         <!-- Defines the animation behavior when it reaches the end and the repeat count is
              greater than 0 or infinite. The default value is restart. -->
         <attr name="dotLottie_playMode">
@@ -17,9 +17,10 @@
             <!-- The animation plays backward. -->
             <enum name="reverse" value="2" />
         </attr>
-        <attr name="dotLottie_speed" format="float"/>
+        <attr name="dotLottie_speed" format="float" />
         <attr name="dotLottie_autoplay" format="boolean" />
         <attr name="dotLottie_backgroundColor" format="integer" />
         <attr name="dotLottie_useFrameInterpolation" format="boolean" />
+        <attr name="dotLottie_themeId" format="string" />
     </declare-styleable>
 </resources>

@@ -43,9 +43,9 @@ fun ThemeDataExample() {
     val controller = remember { DotLottieController() }
 
     LaunchedEffect(colorScheme.value) {
-        val red = colorScheme.value.primary.red
-        val green = colorScheme.value.primary.green
-        val blue = colorScheme.value.primary.blue
+        val tertiaryRed = colorScheme.value.tertiary.red
+        val tertiaryGreen = colorScheme.value.tertiary.green
+        val tertiaryBlue = colorScheme.value.tertiary.blue
 
         val backgroundRed = colorScheme.value.background.red
         val backgroundGreen = colorScheme.value.background.green
@@ -54,22 +54,38 @@ fun ThemeDataExample() {
         // Create theme data based on extracted colors
         val theme = """
         {
-          "ball_color": {
-            "p": {
-              "a": 0,
-              "k": [$red, $green, $blue, 1]
-            }
-          },
-          "bg_color": {
-            "p": {
-              "a": 0,
-              "k": [$backgroundRed, $backgroundGreen, $backgroundBlue, 1]
-            }
-          }
+            "rules": [
+                {
+                    "id": "check_mark_bg",
+                    "type": "Color",
+                    "value": [$backgroundRed, $backgroundGreen, $backgroundBlue, 1]
+                },
+                {
+                    "id": "outline",
+                    "type": "Color",
+                    "keyframes": [
+                        {
+                            "frame": 48,
+                            "value": [$tertiaryRed, $tertiaryGreen, $tertiaryBlue, 1],
+                            "outTangent": { "x": 0.65, "y": 0 },
+                            "inTangent": { "x": 0.36, "y": 1 }
+                        }, 
+                        {
+                            "frame": 61,
+                            "value": [$backgroundRed, $backgroundGreen, $backgroundBlue, 1]
+                        }
+                    ]
+                },
+                {
+                    "id": "bubble",
+                    "type": "Color",
+                    "value": [$tertiaryRed, $tertiaryGreen, $tertiaryBlue, 1]
+                }
+            ]
         }
         """.trimIndent()
 
-        controller.loadThemeData(theme)
+        controller.setThemeData(theme)
     }
 
     // Apply dynamic color scheme based on extracted colors
@@ -101,7 +117,7 @@ fun ThemeDataExample() {
             }
 
             DotLottieAnimation(
-                source = DotLottieSource.Asset("theming_example.lottie"),
+                source = DotLottieSource.Asset("theming_example_v2.lottie"),
                 autoplay = true,
                 loop = true,
                 controller = controller,
@@ -128,13 +144,17 @@ fun extractColorsFromImage(
             val backgroundColor = palette?.dominantSwatch?.rgb ?: android.graphics.Color.TRANSPARENT
             val primaryColor =
                 palette?.lightVibrantSwatch?.rgb ?: android.graphics.Color.TRANSPARENT
+            val tertiary = palette?.vibrantSwatch?.rgb ?: android.graphics.Color.TRANSPARENT
 
             // Modify only the primary and secondary colors by copying the default color scheme
+            colorScheme.value.outline
             colorScheme.value = colorScheme.value.copy(
                 primary = Color(primaryColor),
                 onPrimary = if (isColorDark(primaryColor)) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black,
                 background = Color(backgroundColor),
-                onBackground = if (isColorDark(backgroundColor)) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black
+                onBackground = if (isColorDark(backgroundColor)) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black,
+                tertiary = Color(tertiary),
+                onTertiary = if (isColorDark(tertiary)) androidx.compose.ui.graphics.Color.White else androidx.compose.ui.graphics.Color.Black,
             )
         }
     }

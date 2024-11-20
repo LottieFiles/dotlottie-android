@@ -61,10 +61,10 @@ class MainActivity : ComponentActivity() {
 //                    DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
-//                    ThemeExample()
+                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-                    StateMachineExample()
+//                    StateMachineExample()
                 }
             }
         }
@@ -136,8 +136,8 @@ fun DefaultAnimationDemo() {
                             loop = true,
                             eventListeners = listOf(events),
 //                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
-                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
-//                                        source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
+//                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
+                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
 //                                        source = DotLottieSource.Asset("swinging.json"),
                             modifier = Modifier
                                 .background(Color.LightGray)
@@ -466,7 +466,9 @@ fun MarkerExample() {
 
 @Composable
 fun ThemeExample() {
-    val theme = remember { mutableStateOf<String?>(null) }
+    val theme = remember { mutableStateOf<String?>("") }
+    val controller = remember { DotLottieController() }
+    val expandThemes = remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -474,18 +476,37 @@ fun ThemeExample() {
     ) {
         Row {
             DotLottieAnimation(
-                source = DotLottieSource.Asset("theming_example.lottie"),
+                source = DotLottieSource.Asset("theming_example_v2.lottie"),
                 autoplay = true,
                 themeId = theme.value,
                 loop = true,
+                controller = controller,
             )
         }
         Row {
             Column {
                 Button(onClick = {
-                    theme.value = "theme"
+                    expandThemes.value = true
                 }) {
-                    Text(text = "Load `theme`")
+                    Text(text = "Select Theme:: ${theme.value ?: "None"}")
+                }
+                DropdownMenu(
+                    expanded = expandThemes.value,
+                    onDismissRequest = { expandThemes.value = false }) {
+                    controller.manifest()?.themes?.forEach {
+                        DropdownMenuItem(
+                            text = { Text(text = it.id) },
+                            onClick = {
+                                expandThemes.value = false
+                                theme.value = it.id
+                            }
+                        )
+                    }
+                }
+                Button(onClick = {
+                    theme.value = ""
+                }) {
+                    Text(text = "Reset Theme")
                 }
             }
         }
