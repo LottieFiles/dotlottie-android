@@ -312,12 +312,16 @@ class DotLottieController {
         }
     }
 
-    fun loadTheme(themeId: String) {
-        dlplayer?.loadTheme(themeId)
+    fun setTheme(themeId: String) {
+        dlplayer?.setTheme(themeId)
     }
 
-    fun loadThemeData(themeData: String) {
-        dlplayer?.loadThemeData(themeData)
+    fun setThemeData(themeData: String) {
+        dlplayer?.setThemeData(themeData)
+    }
+
+    fun resetTheme() {
+        dlplayer?.resetTheme()
     }
 
     fun setPlayMode(mode: Mode) {
