@@ -131,6 +131,12 @@ class DotLottieDrawable(
             dlPlayer!!.setConfig(config)
         }
 
+    val activeThemeId: String
+        get() = dlPlayer?.activeThemeId() ?: ""
+
+    val activeAnimationId: String
+        get() = dlPlayer?.activeAnimationId() ?: ""
+
     @get:FloatRange(from = 0.0)
     var speed: Float
         get() = dlPlayer!!.config().speed
