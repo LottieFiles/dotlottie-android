@@ -171,6 +171,10 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.resetTheme()
     }
 
+    fun setSlots(slots: String) {
+        mLottieDrawable?.setSlots(slots)
+    }
+
     fun play() {
         mLottieDrawable?.play()
     }

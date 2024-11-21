@@ -293,6 +293,10 @@ class DotLottieDrawable(
         dlPlayer?.resetTheme()
     }
 
+    fun setSlots(slots: String) {
+        dlPlayer?.setSlots(slots)
+    }
+
     fun manifest(): Manifest? {
         return dlPlayer?.manifest()
     }

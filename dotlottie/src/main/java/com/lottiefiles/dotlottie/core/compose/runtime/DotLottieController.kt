@@ -324,6 +324,10 @@ class DotLottieController {
         dlplayer?.resetTheme()
     }
 
+    fun setSlots(slots: String) {
+        dlplayer?.setSlots(slots)
+    }
+
     fun setPlayMode(mode: Mode) {
         dlplayer?.let {
             val config = it.config()
