@@ -101,6 +101,13 @@ class DotLottieAnimation @JvmOverloads constructor(
     val markers: List<Marker>
         get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
 
+
+    val activeThemeId: String
+        get() = mLottieDrawable?.activeThemeId ?: ""
+
+    val activeAnimationId: String
+        get() = mLottieDrawable?.activeAnimationId ?: ""
+
     /***
      * Method
      */
@@ -169,6 +176,10 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun resetTheme() {
         mLottieDrawable?.resetTheme()
+    }
+
+    fun setSlots(slots: String) {
+        mLottieDrawable?.setSlots(slots)
     }
 
     fun play() {

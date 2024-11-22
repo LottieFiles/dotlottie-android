@@ -95,6 +95,12 @@ class DotLottieController {
     val markers: List<Marker>
         get() = dlplayer?.markers() ?: emptyList()
 
+    val activeThemeId: String
+        get() = dlplayer?.activeThemeId() ?: ""
+
+    val activeAnimationId: String
+        get() = dlplayer?.activeAnimationId() ?: ""
+
     fun play() {
         dlplayer?.play()
     }
@@ -322,6 +328,10 @@ class DotLottieController {
 
     fun resetTheme() {
         dlplayer?.resetTheme()
+    }
+
+    fun setSlots(slots: String) {
+        dlplayer?.setSlots(slots)
     }
 
     fun setPlayMode(mode: Mode) {
