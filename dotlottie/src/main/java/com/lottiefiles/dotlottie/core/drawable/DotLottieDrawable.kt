@@ -312,9 +312,11 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
+    fun stateMachineStart(): Boolean {
+        val result = dlPlayer?.stateMachineStart() ?: false
 
-    fun startStateMachine(): Boolean {
-        val result = dlPlayer?.startStateMachine() ?: false
+        // Start render loop
+
         if (result) {
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
                 override fun onStateEntered(enteringState: String) {
@@ -333,55 +335,85 @@ class DotLottieDrawable(
         return result
     }
 
-    fun stopStateMachine(): Boolean {
-        return dlPlayer?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return dlPlayer?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlPlayer?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        val result = dlPlayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlPlayer?.stateMachineLoadData(data) ?: false
+    }
 
-            2 -> {
-                this.play()
-            }
+    /**
+     * Internal move to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event): Int {
+        val result = dlPlayer?.stateMachinePostEvent(event) ?: 0
 
-            3 -> {
-                this.pause()
-            }
+        // Doesn't return a play code anymore - We need to start the rendering loop on state machine start.
 
-            4 -> {
-                invalidateSelf()
-            }
-        }
+//        when (result) {
+//            1 -> {
+//                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
+//            }
+//
+//            2 -> {
+//                this.play()
+//            }
+//
+//            3 -> {
+//                this.pause()
+//            }
+//
+//            4 -> {
+//                invalidateSelf()
+//            }
+//        }
 
         return result
     }
 
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
 
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
+        return dlPlayer?.stateMachineSetNumericTrigger(key, value) ?: false
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
+        return dlPlayer?.stateMachineSetStringTrigger(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
+        return dlPlayer?.stateMachineSetBooleanTrigger(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericTrigger(key: String): Float? {
+        return dlPlayer?.stateMachineGetNumericTrigger(key)
+    }
+
+    fun stateMachineGetStringTrigger(key: String): String? {
+        return dlPlayer?.stateMachineGetStringTrigger(key)
+    }
+
+    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
+        return dlPlayer?.stateMachineGetBooleanTrigger(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlPlayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        dlPlayer?.stateMachineFireEvent(event)
     }
 
     override fun draw(canvas: Canvas) {
