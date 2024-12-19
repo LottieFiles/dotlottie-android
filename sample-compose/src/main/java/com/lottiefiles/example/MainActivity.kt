@@ -611,7 +611,7 @@ fun StateMachineExample() {
     }
 
     LaunchedEffect(UInt) {
-        controller.addStateMachineEventListener(stateListener)
+        controller.stateMachineAddEventListener(stateListener)
     }
 
 
@@ -637,22 +637,23 @@ fun StateMachineExample() {
             Column {
 
                 Button(onClick = {
-                    val result = controller.loadStateMachine("pigeon_fsm")
+                    val result = controller.stateMachineLoad("pigeon_fsm")
                     if (result) {
-                        controller.startStateMachine()
+                        controller.stateMachineStart()
                     }
                 }) {
                     Text(text = "sate machine")
                 }
 
                 Button(onClick = {
-                    controller.postEvent(Event.String("explosion"))
+//                    controller.stateMachinePostEvent(Event.String("explosion"))
+                    controller.stateMachineFireEvent("explosion")
                 }) {
                     Text(text = "Explosion")
                 }
 
                 Button(onClick = {
-                    controller.stopStateMachine()
+                    controller.stateMachineStop()
                 }) {
                     Text(text = "Stop")
                 }

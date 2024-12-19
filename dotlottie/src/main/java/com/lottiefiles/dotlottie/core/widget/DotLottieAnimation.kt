@@ -360,40 +360,64 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun startStateMachine(): Boolean {
-        return mLottieDrawable?.startStateMachine() ?: false
+    fun stateMachineStart(): Boolean {
+        return mLottieDrawable?.stateMachineStart() ?: false
     }
 
-    fun stopStateMachine(): Boolean {
-        return mLottieDrawable?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return mLottieDrawable?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return mLottieDrawable?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        return mLottieDrawable?.postEvent(event) ?: 0
+    fun stateMachineLoadData(data: String): Boolean {
+        return mLottieDrawable?.stateMachineLoadData(data) ?: false
+    }
+
+    fun stateMachinePostEvent(event: Event): Int {
+        return mLottieDrawable?.stateMachinePostEvent(event) ?: 0
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.addStateMachineEventListener(listener)
+        mLottieDrawable?.stateMachineAddEventListener(listener)
     }
 
     fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.removeStateMachineEventListener(listener)
+        mLottieDrawable?.stateMachineRemoveEventListener(listener)
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
+        return mLottieDrawable?.stateMachineSetNumericTrigger(key, value) ?: false
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
+        return mLottieDrawable?.stateMachineSetStringTrigger(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
+        return mLottieDrawable?.stateMachineSetBooleanTrigger(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericTrigger(key: String): Float? {
+        return mLottieDrawable?.stateMachineGetNumericTrigger(key)
+    }
+
+    fun stateMachineGetStringTrigger(key: String): String? {
+        return mLottieDrawable?.stateMachineGetStringTrigger(key)
+    }
+
+    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
+        return mLottieDrawable?.stateMachineGetBooleanTrigger(key)
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        mLottieDrawable?.stateMachineFireEvent(event)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return mLottieDrawable?.stateMachineCurrentState()
     }
 
     companion object {

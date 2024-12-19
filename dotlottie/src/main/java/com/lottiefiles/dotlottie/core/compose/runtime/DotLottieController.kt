@@ -160,8 +160,8 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun startStateMachine(): Boolean {
-        val result = dlplayer?.startStateMachine() ?: false
+    fun stateMachineStart(): Boolean {
+        val result = dlplayer?.stateMachineStart() ?: false
         if (result) {
             if (this.isPlaying) {
                 this.play()
@@ -184,54 +184,84 @@ class DotLottieController {
         return result
     }
 
-    fun stopStateMachine(): Boolean {
-        return dlplayer?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return dlplayer?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlplayer?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlplayer?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        val result = dlplayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlplayer?.stateMachineLoadData(data) ?: false
+    }
 
-            2 -> {
-                this.play()
-            }
+    /**
+     * Internal move to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event): Int {
+        val result = dlplayer?.stateMachinePostEvent(event) ?: 0
 
-            3 -> {
-                this.pause()
-            }
+        // Doesn't return a play code anymore - We need to start the rendering loop on state machine start.
 
-            4 -> {
-                _currentState.value = DotLottiePlayerState.DRAW
-            }
-        }
+//        when (result) {
+//            1 -> {
+//                eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
+//            }
+//
+//            2 -> {
+//                this.play()
+//            }
+//
+//            3 -> {
+//                this.pause()
+//            }
+//
+//            4 -> {
+//                _currentState.value = DotLottiePlayerState.DRAW
+//            }
+//        }
 
         return result
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlplayer?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineFireEvent(event: String) {
+        dlplayer?.stateMachineFireEvent(event)
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlplayer?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
+        return dlplayer?.stateMachineSetNumericTrigger(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlplayer?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
+        return dlplayer?.stateMachineSetStringTrigger(key, value) ?: false
     }
 
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
+        return dlplayer?.stateMachineSetBooleanTrigger(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericTrigger(key: String): Float? {
+        return dlplayer?.stateMachineGetNumericTrigger(key)
+    }
+
+    fun stateMachineGetStringTrigger(key: String): String? {
+        return dlplayer?.stateMachineGetStringTrigger(key)
+    }
+
+    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
+        return dlplayer?.stateMachineGetBooleanTrigger(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlplayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
 
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
     }
 
