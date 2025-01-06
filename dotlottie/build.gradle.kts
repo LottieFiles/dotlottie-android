@@ -63,17 +63,19 @@ publishing {
 dependencies {
     implementation("net.java.dev.jna:jna:5.14.0@aar")
     implementation(libs.core.ktx)
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    implementation(libs.androidx.lifecycle.runtime.ktx.v262)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.espresso.core)
     // JitPack Compose
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.material)
-    implementation(libs.androidx.ui.tooling.preview)
-    androidTestImplementation(libs.androidx.ui.test.junit4)
+    implementation(libs.androidx.ui) {
+        exclude(group = "androidx.compose.runtime")
+        exclude(group = "androidx.compose.foundation")
+        exclude(group = "androidx.compose.material3")
+        exclude(group = "androidx.compose.material")
+    }
+    implementation(libs.androidx.material) {
+        exclude(group = "androidx.compose.runtime")
+    }
 
-    implementation(libs.okhttp)
+    implementation(libs.okhttp) {
+        exclude(group = "com.squareup.okhttp3", module = "logging-interceptor")
+        exclude(group = "com.squareup.okhttp3", module = "okhttp-urlconnection")
+    }
 }
