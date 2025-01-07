@@ -20,6 +20,11 @@ fun String.isJsonAsset(): Boolean {
 fun String.isDotLottieAsset(): Boolean {
     return endsWith(".lottie")
 }
+
+fun String.isUrl(): Boolean {
+    return startsWith("http") || startsWith("https")
+}
+
 fun Context.lifecycleOwner(): LifecycleOwner? {
     var curContext = this
     var maxDepth = 20
