@@ -101,7 +101,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     val markers: List<Marker>
         get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
 
-
     val activeThemeId: String
         get() = mLottieDrawable?.activeThemeId ?: ""
 

@@ -37,6 +37,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
 
     var freeze: Boolean = false
         set(value) {
@@ -318,6 +319,11 @@ class DotLottieDrawable(
         // Start render loop
 
         if (result) {
+            if (dlPlayer != null) {
+                stateMachineGestureListeners =
+                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
+
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
@@ -348,32 +354,20 @@ class DotLottieDrawable(
     }
 
     /**
-     * Internal move to notify the state machine of gesture input.
+     * Internal function to notify the state machine of gesture input.
      */
-    fun stateMachinePostEvent(event: Event): Int {
-        val result = dlPlayer?.stateMachinePostEvent(event) ?: 0
+    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
+        var ret: Int = 1
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
-        // Doesn't return a play code anymore - We need to start the rendering loop on state machine start.
+        if (force) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+        }
 
-//        when (result) {
-//            1 -> {
-//                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-//            }
-//
-//            2 -> {
-//                this.play()
-//            }
-//
-//            3 -> {
-//                this.pause()
-//            }
-//
-//            4 -> {
-//                invalidateSelf()
-//            }
-//        }
-
-        return result
+        return ret
     }
 
     fun stateMachineAddEventListener(listener: StateMachineEventListener) {

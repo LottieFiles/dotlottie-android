@@ -61,10 +61,10 @@ class MainActivity : ComponentActivity() {
 //                    DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
-                    ThemeExample()
+//                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-//                    StateMachineExample()
+                    StateMachineExample()
                 }
             }
         }
@@ -622,8 +622,8 @@ fun StateMachineExample() {
     ) {
         Row {
             DotLottieAnimation(
-                source = DotLottieSource.Asset("exploding_pigeon.lottie"),
-                autoplay = true,
+                source = DotLottieSource.Asset("toggle.json"),
+                autoplay = false,
                 loop = false,
                 layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
                 modifier = Modifier
@@ -637,26 +637,119 @@ fun StateMachineExample() {
             Column {
 
                 Button(onClick = {
-                    val result = controller.stateMachineLoad("pigeon_fsm")
+                    val stateMachineData = """
+                        {
+    "descriptor": {
+        "id": "toggle",
+        "initial": "initial-wait"
+    },
+    "states": [
+        {
+            "name": "initial-wait",
+            "type": "PlaybackState",
+            "animationId": "",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "a",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "a",
+            "type": "PlaybackState",
+            "animationId": "",
+            "autoplay": true,
+            "speed": 2.0,
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "b",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "b",
+            "type": "PlaybackState",
+            "animationId": "",
+            "autoplay": true,
+            "speed": 2.0,
+            "mode": "Reverse",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "a",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "listeners": [
+        {
+            "type": "PointerDown",
+            "actions": [
+                {
+                    "type": "Toggle",
+                    "triggerName": "OnOffSwitch"
+                }
+            ]
+        }
+    ],
+    "triggers": [
+        {
+            "type": "Boolean",
+            "name": "OnOffSwitch",
+            "value": false
+        }
+    ]
+}
+
+
+                    """.trimIndent()
+
+                    val result = controller.stateMachineLoadData(stateMachineData)
                     if (result) {
                         controller.stateMachineStart()
                     }
                 }) {
-                    Text(text = "sate machine")
+                    Text(text = "Load State Machine")
                 }
 
-                Button(onClick = {
-//                    controller.stateMachinePostEvent(Event.String("explosion"))
-                    controller.stateMachineFireEvent("explosion")
-                }) {
-                    Text(text = "Explosion")
-                }
-
-                Button(onClick = {
-                    controller.stateMachineStop()
-                }) {
-                    Text(text = "Stop")
-                }
+//                Button(onClick = {
+////                    controller.stateMachinePostEvent(Event.String("explosion"))
+//                    controller.stateMachineFireEvent("explosion")
+//                }) {
+//                    Text(text = "Explosion")
+//                }
+//
+//                Button(onClick = {
+//                    controller.stateMachineStop()
+//                }) {
+//                    Text(text = "Stop")
+//                }
             }
         }
     }

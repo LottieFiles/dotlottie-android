@@ -40,6 +40,9 @@ class DotLottieController {
     private val _height = MutableStateFlow(0u)
     val height: StateFlow<UInt> = _height.asStateFlow()
 
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+        private set
+
     var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
         private set
     var eventListeners = mutableListOf<DotLottieEventListener>()
@@ -163,6 +166,11 @@ class DotLottieController {
     fun stateMachineStart(): Boolean {
         val result = dlplayer?.stateMachineStart() ?: false
         if (result) {
+            if (dlplayer != null) {
+                stateMachineGestureListeners =
+                    dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
+
             if (this.isPlaying) {
                 this.play()
             }
@@ -197,32 +205,20 @@ class DotLottieController {
     }
 
     /**
-     * Internal move to notify the state machine of gesture input.
+     * Internal function to notify the state machine of gesture input.
      */
-    fun stateMachinePostEvent(event: Event): Int {
-        val result = dlplayer?.stateMachinePostEvent(event) ?: 0
+    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
+        var ret: Int = 1
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
-        // Doesn't return a play code anymore - We need to start the rendering loop on state machine start.
+        if (force) {
+            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
+        }
 
-//        when (result) {
-//            1 -> {
-//                eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
-//            }
-//
-//            2 -> {
-//                this.play()
-//            }
-//
-//            3 -> {
-//                this.pause()
-//            }
-//
-//            4 -> {
-//                _currentState.value = DotLottiePlayerState.DRAW
-//            }
-//        }
-
-        return result
+        return ret
     }
 
     fun stateMachineFireEvent(event: String) {

@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
@@ -22,7 +24,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.input.pointer.pointerInput
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
@@ -35,7 +39,6 @@ import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
-
 
 @Composable
 fun DotLottieAnimation(
@@ -231,6 +234,41 @@ fun DotLottieAnimation(
             .defaultMinSize(200.dp, 200.dp)
             .onGloballyPositioned { layoutCoordinates ->
                 layoutSize = layoutCoordinates.size.toSize()
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    // First touch (Down)
+                    val down = awaitFirstDown()
+                    down.consume() // Consume the down event
+
+                    val scaledX = down.position.x
+                    val scaledY = down.position.y
+
+                    rController.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
+
+                    // Handle move and up events
+                    do {
+                        val event = awaitPointerEvent()
+                        val position = event.changes.first()
+                        position.consume() // Consume each event
+
+                        // Handle move
+                        if (!position.pressed) {
+                            // Touch up detected
+                            val upScaledX = position.position.x
+                            val upScaledY = position.position.y
+
+                            rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
+                            break
+                        } else {
+                            // Move detected
+                            val moveX = position.position.x
+                            val moveY = position.position.y
+
+                            rController.stateMachinePostEvent(Event.PointerMove(moveX, moveY))
+                        }
+                    } while (position.pressed)
+                }
             }
     ) {
         imageBitmap?.let {
