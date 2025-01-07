@@ -1,12 +1,12 @@
 package com.lottiefiles.dotlottie.core.widget
 
 import android.content.Context
-import android.content.res.TypedArray
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewTreeObserver
 import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
@@ -14,17 +14,17 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.R
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
+import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
+import com.lottiefiles.dotlottie.core.util.isUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,6 +33,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dotlottie.dlplayer.Config as DLConfig
 
+data class DotLottieAttributes(
+    val src: String,
+    val loop: Boolean,
+    val marker: String?,
+    val playMode: Int,
+    val speed: Float,
+    val autoplay: Boolean,
+    val backgroundColor: Int,
+    val useFrameInterpolation: Boolean,
+    val themeId: String?
+)
 
 class DotLottieAnimation @JvmOverloads constructor(
     private val context: Context,
@@ -48,6 +59,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val coroutineScope = CoroutineScope(SupervisorJob())
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
+
+    private lateinit var attributes: DotLottieAttributes
 
 
     @get:FloatRange(from = 0.0)
@@ -208,16 +221,51 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     init {
+        retrieveAttributes()
+        waitForLayout()
     }
 
-    private fun setupConfigFromXml() {
-        context.theme?.obtainStyledAttributes(attrs, R.styleable.DotLottieAnimation, 0, 0)?.apply {
+    private fun retrieveAttributes() {
+        context.theme.obtainStyledAttributes(attrs, R.styleable.DotLottieAnimation, 0, 0).apply {
             try {
-                setupDotLottieDrawable()
+                attributes = DotLottieAttributes(
+                    src = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: "",
+                    loop = getBoolean(R.styleable.DotLottieAnimation_dotLottie_loop, false),
+                    marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker),
+                    playMode = getInt(
+                        R.styleable.DotLottieAnimation_dotLottie_playMode,
+                        MODE_FORWARD
+                    ),
+                    speed = getFloat(R.styleable.DotLottieAnimation_dotLottie_speed, 1f),
+                    autoplay = getBoolean(R.styleable.DotLottieAnimation_dotLottie_autoplay, false),
+                    backgroundColor = getColor(
+                        R.styleable.DotLottieAnimation_dotLottie_backgroundColor,
+                        Color.TRANSPARENT
+                    ),
+                    useFrameInterpolation = getBoolean(
+                        R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation,
+                        false
+                    ),
+                    themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId)
+                )
             } finally {
                 recycle()
             }
         }
+    }
+
+    private fun waitForLayout() {
+        viewTreeObserver.addOnGlobalLayoutListener(object :
+            ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                if (width > 0 && height > 0) {
+                    // Start animation setup only when dimensions are available
+                    setupDotLottieDrawable()
+                    // Remove the listener to avoid redundant calls
+                    viewTreeObserver.removeOnGlobalLayoutListener(this)
+                }
+            }
+        })
     }
 
     private fun String.isJsonAsset(): Boolean {
@@ -273,41 +321,38 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
-    private fun TypedArray.setupDotLottieDrawable() {
-        val assetFilePath = getString(R.styleable.DotLottieAnimation_dotLottie_src) ?: ""
+    private fun setupDotLottieDrawable() {
         coroutineScope.launch {
-            if (assetFilePath.isNotBlank()) {
-                val content =
-                    DotLottieUtils.getContent(context, DotLottieSource.Asset(assetFilePath))
-                val mode = getInt(R.styleable.DotLottieAnimation_dotLottie_playMode, MODE_FORWARD)
+            if (attributes.src.isNotBlank()) {
+                val content: DotLottieContent = if (attributes.src.isUrl()) {
+                    DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
+                } else {
+                    DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
+                }
+
                 mLottieDrawable = DotLottieDrawable(
                     animationData = content,
                     width = width,
                     height = height,
                     dotLottieEventListener = mDotLottieEventListener,
                     config = DLConfig(
-                        autoplay = getBoolean(
-                            R.styleable.DotLottieAnimation_dotLottie_autoplay,
-                            true
-                        ),
-                        loopAnimation = getBoolean(
-                            R.styleable.DotLottieAnimation_dotLottie_loop,
-                            false
-                        ),
-                        mode = getMode(mode),
-                        speed = getFloat(R.styleable.DotLottieAnimation_dotLottie_speed, 1f),
-                        useFrameInterpolation = getBoolean(
-                            R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation,
-                            true
-                        ),
-                        backgroundColor = Color.TRANSPARENT.toUInt(),
+                        autoplay = attributes.autoplay,
+                        loopAnimation = attributes.loop,
+                        mode = getMode(attributes.playMode),
+                        speed = attributes.speed,
+                        useFrameInterpolation = attributes.useFrameInterpolation,
+                        backgroundColor = attributes.backgroundColor.toUInt(),
                         segment = listOf(),
-                        marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
+                        marker = attributes.marker ?: "",
                         layout = createDefaultLayout(),
-                        themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId) ?: ""
+                        themeId = attributes.themeId ?: ""
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
+                withContext(Dispatchers.Main) {
+                    requestLayout()
+                    invalidate()
+                }
             }
         }
     }
@@ -322,7 +367,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         width = measuredWidth
         height = measuredHeight
 
-        setupConfigFromXml()
         mLottieDrawable?.let { drawable ->
             if ((width != drawable.intrinsicWidth || height != drawable.intrinsicHeight)) {
                 drawable.resize(width, height)
