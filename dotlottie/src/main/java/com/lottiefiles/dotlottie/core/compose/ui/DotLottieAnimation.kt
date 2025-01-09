@@ -239,7 +239,7 @@ fun DotLottieAnimation(
                 awaitEachGesture {
                     // First touch (Down)
                     val down = awaitFirstDown()
-                    down.consume() // Consume the down event
+//                    down.consume() // Consume the down event
 
                     val scaledX = down.position.x
                     val scaledY = down.position.y
@@ -250,7 +250,7 @@ fun DotLottieAnimation(
                     do {
                         val event = awaitPointerEvent()
                         val position = event.changes.first()
-                        position.consume() // Consume each event
+//                        position.consume() // Consume each event
 
                         // Handle move
                         if (!position.pressed) {

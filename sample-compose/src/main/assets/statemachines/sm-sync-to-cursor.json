@@ -1,0 +1,48 @@
+{
+    "initial": "Start",
+    "states": [
+        {
+            "animation": "scroll",
+            "type": "PlaybackState",
+            "name": "Start",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "Start",
+                    "guards": [
+                        {
+                            "type": "Event",
+                            "triggerName": "Step"
+                        }
+                    ]
+                }
+            ],
+            "entryActions": [
+                {
+                    "type": "SetFrame",
+                    "value": "$Progress"
+                }
+            ]
+        }
+    ],
+    "listeners": [{
+        "type": "PointerDown",
+        "actions": [
+            {
+                "type": "Increment",
+                "triggerName": "Progress"
+            }
+        ]
+    }],
+    "triggers": [
+        {
+            "type": "Numeric",
+            "name": "Progress",
+            "value": 0
+        },
+        {
+            "type": "Event",
+            "name": "Step"
+        }
+    ]
+}
