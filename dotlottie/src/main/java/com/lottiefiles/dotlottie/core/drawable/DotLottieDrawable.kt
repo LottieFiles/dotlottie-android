@@ -37,6 +37,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
 
     var freeze: Boolean = false
         set(value) {
@@ -312,11 +313,22 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
+    fun stateMachineStart(): Boolean {
+        val result = dlPlayer?.stateMachineStart() ?: false
 
-    fun startStateMachine(): Boolean {
-        val result = dlPlayer?.startStateMachine() ?: false
+        // Start render loop
+
         if (result) {
+            if (dlPlayer != null) {
+                stateMachineGestureListeners =
+                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
+
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
                 }
@@ -333,55 +345,73 @@ class DotLottieDrawable(
         return result
     }
 
-    fun stopStateMachine(): Boolean {
-        return dlPlayer?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return dlPlayer?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlPlayer?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        val result = dlPlayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlPlayer?.stateMachineLoadData(data) ?: false
+    }
 
-            2 -> {
-                this.play()
-            }
+    /**
+     * Internal function to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
+        var ret: Int = 1
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
-            3 -> {
-                this.pause()
-            }
-
-            4 -> {
-                invalidateSelf()
-            }
+        if (force) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
         }
 
-        return result
+        return ret
     }
 
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
 
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
+        return dlPlayer?.stateMachineSetNumericTrigger(key, value) ?: false
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
+        return dlPlayer?.stateMachineSetStringTrigger(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
+        return dlPlayer?.stateMachineSetBooleanTrigger(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericTrigger(key: String): Float? {
+        return dlPlayer?.stateMachineGetNumericTrigger(key)
+    }
+
+    fun stateMachineGetStringTrigger(key: String): String? {
+        return dlPlayer?.stateMachineGetStringTrigger(key)
+    }
+
+    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
+        return dlPlayer?.stateMachineGetBooleanTrigger(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlPlayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        dlPlayer?.stateMachineFireEvent(event)
     }
 
     override fun draw(canvas: Canvas) {

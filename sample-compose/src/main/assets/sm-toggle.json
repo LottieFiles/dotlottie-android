@@ -1,0 +1,88 @@
+{
+    "descriptor": {
+        "id": "toggle",
+        "initial": "initial-wait"
+    },
+    "states": [
+        {
+            "name": "initial-wait",
+            "type": "PlaybackState",
+            "animationId": "",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "a",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": true
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "a",
+            "type": "PlaybackState",
+            "animationId": "",
+            "autoplay": true,
+            "speed": 2.0,
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "b",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "b",
+            "type": "PlaybackState",
+            "animationId": "",
+            "autoplay": true,
+            "speed": 2.0,
+            "mode": "Reverse",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "a",
+                    "guards": [
+                        {
+                            "type": "Boolean",
+                            "conditionType": "Equal",
+                            "triggerName": "OnOffSwitch",
+                            "compareTo": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "listeners": [
+        {
+            "type": "PointerDown",
+            "actions": [
+                {
+                    "type": "Toggle",
+                    "triggerName": "OnOffSwitch"
+                }
+            ]
+        }
+    ],
+    "triggers": [
+        {
+            "type": "Boolean",
+            "name": "OnOffSwitch",
+            "value": false
+        }
+    ]
+}

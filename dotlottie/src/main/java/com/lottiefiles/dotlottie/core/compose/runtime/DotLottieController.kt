@@ -23,8 +23,7 @@ enum class DotLottiePlayerState {
     COMPLETED,
     INITIAL,
     LOADED,
-    ERROR,
-    DRAW,
+    ERROR
 }
 
 class DotLottieController {
@@ -39,6 +38,9 @@ class DotLottieController {
 
     private val _height = MutableStateFlow(0u)
     val height: StateFlow<UInt> = _height.asStateFlow()
+
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+        private set
 
     var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
         private set
@@ -101,6 +103,9 @@ class DotLottieController {
     val activeAnimationId: String
         get() = dlplayer?.activeAnimationId() ?: ""
 
+    var stateMachineIsActive: Boolean = false
+        get() = field
+
     fun play() {
         dlplayer?.play()
     }
@@ -160,14 +165,25 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun startStateMachine(): Boolean {
-        val result = dlplayer?.startStateMachine() ?: false
+    fun stateMachineStart(): Boolean {
+        val result = dlplayer?.stateMachineStart() ?: false
         if (result) {
+            stateMachineIsActive = true
+
+            if (dlplayer != null) {
+                stateMachineGestureListeners =
+                    dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
+
             if (this.isPlaying) {
                 this.play()
             }
 
             dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
                 }
@@ -184,54 +200,73 @@ class DotLottieController {
         return result
     }
 
-    fun stopStateMachine(): Boolean {
-        return dlplayer?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        stateMachineIsActive = false
+        return dlplayer?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlplayer?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlplayer?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        val result = dlplayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                eventListeners.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlplayer?.stateMachineLoadData(data) ?: false
+    }
 
-            2 -> {
-                this.play()
-            }
+    /**
+     * Internal function to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
+        var ret: Int = 1
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
-            3 -> {
-                this.pause()
-            }
-
-            4 -> {
-                _currentState.value = DotLottiePlayerState.DRAW
-            }
+        if (force) {
+            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
         }
 
-        return result
+        return ret
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlplayer?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineFire(event: String) {
+        dlplayer?.stateMachineFireEvent(event)
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlplayer?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
+        return dlplayer?.stateMachineSetNumericTrigger(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlplayer?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
+        return dlplayer?.stateMachineSetStringTrigger(key, value) ?: false
     }
 
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
+        return dlplayer?.stateMachineSetBooleanTrigger(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericTrigger(key: String): Float? {
+        return dlplayer?.stateMachineGetNumericTrigger(key)
+    }
+
+    fun stateMachineGetStringTrigger(key: String): String? {
+        return dlplayer?.stateMachineGetStringTrigger(key)
+    }
+
+    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
+        return dlplayer?.stateMachineGetBooleanTrigger(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlplayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
 
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
     }
 

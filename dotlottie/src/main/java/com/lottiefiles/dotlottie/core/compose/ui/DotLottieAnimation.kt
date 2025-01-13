@@ -3,6 +3,8 @@ package com.lottiefiles.dotlottie.core.compose.ui
 import android.graphics.Bitmap
 import android.view.Choreographer
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
@@ -21,11 +23,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.input.pointer.pointerInput
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -34,7 +37,6 @@ import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
-
 
 @Composable
 fun DotLottieAnimation(
@@ -80,30 +82,50 @@ fun DotLottieAnimation(
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
-    val currentSate by rController.currentState.collectAsState()
+    val currentState by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
+    var currentFrame by remember { mutableFloatStateOf(-1.0f) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
             var isActive = true
+
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
                 val nextFrame = dlPlayer.requestFrame()
-                dlPlayer.setFrame(nextFrame)
-                dlPlayer.render()
 
-                bufferBytes?.let { bytes ->
-                    bitmap?.let { bmp ->
-                        bytes.rewind()
-                        bmp.copyPixelsFromBuffer(bytes)
-                        imageBitmap = bmp.asImageBitmap()
+                if (rController.stateMachineIsActive) {
+                    if (nextFrame != currentFrame || (currentFrame == 0.0f)) {
+                    currentFrame = nextFrame
+                    dlPlayer.setFrame(nextFrame)
+                    dlPlayer.render()
+
+                    bufferBytes?.let { bytes ->
+                        bitmap?.let { bmp ->
+                            bytes.rewind()
+                            bmp.copyPixelsFromBuffer(bytes)
+                            imageBitmap = bmp.asImageBitmap()
+                            }
+                        }
+                    }
+                } else {
+                    currentFrame = nextFrame
+                    dlPlayer.setFrame(nextFrame)
+                    dlPlayer.render()
+
+                    bufferBytes?.let { bytes ->
+                        bitmap?.let { bmp ->
+                            bytes.rewind()
+                            bmp.copyPixelsFromBuffer(bytes)
+                            imageBitmap = bmp.asImageBitmap()
+                        }
                     }
                 }
 
-                if (dlPlayer.isPlaying()) {
+                if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
                     choreographer.postFrameCallback(this)
                 }
             }
@@ -143,7 +165,7 @@ fun DotLottieAnimation(
             val startTime = System.currentTimeMillis()
             val timeout = 500L // 500 milliseconds
             while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                if (System.currentTimeMillis() - startTime > 100L && !dlPlayer.isPlaying()) {
+                if (System.currentTimeMillis() - startTime > 100L && !rController.stateMachineIsActive && !dlPlayer.isPlaying()) {
                     choreographer.removeFrameCallback(frameCallback)
                     break
                 }
@@ -156,8 +178,8 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(dlPlayer.isPlaying(), currentSate) {
-        if (dlPlayer.isPlaying() || currentSate == DotLottiePlayerState.DRAW) {
+    LaunchedEffect(dlPlayer.isPlaying(), currentState) {
+        if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
             choreographer.postFrameCallback(frameCallback)
         } else {
             choreographer.removeFrameCallback(frameCallback)
@@ -230,6 +252,41 @@ fun DotLottieAnimation(
             .defaultMinSize(200.dp, 200.dp)
             .onGloballyPositioned { layoutCoordinates ->
                 layoutSize = layoutCoordinates.size.toSize()
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    // First touch (Down)
+                    val down = awaitFirstDown()
+//                    down.consume() // Consume the down event
+
+                    val scaledX = down.position.x
+                    val scaledY = down.position.y
+
+                    rController.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
+
+                    // Handle move and up events
+                    do {
+                        val event = awaitPointerEvent()
+                        val position = event.changes.first()
+//                        position.consume() // Consume each event
+
+                        // Handle move
+                        if (!position.pressed) {
+                            // Touch up detected
+                            val upScaledX = position.position.x
+                            val upScaledY = position.position.y
+
+                            rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
+                            break
+                        } else {
+                            // Move detected
+                            val moveX = position.position.x
+                            val moveY = position.position.y
+
+                            rController.stateMachinePostEvent(Event.PointerMove(moveX, moveY))
+                        }
+                    } while (position.pressed)
+                }
             }
     ) {
         imageBitmap?.let {

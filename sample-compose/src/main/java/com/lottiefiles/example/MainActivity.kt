@@ -61,10 +61,10 @@ class MainActivity : ComponentActivity() {
 //                    DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
-                    ThemeExample()
+//                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-//                    StateMachineExample()
+                    StateMachineExample()
                 }
             }
         }
@@ -588,75 +588,169 @@ fun LayoutExample() {
     }
 }
 
-@Composable
-fun StateMachineExample() {
-    val fit = remember { mutableStateOf(Fit.CONTAIN) }
-    val alignment = remember { mutableStateOf(LayoutUtil.Alignment.Center) }
-    val controller = remember { DotLottieController() }
-
-    val stateListener = remember {
-        object : StateMachineEventListener {
-            override fun onTransition(previousState: String, newState: String) {
-                Log.i("DotLottie", "Transition: $previousState -> $newState")
-            }
-
-            override fun onStateExit(leavingState: String) {
-                Log.i("DotLottie", "Exit: $leavingState")
-            }
-
-            override fun onStateEntered(enteringState: String) {
-                Log.i("DotLottie", "Enter: $enteringState")
-            }
-        }
-    }
-
-    LaunchedEffect(UInt) {
-        controller.addStateMachineEventListener(stateListener)
-    }
-
-
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row {
-            DotLottieAnimation(
-                source = DotLottieSource.Asset("exploding_pigeon.lottie"),
-                autoplay = true,
-                loop = false,
-                layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
-                modifier = Modifier
-                    .background(Color.LightGray)
-                    .fillMaxWidth()
-                    .aspectRatio(1.6f),
-                controller = controller,
-            )
-        }
-        Row {
-            Column {
-
-                Button(onClick = {
-                    val result = controller.loadStateMachine("pigeon_fsm")
-                    if (result) {
-                        controller.startStateMachine()
-                    }
-                }) {
-                    Text(text = "sate machine")
-                }
-
-                Button(onClick = {
-                    controller.postEvent(Event.String("explosion"))
-                }) {
-                    Text(text = "Explosion")
-                }
-
-                Button(onClick = {
-                    controller.stopStateMachine()
-                }) {
-                    Text(text = "Stop")
-                }
-            }
-        }
-    }
-}
+//@Composable
+//fun StateMachineExample() {
+//    val fit = remember { mutableStateOf(Fit.CONTAIN) }
+//    val alignment = remember { mutableStateOf(LayoutUtil.Alignment.Center) }
+//    val controller = remember { DotLottieController() }
+//
+//    val stateListener = remember {
+//        object : StateMachineEventListener {
+//            override fun onTransition(previousState: String, newState: String) {
+//                Log.i("DotLottie", "Transition: $previousState -> $newState")
+//            }
+//
+//            override fun onStateExit(leavingState: String) {
+//                Log.i("DotLottie", "Exit: $leavingState")
+//            }
+//
+//            override fun onStateEntered(enteringState: String) {
+//                Log.i("DotLottie", "Enter: $enteringState")
+//            }
+//        }
+//    }
+//
+//    LaunchedEffect(UInt) {
+//        controller.stateMachineAddEventListener(stateListener)
+//    }
+//
+//
+//
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//    ) {
+//        Row {
+//            DotLottieAnimation(
+//                source = DotLottieSource.Asset("toggle.json"),
+//                autoplay = false,
+//                loop = false,
+//                layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
+//                modifier = Modifier
+//                    .background(Color.LightGray)
+//                    .fillMaxWidth()
+//                    .aspectRatio(1.6f),
+//                controller = controller,
+//            )
+//        }
+//        Row {
+//            Column {
+//
+//                Button(onClick = {
+//                    val stateMachineData = """
+//                        {
+//    "descriptor": {
+//        "id": "toggle",
+//        "initial": "initial-wait"
+//    },
+//    "states": [
+//        {
+//            "name": "initial-wait",
+//            "type": "PlaybackState",
+//            "animationId": "",
+//            "transitions": [
+//                {
+//                    "type": "Transition",
+//                    "toState": "a",
+//                    "guards": [
+//                        {
+//                            "type": "Boolean",
+//                            "conditionType": "Equal",
+//                            "triggerName": "OnOffSwitch",
+//                            "compareTo": true
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        {
+//            "name": "a",
+//            "type": "PlaybackState",
+//            "animationId": "",
+//            "autoplay": true,
+//            "speed": 2.0,
+//            "transitions": [
+//                {
+//                    "type": "Transition",
+//                    "toState": "b",
+//                    "guards": [
+//                        {
+//                            "type": "Boolean",
+//                            "conditionType": "Equal",
+//                            "triggerName": "OnOffSwitch",
+//                            "compareTo": false
+//                        }
+//                    ]
+//                }
+//            ]
+//        },
+//        {
+//            "name": "b",
+//            "type": "PlaybackState",
+//            "animationId": "",
+//            "autoplay": true,
+//            "speed": 2.0,
+//            "mode": "Reverse",
+//            "transitions": [
+//                {
+//                    "type": "Transition",
+//                    "toState": "a",
+//                    "guards": [
+//                        {
+//                            "type": "Boolean",
+//                            "conditionType": "Equal",
+//                            "triggerName": "OnOffSwitch",
+//                            "compareTo": true
+//                        }
+//                    ]
+//                }
+//            ]
+//        }
+//    ],
+//    "listeners": [
+//        {
+//            "type": "PointerDown",
+//            "actions": [
+//                {
+//                    "type": "Toggle",
+//                    "triggerName": "OnOffSwitch"
+//                }
+//            ]
+//        }
+//    ],
+//    "triggers": [
+//        {
+//            "type": "Boolean",
+//            "name": "OnOffSwitch",
+//            "value": false
+//        }
+//    ]
+//}
+//
+//
+//                    """.trimIndent()
+//
+//                    val result = controller.stateMachineLoadData(stateMachineData)
+//                    if (result) {
+//                        controller.stateMachineStart()
+//                    }
+//                }) {
+//                    Text(text = "Load State Machine")
+//                }
+//
+////                Button(onClick = {
+//////                    controller.stateMachinePostEvent(Event.String("explosion"))
+////                    controller.stateMachineFireEvent("explosion")
+////                }) {
+////                    Text(text = "Explosion")
+////                }
+////
+////                Button(onClick = {
+////                    controller.stateMachineStop()
+////                }) {
+////                    Text(text = "Stop")
+////                }
+//            }
+//        }
+//    }
+//}
