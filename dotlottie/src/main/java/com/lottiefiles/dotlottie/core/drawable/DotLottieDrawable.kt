@@ -325,6 +325,10 @@ class DotLottieDrawable(
             }
 
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
                 }

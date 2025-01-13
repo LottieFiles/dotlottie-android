@@ -47,7 +47,7 @@ fun StateMachineExample() {
     val dotLottieController = remember { DotLottieController() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedAnimation by remember { mutableStateOf<String?>(null) }
+    var selectedAnimation by remember { mutableStateOf<String?>("animations/click-button.json") }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -68,15 +68,14 @@ fun StateMachineExample() {
                         .verticalScroll(rememberScrollState())
                 ) {
                     val imageRows = listOf(
-//                        listOf("animations/analytics.json"),
-//                        listOf("animations/button.json"),
+                        listOf("animations/analytics.json"),
                         listOf("animations/click-button.json"),
-//                        listOf("animations/hold-button.json"),
-//                        listOf("animations/loader.json"),
+                        listOf("animations/hold-button.json"),
+                        listOf("animations/loader.json"),
                         listOf("animations/pigeon.lottie"),
                         listOf("animations/star-marked.lottie"),
-//                        listOf("animations/sync-to-cursor.lottie"),
-//                        listOf("animations/theming.lottie"),
+                        listOf("animations/sync-to-cursor.lottie"),
+                        listOf("animations/theming.lottie"),
                         listOf("animations/toggle.json")
                     )
 
@@ -139,6 +138,8 @@ fun StateMachineExample() {
                     var loadedStateMachine by remember { mutableStateOf("") }
 
                     LaunchedEffect(selectedAnimation) {
+                        dotLottieController.stateMachineStop()
+
                         val stateMachineDataFromFile = transformAssetPath(selectedAnimation!!)
 
                         jsonString = loadJsonFromAssets(context, stateMachineDataFromFile)
@@ -174,7 +175,7 @@ fun StateMachineExample() {
                                                 dotLottieController.stateMachineSetNumericTrigger("Progress", percentage)
                                                     .toString()
                                             );
-                                            Log.d("DotLottie - Fire", dotLottieController.stateMachineFireEvent("Step").toString())
+                                            Log.d("DotLottie - Fire", dotLottieController.stateMachineFire("Step").toString())
                                         }
                                     }
                                 }

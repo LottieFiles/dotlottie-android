@@ -1,7 +1,6 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
-import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -30,7 +29,6 @@ import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -84,30 +82,50 @@ fun DotLottieAnimation(
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
-    val currentSate by rController.currentState.collectAsState()
+    val currentState by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
+    var currentFrame by remember { mutableFloatStateOf(-1.0f) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
             var isActive = true
+
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
                 val nextFrame = dlPlayer.requestFrame()
-                dlPlayer.setFrame(nextFrame)
-                dlPlayer.render()
 
-                bufferBytes?.let { bytes ->
-                    bitmap?.let { bmp ->
-                        bytes.rewind()
-                        bmp.copyPixelsFromBuffer(bytes)
-                        imageBitmap = bmp.asImageBitmap()
+                if (rController.stateMachineIsActive) {
+                    if (nextFrame != currentFrame || (currentFrame == 0.0f)) {
+                    currentFrame = nextFrame
+                    dlPlayer.setFrame(nextFrame)
+                    dlPlayer.render()
+
+                    bufferBytes?.let { bytes ->
+                        bitmap?.let { bmp ->
+                            bytes.rewind()
+                            bmp.copyPixelsFromBuffer(bytes)
+                            imageBitmap = bmp.asImageBitmap()
+                            }
+                        }
+                    }
+                } else {
+                    currentFrame = nextFrame
+                    dlPlayer.setFrame(nextFrame)
+                    dlPlayer.render()
+
+                    bufferBytes?.let { bytes ->
+                        bitmap?.let { bmp ->
+                            bytes.rewind()
+                            bmp.copyPixelsFromBuffer(bytes)
+                            imageBitmap = bmp.asImageBitmap()
+                        }
                     }
                 }
 
-                if (dlPlayer.isPlaying()) {
+                if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
                     choreographer.postFrameCallback(this)
                 }
             }
@@ -147,7 +165,7 @@ fun DotLottieAnimation(
             val startTime = System.currentTimeMillis()
             val timeout = 500L // 500 milliseconds
             while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                if (System.currentTimeMillis() - startTime > 100L && !dlPlayer.isPlaying()) {
+                if (System.currentTimeMillis() - startTime > 100L && !rController.stateMachineIsActive && !dlPlayer.isPlaying()) {
                     choreographer.removeFrameCallback(frameCallback)
                     break
                 }
@@ -160,8 +178,8 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(dlPlayer.isPlaying(), currentSate) {
-        if (dlPlayer.isPlaying() || currentSate == DotLottiePlayerState.DRAW) {
+    LaunchedEffect(dlPlayer.isPlaying(), currentState) {
+        if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
             choreographer.postFrameCallback(frameCallback)
         } else {
             choreographer.removeFrameCallback(frameCallback)

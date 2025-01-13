@@ -23,8 +23,7 @@ enum class DotLottiePlayerState {
     COMPLETED,
     INITIAL,
     LOADED,
-    ERROR,
-    DRAW,
+    ERROR
 }
 
 class DotLottieController {
@@ -104,6 +103,9 @@ class DotLottieController {
     val activeAnimationId: String
         get() = dlplayer?.activeAnimationId() ?: ""
 
+    var stateMachineIsActive: Boolean = false
+        get() = field
+
     fun play() {
         dlplayer?.play()
     }
@@ -166,6 +168,8 @@ class DotLottieController {
     fun stateMachineStart(): Boolean {
         val result = dlplayer?.stateMachineStart() ?: false
         if (result) {
+            stateMachineIsActive = true
+
             if (dlplayer != null) {
                 stateMachineGestureListeners =
                     dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
@@ -176,6 +180,10 @@ class DotLottieController {
             }
 
             dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
                 }
@@ -193,6 +201,7 @@ class DotLottieController {
     }
 
     fun stateMachineStop(): Boolean {
+        stateMachineIsActive = false
         return dlplayer?.stateMachineStop() ?: false
     }
 
@@ -221,7 +230,7 @@ class DotLottieController {
         return ret
     }
 
-    fun stateMachineFireEvent(event: String) {
+    fun stateMachineFire(event: String) {
         dlplayer?.stateMachineFireEvent(event)
     }
 

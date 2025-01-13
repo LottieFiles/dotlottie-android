@@ -2,7 +2,7 @@
     "initial": "Start",
     "states": [
         {
-            "animationId": "stats",
+            "animation": "stats",
             "type": "PlaybackState",
             "name": "Start",
             "transitions": [
