@@ -87,7 +87,12 @@
             "autoplay": true,
             "segment": "star_0",
             "transitions": [],
-            "entryActions": []
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 0"
+                }
+            ]
         },
         {
             "type": "PlaybackState",
@@ -96,7 +101,17 @@
             "autoplay": true,
             "segment": "star_1",
             "transitions": [],
-            "entryActions": []
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 1"
+                },
+                {
+                    "type": "OpenUrl",
+                    "url": "https://www.reddit.com/",
+                    "target": "_self"
+                }
+            ]
         },
         {
             "type": "PlaybackState",
@@ -105,7 +120,12 @@
             "autoplay": true,
             "segment": "star_2",
             "transitions": [],
-            "entryActions": []
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 2"
+                }
+            ]
         },
         {
             "type": "PlaybackState",
@@ -113,7 +133,13 @@
             "animation": "",
             "autoplay": true,
             "segment": "star_3",
-            "transitions": []
+            "transitions": [],
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 3"
+                }
+            ]
         },
         {
             "type": "PlaybackState",
@@ -121,7 +147,13 @@
             "animation": "",
             "autoplay": true,
             "segment": "star_4",
-            "transitions": []
+            "transitions": [],
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 4"
+                }
+            ]
         },
         {
             "type": "PlaybackState",
@@ -129,7 +161,13 @@
             "animation": "",
             "autoplay": true,
             "segment": "star_5",
-            "transitions": []
+            "transitions": [],
+            "entryActions": [
+                {
+                    "type": "FireCustomEvent",
+                    "value": "WOOHOO STAR 5"
+                }
+            ]
         }
     ],
     "listeners": [

@@ -1,5 +1,10 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat.startActivity
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
@@ -8,7 +13,9 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
+import com.dotlottie.dlplayer.OpenUrl
 import com.dotlottie.dlplayer.StateMachineObserver
+import com.dotlottie.dlplayer.createDefaultOpenUrl
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
@@ -165,8 +172,8 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun stateMachineStart(): Boolean {
-        val result = dlplayer?.stateMachineStart() ?: false
+    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context): Boolean {
+        val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
 
@@ -179,9 +186,34 @@ class DotLottieController {
                 this.play()
             }
 
+            // For the users' observers
             dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onBooleanTriggerValueChange(
+                    triggerName: String,
+                    oldValue: Boolean,
+                    newValue: Boolean
+                ) {
+                    stateMachineListeners.forEach { it.onBooleanTriggerValueChange(triggerName, oldValue, newValue) }
+                }
+
                 override fun onCustomEvent(message: String) {
                     stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
+                override fun onError(message: String) {
+                    stateMachineListeners.forEach { it.onError(message) }
+                }
+
+                override fun onNumericTriggerValueChange(
+                    triggerName: String,
+                    oldValue: Float,
+                    newValue: Float
+                ) {
+                    stateMachineListeners.forEach { it.onNumericTriggerValueChange(triggerName, oldValue, newValue) }
+                }
+
+                override fun onStart() {
+                    stateMachineListeners.forEach { it.onStart() }
                 }
 
                 override fun onStateEntered(enteringState: String) {
@@ -192,8 +224,79 @@ class DotLottieController {
                     stateMachineListeners.forEach { it.onStateExit(leavingState) }
                 }
 
+                override fun onStop() {
+                    stateMachineListeners.forEach { it.onStop() }
+                }
+
+                override fun onStringTriggerValueChange(
+                    triggerName: String,
+                    oldValue: String,
+                    newValue: String
+                ) {
+                    stateMachineListeners.forEach { it.onStringTriggerValueChange(triggerName, oldValue, newValue) }
+                }
+
                 override fun onTransition(previousState: String, newState: String) {
                     stateMachineListeners.forEach { it.onTransition(previousState, newState) }
+                }
+
+                override fun onTriggerFired(triggerName: String) {
+                    stateMachineListeners.forEach { it.onTriggerFired(triggerName) }
+                }
+            })
+
+            // For internal observer
+            dlplayer?.stateMachineFrameworkSubscribe(object : StateMachineObserver {
+                override fun onBooleanTriggerValueChange(
+                    triggerName: String,
+                    oldValue: Boolean,
+                    newValue: Boolean
+                ) {}
+
+                override fun onCustomEvent(message: String) {
+                    if (message.startsWith("OpenUrl: ")) {
+                        // Extract the URL part after "OpenUrl: "
+                        val url = message.substringAfter("OpenUrl: ")
+
+                        // Create and launch the intent to open the URL
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    }
+                }
+
+                override fun onError(message: String) {}
+
+                override fun onNumericTriggerValueChange(
+                    triggerName: String,
+                    oldValue: Float,
+                    newValue: Float
+                ) {
+                }
+
+                override fun onStart() {
+                }
+
+                override fun onStateEntered(enteringState: String) {
+                }
+
+                override fun onStateExit(leavingState: String) {
+                }
+
+                override fun onStop() {
+                }
+
+                override fun onStringTriggerValueChange(
+                    triggerName: String,
+                    oldValue: String,
+                    newValue: String
+                ) {
+                }
+
+                override fun onTransition(previousState: String, newState: String) {
+                }
+
+                override fun onTriggerFired(triggerName: String) {
                 }
             })
         }

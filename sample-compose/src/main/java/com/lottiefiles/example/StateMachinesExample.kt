@@ -1,6 +1,7 @@
 package com.lottiefiles.example
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import com.dotlottie.dlplayer.OpenUrl
+import com.dotlottie.dlplayer.OpenUrlMode
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
@@ -147,8 +150,11 @@ fun StateMachineExample() {
                         loadedStateMachine = stateMachineDataFromFile
 
                         loadResult = dotLottieController.stateMachineLoadData(jsonString ?: "")
-                        if (loadResult) {
-                            startResult = dotLottieController.stateMachineStart()
+                        val openUrl = OpenUrl(
+                            mode = OpenUrlMode.INTERACTION,
+                            whitelist = emptyList()
+                        );
+                        if (loadResult) { startResult = dotLottieController.stateMachineStart(openUrl, context = context)
                         }
                     }
 

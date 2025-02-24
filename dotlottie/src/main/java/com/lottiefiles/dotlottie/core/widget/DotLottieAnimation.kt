@@ -14,8 +14,10 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.OpenUrl
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
+import com.dotlottie.dlplayer.createDefaultOpenUrl
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
@@ -249,6 +251,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = config.marker,
                         layout = config.layout,
                         themeId = config.themeId,
+                        stateMachineId = config.stateMachineId,
                     )
                 )
 
@@ -303,7 +306,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         segment = listOf(),
                         marker = getString(R.styleable.DotLottieAnimation_dotLottie_marker) ?: "",
                         layout = createDefaultLayout(),
-                        themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId) ?: ""
+                        themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId) ?: "",
+                        stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId) ?: "",
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
@@ -359,8 +363,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun stateMachineStart(): Boolean {
-        return mLottieDrawable?.stateMachineStart() ?: false
+    fun stateMachineStart(urlConfig: OpenUrl = createDefaultOpenUrl(),  context: Context): Boolean {
+        return mLottieDrawable?.stateMachineStart(urlConfig, context = context) ?: false
     }
 
     fun stateMachineStop(): Boolean {
