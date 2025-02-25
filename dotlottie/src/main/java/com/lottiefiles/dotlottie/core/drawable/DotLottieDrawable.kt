@@ -329,12 +329,12 @@ class DotLottieDrawable(
             }
 
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanTriggerValueChange(
-                    triggerName: String,
+                override fun onBooleanInputValueChange(
+                    inputName: String,
                     oldValue: Boolean,
                     newValue: Boolean
                 ) {
-                    stateMachineListeners.forEach { it.onBooleanTriggerValueChange(triggerName, oldValue, newValue) }
+                    stateMachineListeners.forEach { it.onBooleanInputValueChange(inputName, oldValue, newValue) }
                 }
 
                 override fun onCustomEvent(message: String) {
@@ -345,12 +345,12 @@ class DotLottieDrawable(
                     stateMachineListeners.forEach { it.onError(message) }
                 }
 
-                override fun onNumericTriggerValueChange(
-                    triggerName: String,
+                override fun onNumericInputValueChange(
+                    inputName: String,
                     oldValue: Float,
                     newValue: Float
                 ) {
-                    stateMachineListeners.forEach { it.onNumericTriggerValueChange(triggerName, oldValue, newValue) }
+                    stateMachineListeners.forEach { it.onNumericInputValueChange(inputName, oldValue, newValue) }
                 }
 
                 override fun onStart() {
@@ -369,27 +369,27 @@ class DotLottieDrawable(
                     stateMachineListeners.forEach { it.onStop() }
                 }
 
-                override fun onStringTriggerValueChange(
-                    triggerName: String,
+                override fun onStringInputValueChange(
+                    inputName: String,
                     oldValue: String,
                     newValue: String
                 ) {
-                    stateMachineListeners.forEach { it.onStringTriggerValueChange(triggerName,oldValue,newValue) }
+                    stateMachineListeners.forEach { it.onStringInputValueChange(inputName,oldValue,newValue) }
                 }
 
                 override fun onTransition(previousState: String, newState: String) {
                     stateMachineListeners.forEach { it.onTransition(previousState, newState) }
                 }
 
-                override fun onTriggerFired(triggerName: String) {
-                    stateMachineListeners.forEach { it.onTriggerFired(triggerName) }
+                override fun onInputFired(inputName: String) {
+                    stateMachineListeners.forEach { it.onInputFired(inputName) }
                 }
             })
 
             // For internal observer
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanTriggerValueChange(
-                    triggerName: String,
+                override fun onBooleanInputValueChange(
+                    inputName: String,
                     oldValue: Boolean,
                     newValue: Boolean
                 ) {}
@@ -408,8 +408,8 @@ class DotLottieDrawable(
 
                 override fun onError(message: String) {}
 
-                override fun onNumericTriggerValueChange(
-                    triggerName: String,
+                override fun onNumericInputValueChange(
+                    inputName: String,
                     oldValue: Float,
                     newValue: Float
                 ) {}
@@ -422,15 +422,15 @@ class DotLottieDrawable(
 
                 override fun onStop() {}
 
-                override fun onStringTriggerValueChange(
-                    triggerName: String,
+                override fun onStringInputValueChange(
+                    inputName: String,
                     oldValue: String,
                     newValue: String
                 ) {}
 
                 override fun onTransition(previousState: String, newState: String) {}
 
-                override fun onTriggerFired(triggerName: String) {}
+                override fun onInputFired(inputName: String) {}
             })
         }
         return result
@@ -473,28 +473,28 @@ class DotLottieDrawable(
         stateMachineListeners.remove(listener)
     }
 
-    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
-        return dlPlayer?.stateMachineSetNumericTrigger(key, value) ?: false
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return dlPlayer?.stateMachineSetNumericInput(key, value) ?: false
     }
 
-    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
-        return dlPlayer?.stateMachineSetStringTrigger(key, value) ?: false
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return dlPlayer?.stateMachineSetStringInput(key, value) ?: false
     }
 
-    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
-        return dlPlayer?.stateMachineSetBooleanTrigger(key, value) ?: false
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return dlPlayer?.stateMachineSetBooleanInput(key, value) ?: false
     }
 
-    fun stateMachineGetNumericTrigger(key: String): Float? {
-        return dlPlayer?.stateMachineGetNumericTrigger(key)
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return dlPlayer?.stateMachineGetNumericInput(key)
     }
 
-    fun stateMachineGetStringTrigger(key: String): String? {
-        return dlPlayer?.stateMachineGetStringTrigger(key)
+    fun stateMachineGetStringInput(key: String): String? {
+        return dlPlayer?.stateMachineGetStringInput(key)
     }
 
-    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
-        return dlPlayer?.stateMachineGetBooleanTrigger(key)
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return dlPlayer?.stateMachineGetBooleanInput(key)
     }
 
     fun stateMachineCurrentState(): String? {

@@ -656,7 +656,7 @@ fun LayoutExample() {
 //                        {
 //                            "type": "Boolean",
 //                            "conditionType": "Equal",
-//                            "triggerName": "OnOffSwitch",
+//                            "inputName": "OnOffSwitch",
 //                            "compareTo": true
 //                        }
 //                    ]
@@ -677,7 +677,7 @@ fun LayoutExample() {
 //                        {
 //                            "type": "Boolean",
 //                            "conditionType": "Equal",
-//                            "triggerName": "OnOffSwitch",
+//                            "inputName": "OnOffSwitch",
 //                            "compareTo": false
 //                        }
 //                    ]
@@ -699,7 +699,7 @@ fun LayoutExample() {
 //                        {
 //                            "type": "Boolean",
 //                            "conditionType": "Equal",
-//                            "triggerName": "OnOffSwitch",
+//                            "inputName": "OnOffSwitch",
 //                            "compareTo": true
 //                        }
 //                    ]
@@ -707,18 +707,18 @@ fun LayoutExample() {
 //            ]
 //        }
 //    ],
-//    "listeners": [
+//    "interactions": [
 //        {
 //            "type": "PointerDown",
 //            "actions": [
 //                {
 //                    "type": "Toggle",
-//                    "triggerName": "OnOffSwitch"
+//                    "inputName": "OnOffSwitch"
 //                }
 //            ]
 //        }
 //    ],
-//    "triggers": [
+//    "inputs": [
 //        {
 //            "type": "Boolean",
 //            "name": "OnOffSwitch",

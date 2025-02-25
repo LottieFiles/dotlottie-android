@@ -828,7 +828,7 @@ internal interface UniffiCallbackInterfaceObserverMethod8 : com.sun.jna.Callback
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod0 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `triggerName`: RustBuffer.ByValue,
+        `inputName`: RustBuffer.ByValue,
         `oldValue`: Byte,
         `newValue`: Byte,
         `uniffiOutReturn`: Pointer,
@@ -857,9 +857,7 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod2 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod3 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `triggerName`: RustBuffer.ByValue,
-        `oldValue`: Float,
-        `newValue`: Float,
+        `inputName`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -868,6 +866,9 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod3 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod4 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
+        `inputName`: RustBuffer.ByValue,
+        `oldValue`: Float,
+        `newValue`: Float,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -876,7 +877,6 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod4 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod5 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `enteringState`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -885,7 +885,7 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod5 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod6 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `leavingState`: RustBuffer.ByValue,
+        `enteringState`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -894,6 +894,7 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod6 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod7 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
+        `leavingState`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -902,9 +903,6 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod7 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod8 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `triggerName`: RustBuffer.ByValue,
-        `oldValue`: RustBuffer.ByValue,
-        `newValue`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -913,8 +911,9 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod8 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod9 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `previousState`: RustBuffer.ByValue,
-        `newState`: RustBuffer.ByValue,
+        `inputName`: RustBuffer.ByValue,
+        `oldValue`: RustBuffer.ByValue,
+        `newValue`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -923,7 +922,8 @@ internal interface UniffiCallbackInterfaceStateMachineObserverMethod9 : com.sun.
 internal interface UniffiCallbackInterfaceStateMachineObserverMethod10 : com.sun.jna.Callback {
     fun callback(
         `uniffiHandle`: Long,
-        `triggerName`: RustBuffer.ByValue,
+        `previousState`: RustBuffer.ByValue,
+        `newState`: RustBuffer.ByValue,
         `uniffiOutReturn`: Pointer,
         uniffiCallStatus: UniffiRustCallStatus,
     )
@@ -982,74 +982,74 @@ internal open class UniffiVTableCallbackInterfaceObserver(
 }
 
 @Structure.FieldOrder(
-    "onBooleanTriggerValueChange",
+    "onBooleanInputValueChange",
     "onCustomEvent",
     "onError",
-    "onNumericTriggerValueChange",
+    "onInputFired",
+    "onNumericInputValueChange",
     "onStart",
     "onStateEntered",
     "onStateExit",
     "onStop",
-    "onStringTriggerValueChange",
+    "onStringInputValueChange",
     "onTransition",
-    "onTriggerFired",
     "uniffiFree",
 )
 internal open class UniffiVTableCallbackInterfaceStateMachineObserver(
-    @JvmField internal var `onBooleanTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod0? = null,
+    @JvmField internal var `onBooleanInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod0? = null,
     @JvmField internal var `onCustomEvent`: UniffiCallbackInterfaceStateMachineObserverMethod1? = null,
     @JvmField internal var `onError`: UniffiCallbackInterfaceStateMachineObserverMethod2? = null,
-    @JvmField internal var `onNumericTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod3? = null,
-    @JvmField internal var `onStart`: UniffiCallbackInterfaceStateMachineObserverMethod4? = null,
-    @JvmField internal var `onStateEntered`: UniffiCallbackInterfaceStateMachineObserverMethod5? = null,
-    @JvmField internal var `onStateExit`: UniffiCallbackInterfaceStateMachineObserverMethod6? = null,
-    @JvmField internal var `onStop`: UniffiCallbackInterfaceStateMachineObserverMethod7? = null,
-    @JvmField internal var `onStringTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod8? = null,
-    @JvmField internal var `onTransition`: UniffiCallbackInterfaceStateMachineObserverMethod9? = null,
-    @JvmField internal var `onTriggerFired`: UniffiCallbackInterfaceStateMachineObserverMethod10? = null,
+    @JvmField internal var `onInputFired`: UniffiCallbackInterfaceStateMachineObserverMethod3? = null,
+    @JvmField internal var `onNumericInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod4? = null,
+    @JvmField internal var `onStart`: UniffiCallbackInterfaceStateMachineObserverMethod5? = null,
+    @JvmField internal var `onStateEntered`: UniffiCallbackInterfaceStateMachineObserverMethod6? = null,
+    @JvmField internal var `onStateExit`: UniffiCallbackInterfaceStateMachineObserverMethod7? = null,
+    @JvmField internal var `onStop`: UniffiCallbackInterfaceStateMachineObserverMethod8? = null,
+    @JvmField internal var `onStringInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod9? = null,
+    @JvmField internal var `onTransition`: UniffiCallbackInterfaceStateMachineObserverMethod10? = null,
     @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
 ) : Structure() {
     class UniffiByValue(
-        `onBooleanTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod0? = null,
+        `onBooleanInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod0? = null,
         `onCustomEvent`: UniffiCallbackInterfaceStateMachineObserverMethod1? = null,
         `onError`: UniffiCallbackInterfaceStateMachineObserverMethod2? = null,
-        `onNumericTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod3? = null,
-        `onStart`: UniffiCallbackInterfaceStateMachineObserverMethod4? = null,
-        `onStateEntered`: UniffiCallbackInterfaceStateMachineObserverMethod5? = null,
-        `onStateExit`: UniffiCallbackInterfaceStateMachineObserverMethod6? = null,
-        `onStop`: UniffiCallbackInterfaceStateMachineObserverMethod7? = null,
-        `onStringTriggerValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod8? = null,
-        `onTransition`: UniffiCallbackInterfaceStateMachineObserverMethod9? = null,
-        `onTriggerFired`: UniffiCallbackInterfaceStateMachineObserverMethod10? = null,
+        `onInputFired`: UniffiCallbackInterfaceStateMachineObserverMethod3? = null,
+        `onNumericInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod4? = null,
+        `onStart`: UniffiCallbackInterfaceStateMachineObserverMethod5? = null,
+        `onStateEntered`: UniffiCallbackInterfaceStateMachineObserverMethod6? = null,
+        `onStateExit`: UniffiCallbackInterfaceStateMachineObserverMethod7? = null,
+        `onStop`: UniffiCallbackInterfaceStateMachineObserverMethod8? = null,
+        `onStringInputValueChange`: UniffiCallbackInterfaceStateMachineObserverMethod9? = null,
+        `onTransition`: UniffiCallbackInterfaceStateMachineObserverMethod10? = null,
         `uniffiFree`: UniffiCallbackInterfaceFree? = null,
     ) : UniffiVTableCallbackInterfaceStateMachineObserver(
-            `onBooleanTriggerValueChange`,
+            `onBooleanInputValueChange`,
             `onCustomEvent`,
             `onError`,
-            `onNumericTriggerValueChange`,
+            `onInputFired`,
+            `onNumericInputValueChange`,
             `onStart`,
             `onStateEntered`,
             `onStateExit`,
             `onStop`,
-            `onStringTriggerValueChange`,
+            `onStringInputValueChange`,
             `onTransition`,
-            `onTriggerFired`,
             `uniffiFree`,
         ),
         Structure.ByValue
 
     internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceStateMachineObserver) {
-        `onBooleanTriggerValueChange` = other.`onBooleanTriggerValueChange`
+        `onBooleanInputValueChange` = other.`onBooleanInputValueChange`
         `onCustomEvent` = other.`onCustomEvent`
         `onError` = other.`onError`
-        `onNumericTriggerValueChange` = other.`onNumericTriggerValueChange`
+        `onInputFired` = other.`onInputFired`
+        `onNumericInputValueChange` = other.`onNumericInputValueChange`
         `onStart` = other.`onStart`
         `onStateEntered` = other.`onStateEntered`
         `onStateExit` = other.`onStateExit`
         `onStop` = other.`onStop`
-        `onStringTriggerValueChange` = other.`onStringTriggerValueChange`
+        `onStringInputValueChange` = other.`onStringInputValueChange`
         `onTransition` = other.`onTransition`
-        `onTriggerFired` = other.`onTriggerFired`
         `uniffiFree` = other.`uniffiFree`
     }
 }
@@ -1339,19 +1339,19 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Float
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
@@ -1424,21 +1424,21 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Int
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         `value`: Byte,
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         `value`: Float,
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_trigger(
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_input(
         `ptr`: Pointer,
         `key`: RustBuffer.ByValue,
         `value`: RustBuffer.ByValue,
@@ -1569,9 +1569,9 @@ internal interface UniffiLib : Library {
         `vtable`: UniffiVTableCallbackInterfaceStateMachineObserver,
     ): Unit
 
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_trigger_value_change(
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_input_value_change(
         `ptr`: Pointer,
-        `triggerName`: RustBuffer.ByValue,
+        `inputName`: RustBuffer.ByValue,
         `oldValue`: Byte,
         `newValue`: Byte,
         uniffi_out_err: UniffiRustCallStatus,
@@ -1589,9 +1589,15 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_trigger_value_change(
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_input_fired(
         `ptr`: Pointer,
-        `triggerName`: RustBuffer.ByValue,
+        `inputName`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Unit
+
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_input_value_change(
+        `ptr`: Pointer,
+        `inputName`: RustBuffer.ByValue,
         `oldValue`: Float,
         `newValue`: Float,
         uniffi_out_err: UniffiRustCallStatus,
@@ -1619,9 +1625,9 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_trigger_value_change(
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_input_value_change(
         `ptr`: Pointer,
-        `triggerName`: RustBuffer.ByValue,
+        `inputName`: RustBuffer.ByValue,
         `oldValue`: RustBuffer.ByValue,
         `newValue`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
@@ -1631,12 +1637,6 @@ internal interface UniffiLib : Library {
         `ptr`: Pointer,
         `previousState`: RustBuffer.ByValue,
         `newState`: RustBuffer.ByValue,
-        uniffi_out_err: UniffiRustCallStatus,
-    ): Unit
-
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_trigger_fired(
-        `ptr`: Pointer,
-        `triggerName`: RustBuffer.ByValue,
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
@@ -1956,11 +1956,11 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_framework_unsubscribe(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_input(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_input(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_string_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_string_input(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_load(): Short
 
@@ -1982,11 +1982,11 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_post_pointer_up_event(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_boolean_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_boolean_input(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_numeric_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_numeric_input(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_string_trigger(): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_string_input(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_start(): Short
 
@@ -2024,13 +2024,15 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_observer_on_stop(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_boolean_trigger_value_change(): Short
+    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_boolean_input_value_change(): Short
 
     fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_custom_event(): Short
 
     fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_error(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_numeric_trigger_value_change(): Short
+    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_input_fired(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_numeric_input_value_change(): Short
 
     fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_start(): Short
 
@@ -2040,11 +2042,9 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_stop(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_string_trigger_value_change(): Short
+    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_string_input_value_change(): Short
 
     fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_transition(): Short
-
-    fun uniffi_dotlottie_player_checksum_method_statemachineobserver_on_trigger_fired(): Short
 
     fun uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new(): Short
 
@@ -2204,13 +2204,13 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_framework_unsubscribe() != 64000.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_trigger() != 30117.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_input() != 55120.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_trigger() != 15678.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_input() != 10400.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_string_trigger() != 52037.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_string_input() != 47598.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_load() != 64493.toShort()) {
@@ -2243,13 +2243,13 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_post_pointer_up_event() != 24904.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_boolean_trigger() != 12695.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_boolean_input() != 63405.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_numeric_trigger() != 36836.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_numeric_input() != 54841.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_string_trigger() != 26005.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_set_string_input() != 4923.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_start() != 32431.toShort()) {
@@ -2306,7 +2306,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_observer_on_stop() != 52331.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_boolean_trigger_value_change() != 21867.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_boolean_input_value_change() != 21933.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_custom_event() != 50052.toShort()) {
@@ -2315,7 +2315,10 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_error() != 46774.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_numeric_trigger_value_change() != 57476.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_input_fired() != 28837.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_numeric_input_value_change() != 49226.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_start() != 26147.toShort()) {
@@ -2330,13 +2333,10 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_stop() != 19940.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_string_trigger_value_change() != 62692.toShort()) {
+    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_string_input_value_change() != 58131.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_transition() != 25374.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_dotlottie_player_checksum_method_statemachineobserver_on_trigger_fired() != 65439.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new() != 34558.toShort()) {
@@ -2857,11 +2857,11 @@ public interface DotLottiePlayerInterface {
 
     fun `stateMachineFrameworkUnsubscribe`(`observer`: StateMachineObserver): kotlin.Boolean
 
-    fun `stateMachineGetBooleanTrigger`(`key`: kotlin.String): kotlin.Boolean
+    fun `stateMachineGetBooleanInput`(`key`: kotlin.String): kotlin.Boolean
 
-    fun `stateMachineGetNumericTrigger`(`key`: kotlin.String): kotlin.Float
+    fun `stateMachineGetNumericInput`(`key`: kotlin.String): kotlin.Float
 
-    fun `stateMachineGetStringTrigger`(`key`: kotlin.String): kotlin.String
+    fun `stateMachineGetStringInput`(`key`: kotlin.String): kotlin.String
 
     fun `stateMachineLoad`(`stateMachineId`: kotlin.String): kotlin.Boolean
 
@@ -2904,17 +2904,17 @@ public interface DotLottiePlayerInterface {
         `y`: kotlin.Float,
     ): kotlin.Int
 
-    fun `stateMachineSetBooleanTrigger`(
+    fun `stateMachineSetBooleanInput`(
         `key`: kotlin.String,
         `value`: kotlin.Boolean,
     ): kotlin.Boolean
 
-    fun `stateMachineSetNumericTrigger`(
+    fun `stateMachineSetNumericInput`(
         `key`: kotlin.String,
         `value`: kotlin.Float,
     ): kotlin.Boolean
 
-    fun `stateMachineSetStringTrigger`(
+    fun `stateMachineSetStringInput`(
         `key`: kotlin.String,
         `value`: kotlin.String,
     ): kotlin.Boolean
@@ -3608,11 +3608,11 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineGetBooleanTrigger`(`key`: kotlin.String): kotlin.Boolean =
+    override fun `stateMachineGetBooleanInput`(`key`: kotlin.String): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_input(
                         it,
                         FfiConverterString.lower(`key`),
                         _status,
@@ -3621,11 +3621,11 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineGetNumericTrigger`(`key`: kotlin.String): kotlin.Float =
+    override fun `stateMachineGetNumericInput`(`key`: kotlin.String): kotlin.Float =
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_input(
                         it,
                         FfiConverterString.lower(`key`),
                         _status,
@@ -3634,11 +3634,11 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineGetStringTrigger`(`key`: kotlin.String): kotlin.String =
+    override fun `stateMachineGetStringInput`(`key`: kotlin.String): kotlin.String =
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_input(
                         it,
                         FfiConverterString.lower(`key`),
                         _status,
@@ -3805,14 +3805,14 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineSetBooleanTrigger`(
+    override fun `stateMachineSetBooleanInput`(
         `key`: kotlin.String,
         `value`: kotlin.Boolean,
     ): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_input(
                         it,
                         FfiConverterString.lower(`key`),
                         FfiConverterBoolean.lower(`value`),
@@ -3822,14 +3822,14 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineSetNumericTrigger`(
+    override fun `stateMachineSetNumericInput`(
         `key`: kotlin.String,
         `value`: kotlin.Float,
     ): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_input(
                         it,
                         FfiConverterString.lower(`key`),
                         FfiConverterFloat.lower(`value`),
@@ -3839,14 +3839,14 @@ open class DotLottiePlayer :
             },
         )
 
-    override fun `stateMachineSetStringTrigger`(
+    override fun `stateMachineSetStringInput`(
         `key`: kotlin.String,
         `value`: kotlin.String,
     ): kotlin.Boolean =
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_trigger(
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_input(
                         it,
                         FfiConverterString.lower(`key`),
                         FfiConverterString.lower(`value`),
@@ -4612,8 +4612,8 @@ public object FfiConverterTypeObserver : FfiConverter<Observer, Pointer> {
 //
 
 public interface StateMachineObserver {
-    fun `onBooleanTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    fun `onBooleanInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.Boolean,
         `newValue`: kotlin.Boolean,
     )
@@ -4622,8 +4622,10 @@ public interface StateMachineObserver {
 
     fun `onError`(`message`: kotlin.String)
 
-    fun `onNumericTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    fun `onInputFired`(`inputName`: kotlin.String)
+
+    fun `onNumericInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.Float,
         `newValue`: kotlin.Float,
     )
@@ -4636,8 +4638,8 @@ public interface StateMachineObserver {
 
     fun `onStop`()
 
-    fun `onStringTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    fun `onStringInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.String,
         `newValue`: kotlin.String,
     )
@@ -4646,8 +4648,6 @@ public interface StateMachineObserver {
         `previousState`: kotlin.String,
         `newState`: kotlin.String,
     )
-
-    fun `onTriggerFired`(`triggerName`: kotlin.String)
 
     companion object
 }
@@ -4736,15 +4736,15 @@ open class StateMachineObserverImpl :
             UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_clone_statemachineobserver(pointer!!, status)
         }
 
-    override fun `onBooleanTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    override fun `onBooleanInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.Boolean,
         `newValue`: kotlin.Boolean,
     ) = callWithPointer {
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_trigger_value_change(
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_input_value_change(
                 it,
-                FfiConverterString.lower(`triggerName`),
+                FfiConverterString.lower(`inputName`),
                 FfiConverterBoolean.lower(`oldValue`),
                 FfiConverterBoolean.lower(`newValue`),
                 _status,
@@ -4774,15 +4774,26 @@ open class StateMachineObserverImpl :
             }
         }
 
-    override fun `onNumericTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    override fun `onInputFired`(`inputName`: kotlin.String) =
+        callWithPointer {
+            uniffiRustCall { _status ->
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_input_fired(
+                    it,
+                    FfiConverterString.lower(`inputName`),
+                    _status,
+                )
+            }
+        }
+
+    override fun `onNumericInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.Float,
         `newValue`: kotlin.Float,
     ) = callWithPointer {
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_trigger_value_change(
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_input_value_change(
                 it,
-                FfiConverterString.lower(`triggerName`),
+                FfiConverterString.lower(`inputName`),
                 FfiConverterFloat.lower(`oldValue`),
                 FfiConverterFloat.lower(`newValue`),
                 _status,
@@ -4832,15 +4843,15 @@ open class StateMachineObserverImpl :
             }
         }
 
-    override fun `onStringTriggerValueChange`(
-        `triggerName`: kotlin.String,
+    override fun `onStringInputValueChange`(
+        `inputName`: kotlin.String,
         `oldValue`: kotlin.String,
         `newValue`: kotlin.String,
     ) = callWithPointer {
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_trigger_value_change(
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_input_value_change(
                 it,
-                FfiConverterString.lower(`triggerName`),
+                FfiConverterString.lower(`inputName`),
                 FfiConverterString.lower(`oldValue`),
                 FfiConverterString.lower(`newValue`),
                 _status,
@@ -4862,34 +4873,23 @@ open class StateMachineObserverImpl :
         }
     }
 
-    override fun `onTriggerFired`(`triggerName`: kotlin.String) =
-        callWithPointer {
-            uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_trigger_fired(
-                    it,
-                    FfiConverterString.lower(`triggerName`),
-                    _status,
-                )
-            }
-        }
-
     companion object
 }
 
 // Put the implementation in an object so we don't pollute the top-level namespace
 internal object uniffiCallbackInterfaceStateMachineObserver {
-    internal object `onBooleanTriggerValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod0 {
+    internal object `onBooleanInputValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod0 {
         override fun callback(
             `uniffiHandle`: Long,
-            `triggerName`: RustBuffer.ByValue,
+            `inputName`: RustBuffer.ByValue,
             `oldValue`: Byte,
             `newValue`: Byte,
             `uniffiOutReturn`: Pointer,
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = {  uniffiObj.`onBooleanTriggerValueChange`(
-                FfiConverterString.lift(`triggerName`),
+            val makeCall = {  uniffiObj.`onBooleanInputValueChange`(
+                FfiConverterString.lift(`inputName`),
                 FfiConverterBoolean.lift(`oldValue`),
                 FfiConverterBoolean.lift(`newValue`),
             )
@@ -4933,18 +4933,35 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onNumericTriggerValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod3 {
+    internal object `onInputFired` : UniffiCallbackInterfaceStateMachineObserverMethod3 {
         override fun callback(
             `uniffiHandle`: Long,
-            `triggerName`: RustBuffer.ByValue,
+            `inputName`: RustBuffer.ByValue,
+            `uniffiOutReturn`: Pointer,
+            uniffiCallStatus: UniffiRustCallStatus,
+        ) {
+            val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
+            val makeCall = {  uniffiObj.`onInputFired`(
+                FfiConverterString.lift(`inputName`),
+            )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+
+    internal object `onNumericInputValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod4 {
+        override fun callback(
+            `uniffiHandle`: Long,
+            `inputName`: RustBuffer.ByValue,
             `oldValue`: Float,
             `newValue`: Float,
             `uniffiOutReturn`: Pointer,
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = {  uniffiObj.`onNumericTriggerValueChange`(
-                FfiConverterString.lift(`triggerName`),
+            val makeCall = {  uniffiObj.`onNumericInputValueChange`(
+                FfiConverterString.lift(`inputName`),
                 FfiConverterFloat.lift(`oldValue`),
                 FfiConverterFloat.lift(`newValue`),
             )
@@ -4954,7 +4971,7 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onStart` : UniffiCallbackInterfaceStateMachineObserverMethod4 {
+    internal object `onStart` : UniffiCallbackInterfaceStateMachineObserverMethod5 {
         override fun callback(
             `uniffiHandle`: Long,
             `uniffiOutReturn`: Pointer,
@@ -4967,7 +4984,7 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onStateEntered` : UniffiCallbackInterfaceStateMachineObserverMethod5 {
+    internal object `onStateEntered` : UniffiCallbackInterfaceStateMachineObserverMethod6 {
         override fun callback(
             `uniffiHandle`: Long,
             `enteringState`: RustBuffer.ByValue,
@@ -4984,7 +5001,7 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onStateExit` : UniffiCallbackInterfaceStateMachineObserverMethod6 {
+    internal object `onStateExit` : UniffiCallbackInterfaceStateMachineObserverMethod7 {
         override fun callback(
             `uniffiHandle`: Long,
             `leavingState`: RustBuffer.ByValue,
@@ -5001,7 +5018,7 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onStop` : UniffiCallbackInterfaceStateMachineObserverMethod7 {
+    internal object `onStop` : UniffiCallbackInterfaceStateMachineObserverMethod8 {
         override fun callback(
             `uniffiHandle`: Long,
             `uniffiOutReturn`: Pointer,
@@ -5014,18 +5031,18 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onStringTriggerValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod8 {
+    internal object `onStringInputValueChange` : UniffiCallbackInterfaceStateMachineObserverMethod9 {
         override fun callback(
             `uniffiHandle`: Long,
-            `triggerName`: RustBuffer.ByValue,
+            `inputName`: RustBuffer.ByValue,
             `oldValue`: RustBuffer.ByValue,
             `newValue`: RustBuffer.ByValue,
             `uniffiOutReturn`: Pointer,
             uniffiCallStatus: UniffiRustCallStatus,
         ) {
             val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = {  uniffiObj.`onStringTriggerValueChange`(
-                FfiConverterString.lift(`triggerName`),
+            val makeCall = {  uniffiObj.`onStringInputValueChange`(
+                FfiConverterString.lift(`inputName`),
                 FfiConverterString.lift(`oldValue`),
                 FfiConverterString.lift(`newValue`),
             )
@@ -5035,7 +5052,7 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onTransition` : UniffiCallbackInterfaceStateMachineObserverMethod9 {
+    internal object `onTransition` : UniffiCallbackInterfaceStateMachineObserverMethod10 {
         override fun callback(
             `uniffiHandle`: Long,
             `previousState`: RustBuffer.ByValue,
@@ -5054,23 +5071,6 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
         }
     }
 
-    internal object `onTriggerFired` : UniffiCallbackInterfaceStateMachineObserverMethod10 {
-        override fun callback(
-            `uniffiHandle`: Long,
-            `triggerName`: RustBuffer.ByValue,
-            `uniffiOutReturn`: Pointer,
-            uniffiCallStatus: UniffiRustCallStatus,
-        ) {
-            val uniffiObj = FfiConverterTypeStateMachineObserver.handleMap.get(uniffiHandle)
-            val makeCall = {  uniffiObj.`onTriggerFired`(
-                FfiConverterString.lift(`triggerName`),
-            )
-            }
-            val writeReturn = { _: Unit -> Unit }
-            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
-        }
-    }
-
     internal object uniffiFree : UniffiCallbackInterfaceFree {
         override fun callback(handle: Long) {
             FfiConverterTypeStateMachineObserver.handleMap.remove(handle)
@@ -5079,17 +5079,17 @@ internal object uniffiCallbackInterfaceStateMachineObserver {
 
     internal var vtable =
         UniffiVTableCallbackInterfaceStateMachineObserver.UniffiByValue(
-            `onBooleanTriggerValueChange`,
+            `onBooleanInputValueChange`,
             `onCustomEvent`,
             `onError`,
-            `onNumericTriggerValueChange`,
+            `onInputFired`,
+            `onNumericInputValueChange`,
             `onStart`,
             `onStateEntered`,
             `onStateExit`,
             `onStop`,
-            `onStringTriggerValueChange`,
+            `onStringInputValueChange`,
             `onTransition`,
-            `onTriggerFired`,
             uniffiFree,
         )
 
