@@ -12,7 +12,7 @@
                     "guards": [
                         {
                             "type": "Event",
-                            "triggerName": "Forward"
+                            "inputName": "Forward"
                         }
                     ]
                 },
@@ -22,7 +22,7 @@
                     "guards": [
                         {
                             "type": "Event",
-                            "triggerName": "Reverse"
+                            "inputName": "Reverse"
                         }
                     ]
                 }
@@ -45,13 +45,13 @@
             "transitions": []
         }
     ],
-    "listeners": [
+    "interactions": [
         {
             "type": "PointerDown",
             "actions": [
                 {
                     "type": "Fire",
-                    "triggerName": "Forward"
+                    "inputName": "Forward"
                 }
             ]
         },
@@ -60,12 +60,12 @@
             "actions": [
                 {
                     "type": "Fire",
-                    "triggerName": "Reverse"
+                    "inputName": "Reverse"
                 }
             ]
         }
     ],
-    "triggers": [
+    "inputs": [
         {
             "type": "Event",
             "name": "Forward"

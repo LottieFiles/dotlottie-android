@@ -391,28 +391,28 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.stateMachineRemoveEventListener(listener)
     }
 
-    fun stateMachineSetNumericTrigger(key: String, value: Float): Boolean {
-        return mLottieDrawable?.stateMachineSetNumericTrigger(key, value) ?: false
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return mLottieDrawable?.stateMachineSetNumericInput(key, value) ?: false
     }
 
-    fun stateMachineSetStringTrigger(key: String, value: String): Boolean {
-        return mLottieDrawable?.stateMachineSetStringTrigger(key, value) ?: false
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return mLottieDrawable?.stateMachineSetStringInput(key, value) ?: false
     }
 
-    fun stateMachineSetBooleanTrigger(key: String, value: Boolean): Boolean {
-        return mLottieDrawable?.stateMachineSetBooleanTrigger(key, value) ?: false
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return mLottieDrawable?.stateMachineSetBooleanInput(key, value) ?: false
     }
 
-    fun stateMachineGetNumericTrigger(key: String): Float? {
-        return mLottieDrawable?.stateMachineGetNumericTrigger(key)
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return mLottieDrawable?.stateMachineGetNumericInput(key)
     }
 
-    fun stateMachineGetStringTrigger(key: String): String? {
-        return mLottieDrawable?.stateMachineGetStringTrigger(key)
+    fun stateMachineGetStringInput(key: String): String? {
+        return mLottieDrawable?.stateMachineGetStringInput(key)
     }
 
-    fun stateMachineGetBooleanTrigger(key: String): Boolean? {
-        return mLottieDrawable?.stateMachineGetBooleanTrigger(key)
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return mLottieDrawable?.stateMachineGetBooleanInput(key)
     }
 
     fun stateMachineFireEvent(event: String) {

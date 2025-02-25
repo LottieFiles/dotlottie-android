@@ -12,7 +12,7 @@
                     "guards": [
                         {
                             "type": "Event",
-                            "triggerName": "Forward"
+                            "inputName": "Forward"
                         }
                     ]
                 }
@@ -27,18 +27,18 @@
             "transitions": []
         }
     ],
-    "listeners": [
+    "interactions": [
         {
             "type": "PointerDown",
             "actions": [
                 {
                     "type": "Fire",
-                    "triggerName": "Forward"
+                    "inputName": "Forward"
                 }
             ]
         }
     ],
-    "triggers": [
+    "inputs": [
         {
             "type": "Event",
             "name": "Forward"

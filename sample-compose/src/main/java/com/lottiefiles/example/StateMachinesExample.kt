@@ -177,8 +177,8 @@ fun StateMachineExample() {
 
                                             Log.d("Gestures", percentage.toString())
 
-                                            Log.d("DotLottie - set Trigger",
-                                                dotLottieController.stateMachineSetNumericTrigger("Progress", percentage)
+                                            Log.d("DotLottie - set Input",
+                                                dotLottieController.stateMachineSetNumericInput("Progress", percentage)
                                                     .toString()
                                             );
                                             Log.d("DotLottie - Fire", dotLottieController.stateMachineFire("Step").toString())
