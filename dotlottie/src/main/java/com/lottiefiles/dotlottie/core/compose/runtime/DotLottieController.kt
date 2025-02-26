@@ -172,7 +172,7 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context): Boolean {
+    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context? = null): Boolean {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
@@ -255,13 +255,15 @@ class DotLottieController {
 
                 override fun onCustomEvent(message: String) {
                     if (message.startsWith("OpenUrl: ")) {
-                        // Extract the URL part after "OpenUrl: "
-                        val url = message.substringAfter("OpenUrl: ")
+                        if (context != null) {
+                            // Extract the URL part after "OpenUrl: "
+                            val url = message.substringAfter("OpenUrl: ")
 
-                        // Create and launch the intent to open the URL
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
+                            // Create and launch the intent to open the URL
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                        }
                     }
                 }
 

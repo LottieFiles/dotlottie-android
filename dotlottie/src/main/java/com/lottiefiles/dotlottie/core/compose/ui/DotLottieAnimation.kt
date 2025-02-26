@@ -75,10 +75,11 @@ fun DotLottieAnimation(
             marker = marker ?: "",
             layout = layout,
             themeId = themeId ?: "",
-            stateMachineId = stateMachineId ?: "",
+            stateMachineId = "",
         )
     }
 
+    val initialStateMachineId = remember { stateMachineId }
     val dlPlayer = remember { DotLottiePlayer(dlConfig) }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var nativeBuffer by remember { mutableStateOf<Pointer?>(null) }
@@ -177,6 +178,17 @@ fun DotLottieAnimation(
         } catch (e: Exception) {
             rController.eventListeners.forEach {
                 it.onLoadError(e)
+            }
+        }
+    }
+
+    // Self manage starting the state machine rather than using the config prop
+    // This is so that we can check if it loaded successfully, attach listeners etc.
+    LaunchedEffect(dlPlayer.isLoaded()) {
+        if (initialStateMachineId != null) {
+            if (initialStateMachineId.isNotEmpty()) {
+                rController.stateMachineLoad(initialStateMachineId)
+                rController.stateMachineStart()
             }
         }
     }
