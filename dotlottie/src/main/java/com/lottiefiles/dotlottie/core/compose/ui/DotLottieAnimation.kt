@@ -38,6 +38,7 @@ import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
+import kotlin.math.pow
 
 @Composable
 fun DotLottieAnimation(
@@ -272,31 +273,58 @@ fun DotLottieAnimation(
                 awaitEachGesture {
                     // First touch (Down)
                     val down = awaitFirstDown()
-//                    down.consume() // Consume the down event
+                    //      down.consume() // Consume the down event
 
-                    val scaledX = down.position.x
-                    val scaledY = down.position.y
+                    val downPosition = down.position
+                    val scaledX = downPosition.x
+                    val scaledY = downPosition.y
 
                     rController.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
+
+                    // Variables to track movement distance
+                    var movedTooMuch = false
+                    val touchSlop = 20f // Define a reasonable threshold for tap movement
 
                     // Handle move and up events
                     do {
                         val event = awaitPointerEvent()
                         val position = event.changes.first()
-//                        position.consume() // Consume each event
 
                         // Handle move
                         if (!position.pressed) {
                             // Touch up detected
-                            val upScaledX = position.position.x
-                            val upScaledY = position.position.y
+                            val upPosition = position.position
+                            val upScaledX = upPosition.x
+                            val upScaledY = upPosition.y
 
                             rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
+
+                            // Check for pointer movement distance
+                            val distance = kotlin.math.sqrt(
+                                (upPosition.x - downPosition.x).pow(2) +
+                                        (upPosition.y - downPosition.y).pow(2)
+                            )
+
+                            // If the pointer down has moved too much
+                            if (distance < touchSlop && !movedTooMuch) {
+                                rController.stateMachinePostEvent(Event.Click(upScaledX, upScaledY))
+                            }
+
                             break
                         } else {
                             // Move detected
-                            val moveX = position.position.x
-                            val moveY = position.position.y
+                            val movePosition = position.position
+                            val moveX = movePosition.x
+                            val moveY = movePosition.y
+
+                            // Check if we've moved beyond the threshold to be considered a tap
+                            val moveDistance = kotlin.math.sqrt(
+                                (movePosition.x - downPosition.x).pow(2) +
+                                        (movePosition.y - downPosition.y).pow(2)
+                            )
+                            if (moveDistance > touchSlop) {
+                                movedTooMuch = true
+                            }
 
                             rController.stateMachinePostEvent(Event.PointerMove(moveX, moveY))
                         }
