@@ -508,8 +508,7 @@ class DotLottieDrawable(
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
-        val nextFrame = dlPlayer!!.requestFrame()
-        dlPlayer!!.setFrame(nextFrame)
+        dlPlayer!!.tick()
         dlPlayer!!.render()
 
         val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong())

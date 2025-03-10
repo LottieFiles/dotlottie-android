@@ -91,7 +91,6 @@ fun DotLottieAnimation(
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
-    var currentFrame by remember { mutableFloatStateOf(-1.0f) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -100,35 +99,17 @@ fun DotLottieAnimation(
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
-                val nextFrame = dlPlayer.requestFrame()
+                dlPlayer.tick()
+                dlPlayer.render()
 
-                if (rController.stateMachineIsActive) {
-                    if (nextFrame != currentFrame || (currentFrame == 0.0f)) {
-                    currentFrame = nextFrame
-                    dlPlayer.setFrame(nextFrame)
-                    dlPlayer.render()
-
-                    bufferBytes?.let { bytes ->
-                        bitmap?.let { bmp ->
-                            bytes.rewind()
-                            bmp.copyPixelsFromBuffer(bytes)
-                            imageBitmap = bmp.asImageBitmap()
-                            }
-                        }
-                    }
-                } else {
-                    currentFrame = nextFrame
-                    dlPlayer.setFrame(nextFrame)
-                    dlPlayer.render()
-
-                    bufferBytes?.let { bytes ->
-                        bitmap?.let { bmp ->
-                            bytes.rewind()
-                            bmp.copyPixelsFromBuffer(bytes)
-                            imageBitmap = bmp.asImageBitmap()
-                        }
+                bufferBytes?.let { bytes ->
+                    bitmap?.let { bmp ->
+                        bytes.rewind()
+                        bmp.copyPixelsFromBuffer(bytes)
+                        imageBitmap = bmp.asImageBitmap()
                     }
                 }
+
 
                 if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
                     choreographer.postFrameCallback(this)

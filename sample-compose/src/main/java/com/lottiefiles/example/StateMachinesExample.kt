@@ -50,7 +50,7 @@ fun StateMachineExample() {
     val dotLottieController = remember { DotLottieController() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedAnimation by remember { mutableStateOf<String?>("animations/click-button.json") }
+    var selectedAnimation by remember { mutableStateOf<String?>("animations/smiley-slider.lottie") }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -76,6 +76,7 @@ fun StateMachineExample() {
                         listOf("animations/hold-button.json"),
                         listOf("animations/loader.json"),
                         listOf("animations/pigeon.lottie"),
+                        listOf("animations/smiley-slider.lottie"),
                         listOf("animations/star-marked.lottie"),
                         listOf("animations/sync-to-cursor.lottie"),
                         listOf("animations/theming.lottie"),
@@ -154,8 +155,7 @@ fun StateMachineExample() {
                             mode = OpenUrlMode.INTERACTION,
                             whitelist = emptyList()
                         );
-                        if (loadResult) { startResult = dotLottieController.stateMachineStart(openUrl, context = context)
-                        }
+                        if (loadResult) { startResult = dotLottieController.stateMachineStart(openUrl, context = context) }
                     }
 
                     Column {

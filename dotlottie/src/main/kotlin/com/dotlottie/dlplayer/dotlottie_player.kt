@@ -1177,6 +1177,11 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Byte
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(
         `ptr`: Pointer,
         `animationId`: RustBuffer.ByValue,
@@ -1484,10 +1489,42 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): Unit
 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
         `ptr`: Pointer,
         uniffi_out_err: UniffiRustCallStatus,
     ): Float
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween(
+        `ptr`: Pointer,
+        `to`: Float,
+        `duration`: RustBuffer.ByValue,
+        `easing`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(
+        `ptr`: Pointer,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_to_marker(
+        `ptr`: Pointer,
+        `marker`: RustBuffer.ByValue,
+        `duration`: RustBuffer.ByValue,
+        `easing`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_update(
+        `ptr`: Pointer,
+        `progress`: RustBuffer.ByValue,
+        uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
 
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_unsubscribe(
         `ptr`: Pointer,
@@ -1902,6 +1939,8 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_stopped(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_tweening(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_animation(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_animation_data(): Short
@@ -2002,7 +2041,17 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe(): Short
 
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_tick(): Short
+
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_stop(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_to_marker(): Short
+
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_update(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_unsubscribe(): Short
 
@@ -2121,6 +2170,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_stopped() != 28412.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_tweening() != 55447.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_load_animation() != 52252.toShort()) {
@@ -2273,7 +2325,22 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_subscribe() != 45859.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_tick() != 60075.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_total_frames() != 12091.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween() != 57206.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_stop() != 42833.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_to_marker() != 26478.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_tween_update() != 11200.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_unsubscribe() != 1373.toShort()) {
@@ -2779,6 +2846,8 @@ public interface DotLottiePlayerInterface {
 
     fun `isStopped`(): kotlin.Boolean
 
+    fun `isTweening`(): kotlin.Boolean
+
     fun `loadAnimation`(
         `animationId`: kotlin.String,
         `width`: kotlin.UInt,
@@ -2933,7 +3002,25 @@ public interface DotLottiePlayerInterface {
 
     fun `subscribe`(`observer`: Observer)
 
+    fun `tick`(): kotlin.Boolean
+
     fun `totalFrames`(): kotlin.Float
+
+    fun `tween`(
+        `to`: kotlin.Float,
+        `duration`: kotlin.Float?,
+        `easing`: List<kotlin.Float>?,
+    ): kotlin.Boolean
+
+    fun `tweenStop`(): kotlin.Boolean
+
+    fun `tweenToMarker`(
+        `marker`: kotlin.String,
+        `duration`: kotlin.Float?,
+        `easing`: List<kotlin.Float>?,
+    ): kotlin.Boolean
+
+    fun `tweenUpdate`(`progress`: kotlin.Float?): kotlin.Boolean
 
     fun `unsubscribe`(`observer`: Observer)
 
@@ -3230,6 +3317,18 @@ open class DotLottiePlayer :
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
+                        it,
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `isTweening`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(
                         it,
                         _status,
                     )
@@ -3942,12 +4041,87 @@ open class DotLottiePlayer :
             }
         }
 
+    override fun `tick`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(
+                        it,
+                        _status,
+                    )
+                }
+            },
+        )
+
     override fun `totalFrames`(): kotlin.Float =
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
                         it,
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `tween`(
+        `to`: kotlin.Float,
+        `duration`: kotlin.Float?,
+        `easing`: List<kotlin.Float>?,
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween(
+                        it,
+                        FfiConverterFloat.lower(`to`),
+                        FfiConverterOptionalFloat.lower(`duration`),
+                        FfiConverterOptionalSequenceFloat.lower(`easing`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `tweenStop`(): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(
+                        it,
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `tweenToMarker`(
+        `marker`: kotlin.String,
+        `duration`: kotlin.Float?,
+        `easing`: List<kotlin.Float>?,
+    ): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_to_marker(
+                        it,
+                        FfiConverterString.lower(`marker`),
+                        FfiConverterOptionalFloat.lower(`duration`),
+                        FfiConverterOptionalSequenceFloat.lower(`easing`),
+                        _status,
+                    )
+                }
+            },
+        )
+
+    override fun `tweenUpdate`(`progress`: kotlin.Float?): kotlin.Boolean =
+        FfiConverterBoolean.lift(
+            callWithPointer {
+                uniffiRustCall { _status ->
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_update(
+                        it,
+                        FfiConverterOptionalFloat.lower(`progress`),
                         _status,
                     )
                 }
@@ -5789,6 +5963,38 @@ public object FfiConverterTypeOpenUrlMode : FfiConverterRustBuffer<OpenUrlMode> 
 /**
  * @suppress
  */
+public object FfiConverterOptionalFloat : FfiConverterRustBuffer<kotlin.Float?> {
+    override fun read(buf: ByteBuffer): kotlin.Float? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterFloat.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Float?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterFloat.allocationSize(value)
+        }
+    }
+
+    override fun write(
+        value: kotlin.Float?,
+        buf: ByteBuffer,
+    ) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterFloat.write(value, buf)
+        }
+    }
+}
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalString : FfiConverterRustBuffer<kotlin.String?> {
     override fun read(buf: ByteBuffer): kotlin.String? {
         if (buf.get().toInt() == 0) {
@@ -5878,6 +6084,38 @@ public object FfiConverterOptionalTypeManifestInitial : FfiConverterRustBuffer<M
         } else {
             buf.put(1)
             FfiConverterTypeManifestInitial.write(value, buf)
+        }
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalSequenceFloat : FfiConverterRustBuffer<List<kotlin.Float>?> {
+    override fun read(buf: ByteBuffer): List<kotlin.Float>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceFloat.read(buf)
+    }
+
+    override fun allocationSize(value: List<kotlin.Float>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceFloat.allocationSize(value)
+        }
+    }
+
+    override fun write(
+        value: List<kotlin.Float>?,
+        buf: ByteBuffer,
+    ) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceFloat.write(value, buf)
         }
     }
 }
