@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.drawable
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
@@ -7,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.FloatRange
@@ -19,7 +22,9 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
+import com.dotlottie.dlplayer.OpenUrl
 import com.dotlottie.dlplayer.StateMachineObserver
+import com.dotlottie.dlplayer.createDefaultOpenUrl
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
@@ -37,6 +42,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
 
     var freeze: Boolean = false
         set(value) {
@@ -312,11 +318,45 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
+    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context): Boolean {
+        val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
-    fun startStateMachine(): Boolean {
-        val result = dlPlayer?.startStateMachine() ?: false
+        // Start render loop
         if (result) {
+            if (dlPlayer != null) {
+                stateMachineGestureListeners =
+                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
+
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onBooleanInputValueChange(
+                    inputName: String,
+                    oldValue: Boolean,
+                    newValue: Boolean
+                ) {
+                    stateMachineListeners.forEach { it.onBooleanInputValueChange(inputName, oldValue, newValue) }
+                }
+
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
+                override fun onError(message: String) {
+                    stateMachineListeners.forEach { it.onError(message) }
+                }
+
+                override fun onNumericInputValueChange(
+                    inputName: String,
+                    oldValue: Float,
+                    newValue: Float
+                ) {
+                    stateMachineListeners.forEach { it.onNumericInputValueChange(inputName, oldValue, newValue) }
+                }
+
+                override fun onStart() {
+                    stateMachineListeners.forEach { it.onStart() }
+                }
+
                 override fun onStateEntered(enteringState: String) {
                     stateMachineListeners.forEach { it.onStateEntered(enteringState) }
                 }
@@ -325,70 +365,150 @@ class DotLottieDrawable(
                     stateMachineListeners.forEach { it.onStateExit(leavingState) }
                 }
 
+                override fun onStop() {
+                    stateMachineListeners.forEach { it.onStop() }
+                }
+
+                override fun onStringInputValueChange(
+                    inputName: String,
+                    oldValue: String,
+                    newValue: String
+                ) {
+                    stateMachineListeners.forEach { it.onStringInputValueChange(inputName,oldValue,newValue) }
+                }
+
                 override fun onTransition(previousState: String, newState: String) {
                     stateMachineListeners.forEach { it.onTransition(previousState, newState) }
                 }
+
+                override fun onInputFired(inputName: String) {
+                    stateMachineListeners.forEach { it.onInputFired(inputName) }
+                }
+            })
+
+            // For internal observer
+            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onBooleanInputValueChange(
+                    inputName: String,
+                    oldValue: Boolean,
+                    newValue: Boolean
+                ) {}
+
+                override fun onCustomEvent(message: String) {
+                    if (message.startsWith("OpenUrl: ")) {
+                        // Extract the URL part after "OpenUrl: "
+                        val url = message.substringAfter("OpenUrl: ")
+
+                        // Create and launch the intent to open the URL
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    }
+                }
+
+                override fun onError(message: String) {}
+
+                override fun onNumericInputValueChange(
+                    inputName: String,
+                    oldValue: Float,
+                    newValue: Float
+                ) {}
+
+                override fun onStart() {}
+
+                override fun onStateEntered(enteringState: String) {}
+
+                override fun onStateExit(leavingState: String) {}
+
+                override fun onStop() {}
+
+                override fun onStringInputValueChange(
+                    inputName: String,
+                    oldValue: String,
+                    newValue: String
+                ) {}
+
+                override fun onTransition(previousState: String, newState: String) {}
+
+                override fun onInputFired(inputName: String) {}
             })
         }
         return result
     }
 
-    fun stopStateMachine(): Boolean {
-        return dlPlayer?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return dlPlayer?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlPlayer?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        val result = dlPlayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlPlayer?.stateMachineLoadData(data) ?: false
+    }
 
-            2 -> {
-                this.play()
-            }
+    /**
+     * Internal function to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
+        var ret: Int = 1
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
-            3 -> {
-                this.pause()
-            }
-
-            4 -> {
-                invalidateSelf()
-            }
+        if (force) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
         }
 
-        return result
+        return ret
     }
 
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
 
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.remove(listener)
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return dlPlayer?.stateMachineSetNumericInput(key, value) ?: false
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return dlPlayer?.stateMachineSetStringInput(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return dlPlayer?.stateMachineSetBooleanInput(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return dlPlayer?.stateMachineGetNumericInput(key)
+    }
+
+    fun stateMachineGetStringInput(key: String): String? {
+        return dlPlayer?.stateMachineGetStringInput(key)
+    }
+
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return dlPlayer?.stateMachineGetBooleanInput(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlPlayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        dlPlayer?.stateMachineFireEvent(event)
     }
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
-        val nextFrame = dlPlayer!!.requestFrame()
-        dlPlayer!!.setFrame(nextFrame)
+        dlPlayer!!.tick()
         dlPlayer!!.render()
 
         val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong())
