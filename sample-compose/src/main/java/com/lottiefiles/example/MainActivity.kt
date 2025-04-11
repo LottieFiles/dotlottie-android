@@ -61,10 +61,10 @@ class MainActivity : ComponentActivity() {
 //                    DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
-                    ThemeExample()
+//                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-//                    StateMachineExample()
+                    StateMachineExample()
                 }
             }
         }
@@ -582,79 +582,6 @@ fun LayoutExample() {
                     controller.setLayout(Fit.CONTAIN, LayoutUtil.Alignment.Center)
                 }) {
                     Text(text = "FIT::CONTAIN, ALIGN::CENTER")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun StateMachineExample() {
-    val fit = remember { mutableStateOf(Fit.CONTAIN) }
-    val alignment = remember { mutableStateOf(LayoutUtil.Alignment.Center) }
-    val controller = remember { DotLottieController() }
-
-    val stateListener = remember {
-        object : StateMachineEventListener {
-            override fun onTransition(previousState: String, newState: String) {
-                Log.i("DotLottie", "Transition: $previousState -> $newState")
-            }
-
-            override fun onStateExit(leavingState: String) {
-                Log.i("DotLottie", "Exit: $leavingState")
-            }
-
-            override fun onStateEntered(enteringState: String) {
-                Log.i("DotLottie", "Enter: $enteringState")
-            }
-        }
-    }
-
-    LaunchedEffect(UInt) {
-        controller.addStateMachineEventListener(stateListener)
-    }
-
-
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row {
-            DotLottieAnimation(
-                source = DotLottieSource.Asset("exploding_pigeon.lottie"),
-                autoplay = true,
-                loop = false,
-                layout = LayoutUtil.createLayout(fit.value, alignment.value.alignment),
-                modifier = Modifier
-                    .background(Color.LightGray)
-                    .fillMaxWidth()
-                    .aspectRatio(1.6f),
-                controller = controller,
-            )
-        }
-        Row {
-            Column {
-
-                Button(onClick = {
-                    val result = controller.loadStateMachine("pigeon_fsm")
-                    if (result) {
-                        controller.startStateMachine()
-                    }
-                }) {
-                    Text(text = "sate machine")
-                }
-
-                Button(onClick = {
-                    controller.postEvent(Event.String("explosion"))
-                }) {
-                    Text(text = "Explosion")
-                }
-
-                Button(onClick = {
-                    controller.stopStateMachine()
-                }) {
-                    Text(text = "Stop")
                 }
             }
         }

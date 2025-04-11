@@ -14,7 +14,10 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.OpenUrl
+import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
+import com.dotlottie.dlplayer.createDefaultOpenUrl
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
@@ -42,7 +45,8 @@ data class DotLottieAttributes(
     val autoplay: Boolean,
     val backgroundColor: Int,
     val useFrameInterpolation: Boolean,
-    val themeId: String?
+    val themeId: String?,
+    val stateMachineId: String?
 )
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -113,7 +117,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     val markers: List<Marker>
         get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
-
 
     val activeThemeId: String
         get() = mLottieDrawable?.activeThemeId ?: ""
@@ -246,7 +249,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation,
                         false
                     ),
-                    themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId)
+                    themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId),
+                    stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId)
                 )
             } finally {
                 recycle()
@@ -298,6 +302,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = config.marker,
                         layout = config.layout,
                         themeId = config.themeId,
+                        stateMachineId = config.stateMachineId
                     )
                 )
 
@@ -345,7 +350,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         segment = listOf(),
                         marker = attributes.marker ?: "",
                         layout = createDefaultLayout(),
-                        themeId = attributes.themeId ?: ""
+                        themeId = attributes.themeId ?: "",
+                        stateMachineId = attributes.stateMachineId ?: ""
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
@@ -404,40 +410,64 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun startStateMachine(): Boolean {
-        return mLottieDrawable?.startStateMachine() ?: false
+    fun stateMachineStart(urlConfig: OpenUrl = createDefaultOpenUrl(),  context: Context): Boolean {
+        return mLottieDrawable?.stateMachineStart(urlConfig, context = context) ?: false
     }
 
-    fun stopStateMachine(): Boolean {
-        return mLottieDrawable?.stopStateMachine() ?: false
+    fun stateMachineStop(): Boolean {
+        return mLottieDrawable?.stateMachineStop() ?: false
     }
 
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return mLottieDrawable?.stateMachineLoad(stateMachineId) ?: false
     }
 
-    fun postEvent(event: Event): Int {
-        return mLottieDrawable?.postEvent(event) ?: 0
+    fun stateMachineLoadData(data: String): Boolean {
+        return mLottieDrawable?.stateMachineLoadData(data) ?: false
+    }
+
+    fun stateMachinePostEvent(event: Event): Int {
+        return mLottieDrawable?.stateMachinePostEvent(event) ?: 0
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.addStateMachineEventListener(listener)
+        mLottieDrawable?.stateMachineAddEventListener(listener)
     }
 
     fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.removeStateMachineEventListener(listener)
+        mLottieDrawable?.stateMachineRemoveEventListener(listener)
     }
 
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return mLottieDrawable?.stateMachineSetNumericInput(key, value) ?: false
     }
 
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return mLottieDrawable?.stateMachineSetStringInput(key, value) ?: false
     }
 
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return mLottieDrawable?.stateMachineSetBooleanInput(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return mLottieDrawable?.stateMachineGetNumericInput(key)
+    }
+
+    fun stateMachineGetStringInput(key: String): String? {
+        return mLottieDrawable?.stateMachineGetStringInput(key)
+    }
+
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return mLottieDrawable?.stateMachineGetBooleanInput(key)
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        mLottieDrawable?.stateMachineFireEvent(event)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return mLottieDrawable?.stateMachineCurrentState()
     }
 
     companion object {

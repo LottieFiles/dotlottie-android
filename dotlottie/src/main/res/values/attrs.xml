@@ -22,5 +22,6 @@
         <attr name="dotLottie_backgroundColor" format="integer" />
         <attr name="dotLottie_useFrameInterpolation" format="boolean" />
         <attr name="dotLottie_themeId" format="string" />
+        <attr name="dotLottie_stateMachineId" format="string" />
     </declare-styleable>
 </resources>

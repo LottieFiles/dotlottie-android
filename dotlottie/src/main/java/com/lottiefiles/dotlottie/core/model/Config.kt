@@ -17,7 +17,8 @@ class Config private constructor(
     val marker: String,
     val layout: Layout,
     val source: DotLottieSource,
-    val themeId: String = ""
+    val themeId: String = "",
+    val stateMachineId: String = ""
 ) {
 
     class Builder {
