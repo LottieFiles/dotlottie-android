@@ -2,6 +2,7 @@ package com.lottiefiles.dotlottie.core.loader
 
 import android.content.Context
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
+import com.lottiefiles.dotlottie.core.util.isZipCompressed
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -74,10 +75,11 @@ class NetworkLoader(context: Context, private val url: String) : AbstractLoader(
                 throw IOException("[NetworkLoader]: Failed to download file: $url")
             }
 
-            val contentType = response.header("Content-Type", "") ?: "";
-            val isLottie =
-                contentType.contains("application/json") || contentType.contains("text/plain")
-            val content = if (isLottie) {
+            val isDotLottie = response.body?.source()
+                ?.isZipCompressed()
+                ?:false
+
+            val content = if (!isDotLottie) {
                 val text = response.body?.string()
                     ?: throw IOException("Response body is null: $url")
                 cacheJson(text)
