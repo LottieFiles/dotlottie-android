@@ -7,7 +7,7 @@ Dot Lottie Android is a new lottie player that relies on ThorVG for rendering
 <p align="center">
   <a href="https://android-arsenal.com/api?level=24"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
   <a href="https://jitpack.io/#LottieFiles/dotlottie-android"><img alt="API" src="https://jitpack.io/v/LottieFiles/dotlottie-android.svg"/></a>
-  <a href="https://img.shields.io/badge/dotlottie--rs-0.1.40-blue"><img alt="API" src="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.40"/></a>
+  <a href=https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.40""><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.40-blue"/></a>
 </p>
 ## Demo
 
