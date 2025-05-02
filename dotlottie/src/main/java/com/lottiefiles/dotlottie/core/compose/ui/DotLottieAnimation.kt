@@ -34,6 +34,7 @@ import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
+import androidx.core.graphics.createBitmap
 
 
 @Composable
@@ -70,7 +71,8 @@ fun DotLottieAnimation(
             backgroundColor = 0u,
             marker = marker ?: "",
             layout = layout,
-            themeId = themeId ?: ""
+            themeId = themeId ?: "",
+            stateMachineId = ""
         )
     }
 
@@ -135,7 +137,7 @@ fun DotLottieAnimation(
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
             bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
-            bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
+            bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
             // Apply theme on initial load
             choreographer.postFrameCallback(frameCallback)
@@ -204,7 +206,7 @@ fun DotLottieAnimation(
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
             bitmap?.recycle()
-            bitmap = Bitmap.createBitmap(_width.toInt(), _height.toInt(), Bitmap.Config.ARGB_8888)
+            bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
             bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())

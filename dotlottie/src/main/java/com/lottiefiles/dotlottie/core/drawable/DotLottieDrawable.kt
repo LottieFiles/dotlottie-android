@@ -313,76 +313,77 @@ class DotLottieDrawable(
     }
 
 
-    fun startStateMachine(): Boolean {
-        val result = dlPlayer?.startStateMachine() ?: false
-        if (result) {
-            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onStateEntered(enteringState: String) {
-                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-                }
+    // TODO: Add stateMachine features
+//    fun startStateMachine(): Boolean {
+//        val result = dlPlayer?.startStateMachine() ?: false
+//        if (result) {
+//            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+//                override fun onStateEntered(enteringState: String) {
+//                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
+//                }
+//
+//                override fun onStateExit(leavingState: String) {
+//                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
+//                }
+//
+//                override fun onTransition(previousState: String, newState: String) {
+//                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
+//                }
+//            })
+//        }
+//        return result
+//    }
 
-                override fun onStateExit(leavingState: String) {
-                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-                }
+//    fun stopStateMachine(): Boolean {
+//        return dlPlayer?.stopStateMachine() ?: false
+//    }
+//
+//    fun loadStateMachine(stateMachineId: String): Boolean {
+//        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+//    }
+//
+//    fun postEvent(event: Event): Int {
+//        val result = dlPlayer?.postEvent(event) ?: 0
+//        when (result) {
+//            1 -> {
+//                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
+//            }
+//
+//            2 -> {
+//                this.play()
+//            }
+//
+//            3 -> {
+//                this.pause()
+//            }
+//
+//            4 -> {
+//                invalidateSelf()
+//            }
+//        }
+//
+//        return result
+//    }
+//
+//    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+//        stateMachineListeners.add(listener)
+//    }
+//
+//    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+//        stateMachineListeners.remove(listener)
+//    }
 
-                override fun onTransition(previousState: String, newState: String) {
-                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-                }
-            })
-        }
-        return result
-    }
-
-    fun stopStateMachine(): Boolean {
-        return dlPlayer?.stopStateMachine() ?: false
-    }
-
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
-    }
-
-    fun postEvent(event: Event): Int {
-        val result = dlPlayer?.postEvent(event) ?: 0
-        when (result) {
-            1 -> {
-                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-            }
-
-            2 -> {
-                this.play()
-            }
-
-            3 -> {
-                this.pause()
-            }
-
-            4 -> {
-                invalidateSelf()
-            }
-        }
-
-        return result
-    }
-
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
-        stateMachineListeners.add(listener)
-    }
-
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-        stateMachineListeners.remove(listener)
-    }
-
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
-    }
-
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
-    }
-
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
-    }
+//    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
+//        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
+//    }
+//
+//    fun setStateMachineStringContext(key: String, value: String): Boolean {
+//        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
+//    }
+//
+//    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
+//        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
+//    }
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return

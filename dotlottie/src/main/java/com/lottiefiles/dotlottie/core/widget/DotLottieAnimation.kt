@@ -298,6 +298,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = config.marker,
                         layout = config.layout,
                         themeId = config.themeId,
+                        stateMachineId = "", // TODO: implement stateMachine
                     )
                 )
 
@@ -345,7 +346,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         segment = listOf(),
                         marker = attributes.marker ?: "",
                         layout = createDefaultLayout(),
-                        themeId = attributes.themeId ?: ""
+                        themeId = attributes.themeId ?: "",
+                        stateMachineId = "", // TODO: implement statMachine
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
@@ -404,41 +406,42 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun startStateMachine(): Boolean {
-        return mLottieDrawable?.startStateMachine() ?: false
-    }
-
-    fun stopStateMachine(): Boolean {
-        return mLottieDrawable?.stopStateMachine() ?: false
-    }
-
-    fun loadStateMachine(stateMachineId: String): Boolean {
-        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
-    }
-
-    fun postEvent(event: Event): Int {
-        return mLottieDrawable?.postEvent(event) ?: 0
-    }
-
-    fun addStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.addStateMachineEventListener(listener)
-    }
-
-    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-        mLottieDrawable?.removeStateMachineEventListener(listener)
-    }
-
-    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
-    }
-
-    fun setStateMachineStringContext(key: String, value: String): Boolean {
-        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
-    }
-
-    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
-    }
+    // TODO: Add stateMachine features
+//    fun startStateMachine(): Boolean {
+//        return mLottieDrawable?.startStateMachine() ?: false
+//    }
+//
+//    fun stopStateMachine(): Boolean {
+//        return mLottieDrawable?.stopStateMachine() ?: false
+//    }
+//
+//    fun loadStateMachine(stateMachineId: String): Boolean {
+//        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
+//    }
+//
+//    fun postEvent(event: Event): Int {
+//        return mLottieDrawable?.postEvent(event) ?: 0
+//    }
+//
+//    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+//        mLottieDrawable?.addStateMachineEventListener(listener)
+//    }
+//
+//    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+//        mLottieDrawable?.removeStateMachineEventListener(listener)
+//    }
+//
+//    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
+//        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
+//    }
+//
+//    fun setStateMachineStringContext(key: String, value: String): Boolean {
+//        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
+//    }
+//
+//    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
+//        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
+//    }
 
     companion object {
         private const val TAG = "DotLottieAnimation"
