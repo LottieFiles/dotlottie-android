@@ -87,8 +87,8 @@ class MainActivity : ComponentActivity() {
             .autoplay(true)
             .speed(1f)
             .loop(true)
-            .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
-//            .source(DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"))
+//            .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
+            .source(DotLottieSource.Url("https://lottie.host/f8e7eccf-72da-40da-9dd1-0fdbdc93b9ea/yAX2Nay9jD.json"))
 //            .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
             .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)

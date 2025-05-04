@@ -332,7 +332,7 @@ fun AnimationWithReactiveProps() {
     val useFrameInterpolation = remember { mutableStateOf(true) }
     val size = remember { mutableStateOf(200.dp) }
     val source =
-        remember { mutableStateOf("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json") }
+        remember { mutableStateOf("https://lottie.host/f8e7eccf-72da-40da-9dd1-0fdbdc93b9ea/yAX2Nay9jD.json") }
     val segment = remember { mutableStateOf<Pair<Float, Float>?>(null) }
 
 
@@ -395,7 +395,7 @@ fun AnimationWithReactiveProps() {
                 Button(onClick = {
                     if (source.value == "https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie") {
                         source.value =
-                            "https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"
+                            "https://lottie.host/f8e7eccf-72da-40da-9dd1-0fdbdc93b9ea/yAX2Nay9jD.json"
                     } else {
                         source.value =
                             "https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"

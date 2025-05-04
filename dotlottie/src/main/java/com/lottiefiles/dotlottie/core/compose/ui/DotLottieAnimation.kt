@@ -31,12 +31,11 @@ import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.sun.jna.Pointer
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
+import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 
-
+@OptIn(InternalDotLottieApi::class)
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
@@ -86,6 +85,7 @@ fun DotLottieAnimation(
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
+    var animationData by remember { mutableStateOf<DotLottieContent?>(null) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -112,19 +112,17 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(dlConfig, source, layoutSize?.height, layoutSize?.width) {
-        if (layoutSize == null || layoutSize?.height == 0.0f || layoutSize?.width == 0.0f) return@LaunchedEffect
+    LaunchedEffect(source) {
+        animationData = DotLottieUtils.getContent(context, source)
+    }
 
+    fun init(animationData: DotLottieContent, layoutSize: Size) {
         try {
-            val height = layoutSize!!.height.toUInt()
-            val width = layoutSize!!.width.toUInt()
+            val height = layoutSize.height.toUInt()
+            val width = layoutSize.width.toUInt()
+            val isLoaded = dlPlayer.isLoaded()
 
-            // Register initial height/width to controller
-            if (!dlPlayer.isLoaded()) {
-                rController.resize(width, height)
-            }
-
-            when (val animationData = DotLottieUtils.getContent(context, source)) {
+            when (animationData) {
                 is DotLottieContent.Json -> {
                     dlPlayer.loadAnimationData(animationData.jsonString, width, height)
                 }
@@ -139,22 +137,21 @@ fun DotLottieAnimation(
             bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
             bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
-            // Apply theme on initial load
-            choreographer.postFrameCallback(frameCallback)
-            // Renders initial frame if not autoplaying
-            val startTime = System.currentTimeMillis()
-            val timeout = 500L // 500 milliseconds
-            while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                if (System.currentTimeMillis() - startTime > 100L && !dlPlayer.isPlaying()) {
-                    choreographer.removeFrameCallback(frameCallback)
-                    break
-                }
-                delay(16L)
+
+            if (!isLoaded) {
+                rController.init()
             }
+            choreographer.postFrameCallback(frameCallback)
         } catch (e: Exception) {
             rController.eventListeners.forEach {
                 it.onLoadError(e)
             }
+        }
+    }
+
+    LaunchedEffect(animationData, layoutSize) {
+        if (animationData != null && layoutSize != null) {
+            init(animationData!!, layoutSize!!)
         }
     }
 
@@ -215,7 +212,7 @@ fun DotLottieAnimation(
     }
 
     DisposableEffect(UInt) {
-        rController.setPlayerInstance(dlPlayer)
+        rController.setPlayerInstance(dlPlayer, dlConfig)
         eventListeners.forEach { rController.addEventListener(it) }
 
         onDispose {
@@ -231,7 +228,10 @@ fun DotLottieAnimation(
         modifier = modifier
             .defaultMinSize(200.dp, 200.dp)
             .onGloballyPositioned { layoutCoordinates ->
-                layoutSize = layoutCoordinates.size.toSize()
+                val newSize = layoutCoordinates.size.toSize()
+                if (layoutSize?.width != newSize.width || layoutSize?.height != newSize.height) {
+                    layoutSize = newSize
+                }
             }
     ) {
         imageBitmap?.let {
