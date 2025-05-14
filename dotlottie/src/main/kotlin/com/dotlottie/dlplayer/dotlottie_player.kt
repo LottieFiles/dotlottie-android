@@ -1152,11 +1152,6 @@ internal interface UniffiLib : Library {
         uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
 
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_instance_id(
-        `ptr`: Pointer,
-        uniffi_out_err: UniffiRustCallStatus,
-    ): Int
-
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_intersect(
         `ptr`: Pointer,
         `x`: Float,
@@ -1950,8 +1945,6 @@ internal interface UniffiLib : Library {
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_state_machine(): Short
 
-    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_instance_id(): Short
-
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_intersect(): Short
 
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete(): Short
@@ -2183,9 +2176,6 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_state_machine() != 4598.toShort()) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_instance_id() != 43862.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_intersect() != 12346.toShort()) {
@@ -2870,8 +2860,6 @@ public interface DotLottiePlayerInterface {
 
     fun `getStateMachine`(`stateMachineId`: kotlin.String): kotlin.String
 
-    fun `instanceId`(): kotlin.UInt
-
     fun `intersect`(
         `x`: kotlin.Float,
         `y`: kotlin.Float,
@@ -3300,18 +3288,6 @@ open class DotLottiePlayer :
                     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_get_state_machine(
                         it,
                         FfiConverterString.lower(`stateMachineId`),
-                        _status,
-                    )
-                }
-            },
-        )
-
-    override fun `instanceId`(): kotlin.UInt =
-        FfiConverterUInt.lift(
-            callWithPointer {
-                uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_instance_id(
-                        it,
                         _status,
                     )
                 }
@@ -5387,6 +5363,7 @@ data class Config(
     var `marker`: kotlin.String,
     var `themeId`: kotlin.String,
     var `stateMachineId`: kotlin.String,
+    var `animationId`: kotlin.String,
 ) {
     companion object
 }
@@ -5408,6 +5385,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
         )
 
     override fun allocationSize(value: Config) =
@@ -5422,7 +5400,8 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
                 FfiConverterTypeLayout.allocationSize(value.`layout`) +
                 FfiConverterString.allocationSize(value.`marker`) +
                 FfiConverterString.allocationSize(value.`themeId`) +
-                FfiConverterString.allocationSize(value.`stateMachineId`)
+                FfiConverterString.allocationSize(value.`stateMachineId`) +
+                FfiConverterString.allocationSize(value.`animationId`)
         )
 
     override fun write(
@@ -5440,6 +5419,7 @@ public object FfiConverterTypeConfig : FfiConverterRustBuffer<Config> {
         FfiConverterString.write(value.`marker`, buf)
         FfiConverterString.write(value.`themeId`, buf)
         FfiConverterString.write(value.`stateMachineId`, buf)
+        FfiConverterString.write(value.`animationId`, buf)
     }
 }
 

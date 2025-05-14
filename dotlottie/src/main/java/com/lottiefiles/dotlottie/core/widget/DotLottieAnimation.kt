@@ -46,7 +46,8 @@ data class DotLottieAttributes(
     val backgroundColor: Int,
     val useFrameInterpolation: Boolean,
     val themeId: String?,
-    val stateMachineId: String?
+    val stateMachineId: String?,
+    val animationId: String?
 )
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -250,7 +251,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         false
                     ),
                     themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId),
-                    stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId)
+                    stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId),
+                    animationId = getString(R.styleable.DotLottieAnimation_dotLottie_animationId),
                 )
             } finally {
                 recycle()
@@ -302,7 +304,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = config.marker,
                         layout = config.layout,
                         themeId = config.themeId,
-                        stateMachineId = config.stateMachineId
+                        stateMachineId = config.stateMachineId,
+                        animationId = config.animationId
                     )
                 )
 
@@ -351,7 +354,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = attributes.marker ?: "",
                         layout = createDefaultLayout(),
                         themeId = attributes.themeId ?: "",
-                        stateMachineId = attributes.stateMachineId ?: ""
+                        stateMachineId = attributes.stateMachineId ?: "",
+                        animationId = attributes.animationId ?: ""
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation

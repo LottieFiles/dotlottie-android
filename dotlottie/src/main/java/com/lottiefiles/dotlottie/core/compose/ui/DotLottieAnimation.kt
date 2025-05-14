@@ -27,7 +27,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
-import com.dotlottie.dlplayer.ManifestStateMachine
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
@@ -77,6 +76,7 @@ fun DotLottieAnimation(
             layout = layout,
             themeId = themeId ?: "",
             stateMachineId = "",
+            animationId = "",
         )
     }
 

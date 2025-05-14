@@ -18,7 +18,8 @@ class Config private constructor(
     val layout: Layout,
     val source: DotLottieSource,
     val themeId: String = "",
-    val stateMachineId: String = ""
+    val stateMachineId: String = "",
+    val animationId: String = ""
 ) {
 
     class Builder {
