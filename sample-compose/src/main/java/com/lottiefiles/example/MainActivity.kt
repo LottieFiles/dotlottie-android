@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                 // If not on the menu screen, go back to menu
                 if (currentScreen.value !is Screen.Menu) {
                     currentScreen.value = Screen.Menu
-                } else {
+        } else {
                     // If on menu screen, allow default back behavior (exit app)
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()
@@ -157,7 +157,7 @@ fun MainScreen(
 @Composable
 fun MenuScreen(onScreenSelected: (Screen) -> Unit) {
     Scaffold { paddingValues ->
-        Column(
+    Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

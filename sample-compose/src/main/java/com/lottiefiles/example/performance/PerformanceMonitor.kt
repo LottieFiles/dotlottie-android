@@ -80,6 +80,17 @@ class PerformanceMonitor {
     private var cpuUsageMethod = CpuUsageMethod.ACTIVITY_MANAGER
     private var activityManager: ActivityManager? = null
 
+    // Rate limiting for CPU updates
+    private var lastCpuUpdateTime = AtomicLong(0L)
+    private val MIN_CPU_UPDATE_INTERVAL_MS = 500 // Minimum 500ms between updates
+
+    // Add these properties to track rapid executions
+    // Task burst detection
+    private var taskExecutionCount = AtomicLong(0)
+    private var lastTaskCountResetTime = AtomicLong(System.currentTimeMillis())
+    private val TASK_BURST_THRESHOLD = 5 // Consider 5+ tasks in 1 second as a burst
+    private val TASK_COUNT_RESET_INTERVAL_MS = 1000 // Reset task count every second
+
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             if (!isMonitoring.get()) return
@@ -232,8 +243,9 @@ class PerformanceMonitor {
             // Initialize CPU usage monitoring
             updateCpuUsage()
             
-            // Schedule regular updates - use safe invoke with let to prevent NullPointerException
-            cpuExecutor?.scheduleAtFixedRate(
+            // Use scheduleWithFixedDelay instead of scheduleAtFixedRate to prevent task bursts 
+            // when the app moves from cached to foreground state
+            cpuExecutor?.scheduleWithFixedDelay(
                 { updateCpuUsage() },
                 0,
                 1,
@@ -259,6 +271,30 @@ class PerformanceMonitor {
      * Update CPU usage statistics
      */
     private fun updateCpuUsage() {
+        // Detect and handle task bursts
+        val currentTime = System.currentTimeMillis()
+        val taskCount = taskExecutionCount.incrementAndGet()
+        val lastReset = lastTaskCountResetTime.get()
+        
+        // Reset the counter periodically
+        if (currentTime - lastReset > TASK_COUNT_RESET_INTERVAL_MS) {
+            taskExecutionCount.set(0)
+            lastTaskCountResetTime.set(currentTime)
+        } 
+        // If we detect a task burst, reset the CPU monitoring
+        else if (taskCount > TASK_BURST_THRESHOLD) {
+            Log.w(TAG, "Task burst detected! Resetting CPU monitoring")
+            resetCpuMonitoring()
+            return
+        }
+        
+        // Rate limiting to prevent excessive calls
+        val lastUpdate = lastCpuUpdateTime.get()
+        if (currentTime - lastUpdate < MIN_CPU_UPDATE_INTERVAL_MS) {
+            return // Skip this update if it's too soon
+        }
+        lastCpuUpdateTime.set(currentTime)
+        
         try {
             when (cpuUsageMethod) {
                 CpuUsageMethod.PROC_FILES -> updateCpuUsageViaProcFiles()
@@ -511,6 +547,41 @@ class PerformanceMonitor {
         val jankPercentage: Float,
         val cpuUsagePercent: Float
     )
+
+    /**
+     * Reset CPU monitoring if we detect a task burst
+     */
+    private fun resetCpuMonitoring() {
+        try {
+            // Shutdown the current executor
+            cpuExecutor?.let { executor ->
+                if (!executor.isShutdown && !executor.isTerminated) {
+                    executor.shutdownNow()
+                }
+            }
+            
+            // Create a new executor
+            cpuExecutor = Executors.newSingleThreadScheduledExecutor()
+            
+            // Reset counters
+            taskExecutionCount.set(0)
+            lastTaskCountResetTime.set(System.currentTimeMillis())
+            
+            // Schedule task with a delay to avoid immediate execution
+            cpuExecutor?.schedule(
+                { 
+                    // Only restart if monitoring is still active
+                    if (isMonitoring.get()) {
+                        startCpuMonitoring() 
+                    }
+                },
+                1,
+                TimeUnit.SECONDS
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resetting CPU monitoring", e)
+        }
+    }
 }
 
 /**
