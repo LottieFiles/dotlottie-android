@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -50,11 +52,15 @@ fun LottieView(
     useFrameInterpolation: Boolean = false,
     playMode: Mode = Mode.FORWARD,
     fit: Fit = Fit.FIT_WIDTH,
-    alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center,
-    controller: DotLottieController = DotLottieController()
+    alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center
 ) {
-    // Set up controller parameters and handle interpolation changes
-    LaunchedEffect(url, loop, speed, autoPlay, playMode, useFrameInterpolation) {
+    // Create a new controller each time key parameters change to force recomposition
+    val controller = remember(url, useFrameInterpolation, playMode) { 
+        DotLottieController() 
+    }
+    
+    // Set up controller parameters
+    LaunchedEffect(controller, url, loop, speed, autoPlay, playMode, useFrameInterpolation) {
         // Apply all settings
         controller.setLoop(loop)
         controller.setSpeed(speed)
@@ -62,24 +68,26 @@ fun LottieView(
         controller.setUseFrameInterpolation(useFrameInterpolation)
         
         // Start playback if autoPlay is enabled
-        if (autoPlay && !controller.isPlaying) {
+        if (autoPlay) {
             controller.play()
         }
     }
     
-    Box(modifier = modifier.background(backgroundColor)) {
-        // Recreate the animation with the updated settings
-        DotLottieAnimation(
-            modifier = Modifier.aspectRatio(1f),
-            source = DotLottieSource.Url(url),
-            autoplay = autoPlay,
-            loop = loop,
-            speed = speed,
-            useFrameInterpolation = useFrameInterpolation,
-            playMode = playMode,
-            controller = controller,
-            layout = LayoutUtil.createLayout(fit = fit, alignment)
-        )
+    // Use key to force recomposition when interpolation changes
+    key(url, useFrameInterpolation) {
+        Box(modifier = modifier.background(backgroundColor)) {
+            DotLottieAnimation(
+                modifier = Modifier.aspectRatio(1f),
+                source = DotLottieSource.Url(url),
+                autoplay = autoPlay,
+                loop = loop,
+                speed = speed,
+                useFrameInterpolation = useFrameInterpolation,
+                playMode = playMode,
+                controller = controller,
+                layout = LayoutUtil.createLayout(fit = fit, alignment)
+            )
+        }
     }
 }
 

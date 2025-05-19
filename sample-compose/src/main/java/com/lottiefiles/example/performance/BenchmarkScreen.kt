@@ -64,6 +64,15 @@ import java.text.DecimalFormat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BenchmarkScreen(onBackClick: (() -> Unit)? = null) {
+    // Wrap main content in permission screen
+    PermissionRequiredScreen {
+        BenchmarkScreenContent(onBackClick)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
     val context = LocalContext.current
     val benchmarkRunner = remember { BenchmarkRunner(context) }
     val benchmarkState by benchmarkRunner.benchmarkState.collectAsState()
@@ -91,7 +100,7 @@ fun BenchmarkScreen(onBackClick: (() -> Unit)? = null) {
                 },
                 actions = {
                     if (benchmarkState is BenchmarkRunner.BenchmarkState.Completed) {
-                        IconButton(onClick = { shareBenchmarkResults(context) }) {
+                        IconButton(onClick = { benchmarkRunner.shareBenchmarkResults() }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share Results"
@@ -181,7 +190,7 @@ private fun IdleStateContent(onStartBenchmark: () -> Unit) {
                 
                 BenchmarkInfoItem(title = "Animation Counts", value = "4, 9, 16, 25")
                 BenchmarkInfoItem(title = "With/Without Frame Interpolation", value = "Tests both modes")
-                BenchmarkInfoItem(title = "Metrics", value = "FPS, Memory Usage, Jank %")
+                BenchmarkInfoItem(title = "Metrics", value = "FPS, CPU Usage, Memory, Jank %")
                 BenchmarkInfoItem(title = "Duration", value = "Approximately 5-10 minutes")
                 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -388,6 +397,16 @@ private fun ResultItem(result: BenchmarkRunner.BenchmarkResult) {
                 text = "Memory: ${result.averageMemoryMb} MB (peak: ${result.peakMemoryMb} MB)",
                 style = MaterialTheme.typography.bodySmall
             )
+            
+            Text(
+                text = "CPU: ${String.format("%.1f", result.averageCpuUsage)}% (peak: ${String.format("%.1f", result.peakCpuUsage)}%)",
+                style = MaterialTheme.typography.bodySmall,
+                color = when {
+                    result.averageCpuUsage <= 30 -> Color.Green
+                    result.averageCpuUsage <= 60 -> Color(0xFFFFAA00) // Orange
+                    else -> Color.Red
+                }
+            )
         }
     }
 }
@@ -476,31 +495,5 @@ private fun AirbnbLottieContainer(
                     .background(Color.LightGray.copy(alpha = 0.2f))
             )
         }
-    }
-}
-
-/**
- * Share benchmark results via an Intent
- */
-private fun shareBenchmarkResults(context: Context) {
-    // Find the most recent benchmark report file and share it
-    val filesDir = context.getExternalFilesDir(null)
-    filesDir?.listFiles { file -> 
-        file.name.startsWith("lottie_comparison_benchmark_") && file.extension == "csv" 
-    }?.maxByOrNull { it.lastModified() }?.let { reportFile ->
-        val uri = androidx.core.content.FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            reportFile
-        )
-        
-        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(android.content.Intent.EXTRA_STREAM, uri)
-            putExtra(android.content.Intent.EXTRA_SUBJECT, "Lottie Performance Benchmark Results")
-            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        
-        context.startActivity(android.content.Intent.createChooser(intent, "Share Benchmark Results"))
     }
 } 

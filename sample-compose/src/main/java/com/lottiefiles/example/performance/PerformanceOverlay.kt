@@ -32,13 +32,15 @@ fun PerformanceOverlay(
     val df = remember { DecimalFormat("#.##") }
     var fps by remember { mutableFloatStateOf(0f) }
     var memoryUsage by remember { mutableLongStateOf(0L) }
+    var cpuUsage by remember { mutableFloatStateOf(0f) }
     
     // Add the performance monitor effect
     PerformanceMonitorEffect(
         enabled = enabled,
-        onMetricsUpdated = { newFps, newMemoryUsage ->
+        onMetricsUpdated = { newFps, newMemoryUsage, newCpuUsage ->
             fps = newFps
             memoryUsage = newMemoryUsage
+            cpuUsage = newCpuUsage
         }
     )
     
@@ -47,7 +49,7 @@ fun PerformanceOverlay(
             modifier = modifier
                 .padding(16.dp)
                 .background(
-                    color = Color.Black.copy(alpha = 0.5f),
+                    color = Color.Black.copy(alpha = 0.7f),
                     shape = RoundedCornerShape(8.dp)
                 )
                 .padding(8.dp)
@@ -68,6 +70,19 @@ fun PerformanceOverlay(
             Text(
                 text = "Memory: $memoryUsage MB",
                 color = Color.White,
+                fontSize = 14.sp
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // CPU usage might be approximate on newer Android versions
+            Text(
+                text = "CPU: ${df.format(cpuUsage)}% (approx)",
+                color = when {
+                    cpuUsage <= 30 -> Color.Green
+                    cpuUsage <= 60 -> Color.Yellow
+                    else -> Color.Red
+                },
                 fontSize = 14.sp
             )
         }

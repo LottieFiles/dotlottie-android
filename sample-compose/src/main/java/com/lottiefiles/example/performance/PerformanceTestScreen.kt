@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -52,6 +53,15 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerformanceTestScreen(onBackClick: (() -> Unit)? = null) {
+    // Wrap with permission screen
+    PermissionRequiredScreen {
+        PerformanceTestScreenContent(onBackClick)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
     var animationCount by remember { mutableIntStateOf(4) }
     var showControls by remember { mutableStateOf(true) }
     var useInterpolation by remember { mutableStateOf(true) }
@@ -59,6 +69,13 @@ fun PerformanceTestScreen(onBackClick: (() -> Unit)? = null) {
     
     // Use the swag_sticker_piggy.lottie URL for better performance testing
     val lottieUrl = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
+    
+    // Generate animation items once
+    val animationItems = remember(animationCount, useInterpolation) {
+        List(animationCount) { index -> 
+            AnimationItem(id = index, useInterpolation = useInterpolation)
+        }
+    }
     
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -109,14 +126,14 @@ fun PerformanceTestScreen(onBackClick: (() -> Unit)? = null) {
                         .padding(8.dp)
                 ) {
                     items(
-                        count = animationCount,
-                        key = { index -> "$index-$useInterpolation" }
-                    ) { index ->
+                        items = animationItems,
+                        key = { item -> "${item.id}-${item.useInterpolation}" }
+                    ) { item ->
                         LottieView(
                             url = lottieUrl,
                             autoPlay = true,
                             loop = true,
-                            useFrameInterpolation = useInterpolation,
+                            useFrameInterpolation = item.useInterpolation,
                             playMode = Mode.FORWARD,
                             backgroundColor = Color.LightGray.copy(alpha = 0.3f),
                             modifier = Modifier
@@ -145,6 +162,14 @@ fun PerformanceTestScreen(onBackClick: (() -> Unit)? = null) {
         }
     }
 }
+
+/**
+ * Data class to hold animation items with stable identity for LazyVerticalGrid
+ */
+data class AnimationItem(
+    val id: Int,
+    val useInterpolation: Boolean
+)
 
 @Composable
 private fun ControlPanel(

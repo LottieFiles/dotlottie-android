@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,40 +43,51 @@ fun AirbnbLottieView(
     
     val iterations = if (loop) LottieConstants.IterateForever else 1
     
-    // Load the composition from URL
-    val composition by rememberLottieComposition(
-        spec = LottieCompositionSpec.Url(url)
-    )
-    
-    // Control animation state
-    var isPlaying by remember { mutableStateOf(autoPlay) }
-    
-    // Animation progress state
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        iterations = iterations,
-        isPlaying = isPlaying,
-        speed = effectiveSpeed,
-        // Airbnb Lottie doesn't have direct frame interpolation control
-    )
-    
-    // Handle playMode for bounce effects
-    LaunchedEffect(playMode, composition) {
-        if (composition != null && 
-            (playMode == Mode.BOUNCE || playMode == Mode.REVERSE_BOUNCE) && 
-            (progress >= 0.99f || progress <= 0.01f)) {
-            // Simulate bounce behavior by changing direction at endpoints
-            isPlaying = false
-            isPlaying = true
-        }
-    }
-    
-    Box(modifier = modifier.background(backgroundColor)) {
-        LottieAnimation(
-            composition = composition,
-            progress = { progress },
-            modifier = Modifier.aspectRatio(1f),
-            contentScale = ContentScale.Fit
+    // Force recomposition when interpolation changes
+    key(url, useFrameInterpolation, playMode) {
+        // Load the composition from URL
+        val composition by rememberLottieComposition(
+            spec = LottieCompositionSpec.Url(url)
         )
+        
+        // Control animation state
+        var isPlaying by remember { mutableStateOf(autoPlay) }
+        
+        // Animation progress state - we can only control speed in Airbnb Lottie
+        // Frame interpolation is handled internally by the library
+        val progress by animateLottieCompositionAsState(
+            composition = composition,
+            iterations = iterations,
+            isPlaying = isPlaying,
+            speed = effectiveSpeed
+            // There's no direct equivalent to frame interpolation in Airbnb Lottie
+        )
+        
+        // Handle playMode for bounce effects
+        LaunchedEffect(playMode, composition, progress) {
+            if (composition != null && 
+                (playMode == Mode.BOUNCE || playMode == Mode.REVERSE_BOUNCE) && 
+                (progress >= 0.99f || progress <= 0.01f)) {
+                // Simulate bounce behavior by changing direction at endpoints
+                isPlaying = false
+                isPlaying = true
+            }
+        }
+        
+        // Ensure animation plays when autoPlay is true
+        LaunchedEffect(composition, autoPlay) {
+            if (composition != null && autoPlay) {
+                isPlaying = true
+            }
+        }
+        
+        Box(modifier = modifier.background(backgroundColor)) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.aspectRatio(1f),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 } 

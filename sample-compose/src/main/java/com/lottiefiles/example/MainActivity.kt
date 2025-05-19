@@ -1,9 +1,17 @@
 package com.lottiefiles.example
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,16 +28,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.lottiefiles.example.homesample.presentation.HomeScreen
 import com.lottiefiles.example.homesample.presentation.HomeUIState
 import com.lottiefiles.example.performance.BenchmarkScreen
 import com.lottiefiles.example.performance.PerformanceTestScreen
+import com.lottiefiles.example.performance.PermissionsHelper
 import com.lottiefiles.example.performance.enableHardwareAcceleration
 import com.lottiefiles.example.ui.theme.ExampleTheme
 
 class MainActivity : ComponentActivity() {
     // Store the current screen to handle back navigation
     private val currentScreen = mutableStateOf<Screen>(Screen.Menu)
+    
+    // Permission request launchers
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(this, "Storage permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +61,17 @@ class MainActivity : ComponentActivity() {
         
         // Set up back button handling
         setupBackButtonHandling()
+        
+        // Request storage permissions early - for Android 10 and below
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
         
         setContent {
             ExampleTheme {
@@ -71,6 +104,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+    
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        // Handle the permission result
+        if (requestCode == PermissionsHelper.STORAGE_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Storage permission granted", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
 
