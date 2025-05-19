@@ -429,7 +429,11 @@ private fun DotLottieContainer(
         columns = GridCells.Adaptive(size.dp),
         modifier = modifier
     ) {
-        items(count) {
+        items(
+            count = count,
+            // Add a key that includes the interpolation setting to force recomposition
+            key = { index -> "$index-$useInterpolation" }
+        ) { index ->
             LottieView(
                 url = lottieUrl,
                 useFrameInterpolation = useInterpolation,
@@ -457,7 +461,11 @@ private fun AirbnbLottieContainer(
         columns = GridCells.Adaptive(size.dp),
         modifier = modifier
     ) {
-        items(count) {
+        items(
+            count = count,
+            // Add a key that includes the interpolation setting to force recomposition
+            key = { index -> "$index-$useInterpolation" }
+        ) { index ->
             AirbnbLottieView(
                 url = lottieUrl,
                 useFrameInterpolation = useInterpolation,

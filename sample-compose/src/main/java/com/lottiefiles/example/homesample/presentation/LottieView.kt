@@ -53,33 +53,28 @@ fun LottieView(
     alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center,
     controller: DotLottieController = DotLottieController()
 ) {
-
     // Set up controller parameters and handle interpolation changes
-    LaunchedEffect(loop, speed, autoPlay, playMode, useFrameInterpolation) {
-        // Determine if animation was playing before applying changes
-        val wasPlaying = !controller.isPaused && !controller.isStopped
-        
-        // Temporarily stop the animation
-        if (wasPlaying) {
-            controller.stop()
-        }
-        
+    LaunchedEffect(url, loop, speed, autoPlay, playMode, useFrameInterpolation) {
         // Apply all settings
         controller.setLoop(loop)
         controller.setSpeed(speed)
         controller.setPlayMode(playMode)
         controller.setUseFrameInterpolation(useFrameInterpolation)
         
-        // Restart animation if it was playing before or autoPlay is true
-        if (autoPlay || wasPlaying) {
+        // Start playback if autoPlay is enabled
+        if (autoPlay && !controller.isPlaying) {
             controller.play()
         }
     }
     
     Box(modifier = modifier.background(backgroundColor)) {
+        // Recreate the animation with the updated settings
         DotLottieAnimation(
             modifier = Modifier.aspectRatio(1f),
             source = DotLottieSource.Url(url),
+            autoplay = autoPlay,
+            loop = loop,
+            speed = speed,
             useFrameInterpolation = useFrameInterpolation,
             playMode = playMode,
             controller = controller,

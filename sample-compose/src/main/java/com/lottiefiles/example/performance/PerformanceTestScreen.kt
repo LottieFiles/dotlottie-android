@@ -108,7 +108,10 @@ fun PerformanceTestScreen(onBackClick: (() -> Unit)? = null) {
                         .fillMaxSize()
                         .padding(8.dp)
                 ) {
-                    items(animationCount) { index ->
+                    items(
+                        count = animationCount,
+                        key = { index -> "$index-$useInterpolation" }
+                    ) { index ->
                         LottieView(
                             url = lottieUrl,
                             autoPlay = true,
