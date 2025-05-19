@@ -223,6 +223,16 @@
 
             </LinearLayout>
 
+            <!-- Performance Test Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_performance_test"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Performance Test"
+                app:icon="@android:drawable/ic_menu_manage"
+                app:iconGravity="textStart"
+                android:backgroundTint="#FF5722" />
 
         </LinearLayout>
     </ScrollView>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
+        android:id="@+id/lottie_animation"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:dotLottie_autoplay="true"
+        app:dotLottie_loop="true"
+        app:dotLottie_playMode="normal"
+        app:dotLottie_speed="1"
+        app:dotLottie_useFrameInterpolation="true" />
+
+</merge> 

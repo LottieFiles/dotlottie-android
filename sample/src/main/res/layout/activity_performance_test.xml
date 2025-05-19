@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".performance.PerformanceTestActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+            app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lottie Performance Test"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Animation Container -->
+            <FrameLayout
+                android:id="@+id/animation_container"
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:background="#E0E0E0"
+                android:layout_marginBottom="16dp"/>
+
+            <!-- Animation Count -->
+            <TextView
+                android:id="@+id/tv_animation_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Animation Count: 1"
+                android:layout_marginTop="8dp"/>
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/slider_animation_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="1"
+                android:valueTo="50"
+                android:value="1"
+                android:stepSize="1"/>
+
+            <!-- Animation Size -->
+            <TextView
+                android:id="@+id/tv_animation_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Animation Size: 100dp"
+                android:layout_marginTop="16dp"/>
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/slider_animation_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:valueFrom="50"
+                android:valueTo="200"
+                android:value="100"
+                android:stepSize="10"/>
+
+            <!-- Frame Interpolation -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_interpolation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Use Frame Interpolation"
+                android:checked="true"
+                android:layout_marginTop="16dp"/>
+
+            <!-- Animation URL Spinner -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select Animation:"
+                android:layout_marginTop="16dp"/>
+
+            <Spinner
+                android:id="@+id/spinner_animation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"/>
+
+            <!-- Action Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_reset"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Reset" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_run_benchmark"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Run Benchmark"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Performance Overlay -->
+    <FrameLayout
+        android:id="@+id/overlay_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.lottiefiles.sample.performance.PerformanceOverlay
+            android:id="@+id/performance_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout> 
