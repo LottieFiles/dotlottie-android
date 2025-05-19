@@ -42,7 +42,7 @@ class BenchmarkRunner(private val context: Context) {
     
     // Test configurations with library type
     val testConfigurations = listOf(
-        // DotLottie tests
+        // DotLottie tests - with and without interpolation since DotLottie supports this feature
         TestConfiguration(animationCount = 4, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
         TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
         TestConfiguration(animationCount = 9, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
@@ -52,14 +52,10 @@ class BenchmarkRunner(private val context: Context) {
         TestConfiguration(animationCount = 25, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
         TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
         
-        // Airbnb Lottie tests
-        TestConfiguration(animationCount = 4, useInterpolation = true, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
+        // Airbnb Lottie tests - only one version since Airbnb Lottie doesn't truly support interpolation
         TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 9, useInterpolation = true, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
         TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 16, useInterpolation = true, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
         TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 25, useInterpolation = true, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
         TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE)
     )
     
@@ -321,6 +317,10 @@ class BenchmarkRunner(private val context: Context) {
                 val header = "# DotLottie vs Airbnb Lottie Performance Comparison\n"
                 fos.write(header.toByteArray())
                 
+                // Add a note about interpolation
+                val note = "# Note: Frame interpolation is only available in DotLottie, not in Airbnb Lottie\n\n"
+                fos.write(note.toByteArray())
+                
                 // Write column names
                 val columns = "Test,Library,Animations,Interpolation,Avg FPS,Min FPS,Max FPS,Avg Memory (MB),Peak Memory (MB),Avg CPU (%),Peak CPU (%)\n"
                 fos.write(columns.toByteArray())
@@ -332,7 +332,14 @@ class BenchmarkRunner(private val context: Context) {
                 }
                 
                 resultsCopy.forEachIndexed { index, result ->
-                    val line = "${index + 1},${result.config.library},${result.config.animationCount},${result.config.useInterpolation}," +
+                    // For Airbnb Lottie, add special note about interpolation
+                    val interpolationValue = if (result.config.library == LibraryType.AIRBNB_LOTTIE) {
+                        "N/A"
+                    } else {
+                        result.config.useInterpolation.toString()
+                    }
+                    
+                    val line = "${index + 1},${result.config.library},${result.config.animationCount},$interpolationValue," +
                             "%.2f,%.2f,%.2f,%d,%d,%.2f,%.2f\n".format(
                                 result.averageFps,
                                 result.minFps,
@@ -362,7 +369,7 @@ class BenchmarkRunner(private val context: Context) {
                         index + 1,
                         result.config.library,
                         result.config.animationCount,
-                        result.config.useInterpolation,
+                        if (result.config.library == LibraryType.AIRBNB_LOTTIE) "N/A" else result.config.useInterpolation,
                         result.averageFps,
                         result.averageMemoryMb
                     )

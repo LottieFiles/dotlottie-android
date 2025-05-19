@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<paths>
-    <external-files-path name="benchmark_reports" path="." />
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Expose app-specific external storage for sharing benchmark results -->
+    <external-files-path name="benchmark_results" path="benchmarks" />
+    <external-files-path name="external_files" path="." />
+    <external-path name="external" path="." />
+    <files-path name="files" path="." />
+    <cache-path name="cache" path="." />
 </paths> 

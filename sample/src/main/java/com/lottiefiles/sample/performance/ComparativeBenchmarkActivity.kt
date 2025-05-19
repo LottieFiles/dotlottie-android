@@ -17,9 +17,13 @@ import com.lottiefiles.sample.R
 import com.lottiefiles.sample.databinding.ActivityComparativeBenchmarkBinding
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 import kotlin.math.sqrt
 
@@ -36,7 +40,10 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
         // Test configurations
         private val ANIMATION_COUNTS = listOf(1, 5, 10, 20, 30)
         private val ANIMATION_SIZES = listOf(100, 200)
-        private val FRAME_INTERPOLATION = listOf(true, false)
+        
+        // DotLottie supports interpolation, Airbnb Lottie doesn't
+        private val INTERPOLATION_DOT_LOTTIE = listOf(true, false)
+        private val INTERPOLATION_AIRBNB_LOTTIE = listOf(false)
         
         // Test durations
         private const val WARMUP_DURATION_MS = 3000L
@@ -50,17 +57,24 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityComparativeBenchmarkBinding
     private lateinit var performanceMonitor: PerformanceMonitor
+    private lateinit var permissionsHelper: PermissionsHelper
     
     private val dotLottieViews = mutableListOf<LottieView>()
     private val airbnbLottieViews = mutableListOf<AirbnbLottieView>()
     
-    private var currentTestIndex = 0
-    private var currentLibraryIndex = 0 // 0 = DotLottie, 1 = Airbnb Lottie
-    private val testResults = mutableListOf<BenchmarkResult>()
+    // Thread-safe state variables
+    private val isRunning = AtomicBoolean(false)
+    private val currentTestIndex = AtomicInteger(0)
+    private val currentLibraryIndex = AtomicInteger(0) // 0 = DotLottie, 1 = Airbnb Lottie
     
-    private var isRunning = false
+    private val testResults = mutableListOf<BenchmarkResult>()
+    private val mainHandler = Handler(Looper.getMainLooper())
+    
     private var startTime = 0L
     private var testStartupTime = 0L
+    
+    // Save Activity reference for error handling
+    private val activityReference = WeakReference<ComparativeBenchmarkActivity>(this)
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +82,7 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
         binding = ActivityComparativeBenchmarkBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
+        permissionsHelper = PermissionsHelper(this)
         setupUI()
         setupPerformanceMonitoring()
     }
@@ -79,7 +94,7 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     
     override fun onPause() {
         super.onPause()
-        if (isRunning) {
+        if (isRunning.get()) {
             stopBenchmark()
         }
         performanceMonitor.stopMonitoring()
@@ -93,6 +108,10 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
         
         // Setup benchmark controls
         binding.btnStartBenchmark.setOnClickListener {
+            if (isRunning.get()) {
+                Toast.makeText(this, "Benchmark already running", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             startBenchmark()
         }
         
@@ -119,16 +138,25 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     }
     
     private fun startBenchmark() {
+        if (!permissionsHelper.getBenchmarkStorageDirectory()?.canWrite() == true) {
+            permissionsHelper.requestStoragePermission(this)
+            Toast.makeText(this, "Storage permission needed to save benchmark results", Toast.LENGTH_LONG).show()
+            return
+        }
+        
         binding.btnStartBenchmark.isEnabled = false
         binding.btnStopBenchmark.isEnabled = true
         binding.btnShareResults.isEnabled = false
         binding.progressBar.visibility = View.VISIBLE
         binding.tvStatus.text = "Benchmark running..."
         
-        isRunning = true
-        currentTestIndex = 0
-        currentLibraryIndex = 0
-        testResults.clear()
+        isRunning.set(true)
+        currentTestIndex.set(0)
+        currentLibraryIndex.set(0)
+        
+        synchronized(testResults) {
+            testResults.clear()
+        }
         
         // Clear previous results
         binding.tvResults.text = ""
@@ -137,102 +165,159 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     }
     
     private fun stopBenchmark() {
-        if (!isRunning) return
+        if (!isRunning.getAndSet(false)) return
         
-        isRunning = false
         binding.btnStartBenchmark.isEnabled = true
         binding.btnStopBenchmark.isEnabled = false
         binding.btnShareResults.isEnabled = true
         binding.progressBar.visibility = View.INVISIBLE
         binding.tvStatus.text = "Benchmark stopped"
         
+        // Cancel any pending operations
+        mainHandler.removeCallbacksAndMessages(null)
+        
         // Remove all animations
         clearAnimations()
     }
     
     private fun runNextTest() {
-        if (!isRunning) return
+        if (!isRunning.get()) return
         
-        // Check if we've completed all tests
-        if (currentLibraryIndex > 1) {
-            currentLibraryIndex = 0
-            currentTestIndex++
+        // Check if we've completed all tests for the current library
+        val libraryIndex = currentLibraryIndex.get()
+        if (libraryIndex > 1) {
+            currentLibraryIndex.set(0)
+            currentTestIndex.incrementAndGet()
         }
         
+        // Calculate total test counts
+        val dotLottieTestCount = ANIMATION_COUNTS.size * ANIMATION_SIZES.size * INTERPOLATION_DOT_LOTTIE.size
+        val airbnbLottieTestCount = ANIMATION_COUNTS.size * ANIMATION_SIZES.size * INTERPOLATION_AIRBNB_LOTTIE.size
+        val totalTestCount = dotLottieTestCount + airbnbLottieTestCount
+        
         // Check if we've completed all test combinations
-        val totalTestConfigs = ANIMATION_COUNTS.size * ANIMATION_SIZES.size * FRAME_INTERPOLATION.size
-        if (currentTestIndex >= totalTestConfigs) {
+        val testIndex = currentTestIndex.get()
+        if (calculateTestsCompleted() >= totalTestCount) {
             finalizeBenchmark()
             return
         }
         
-        // Calculate current test configuration
-        val countIndex = currentTestIndex / (ANIMATION_SIZES.size * FRAME_INTERPOLATION.size)
-        val sizeIndex = (currentTestIndex % (ANIMATION_SIZES.size * FRAME_INTERPOLATION.size)) / FRAME_INTERPOLATION.size
-        val interpolationIndex = currentTestIndex % FRAME_INTERPOLATION.size
+        // Calculate current test configuration indices
+        val countConfigs = ANIMATION_COUNTS.size
+        val sizeConfigs = ANIMATION_SIZES.size
+        
+        val countIndex = testIndex / (sizeConfigs * 2) // 2 libraries
+        val remainingIndex = testIndex % (sizeConfigs * 2)
+        val sizeIndex = remainingIndex / 2
+        
+        // Make sure indices are in bounds
+        if (countIndex >= ANIMATION_COUNTS.size || sizeIndex >= ANIMATION_SIZES.size) {
+            finalizeBenchmark()
+            return
+        }
         
         val animationCount = ANIMATION_COUNTS[countIndex]
         val animationSize = ANIMATION_SIZES[sizeIndex]
-        val useInterpolation = FRAME_INTERPOLATION[interpolationIndex]
+        
+        // Handle interpolation based on library - Airbnb Lottie doesn't support it
+        val useInterpolation = if (libraryIndex == 0) {
+            // For DotLottie, use the appropriate interpolation setting
+            val interpolationIndex = testIndex % INTERPOLATION_DOT_LOTTIE.size
+            INTERPOLATION_DOT_LOTTIE[interpolationIndex]
+        } else {
+            // Airbnb Lottie doesn't support interpolation
+            false
+        }
         
         // Determine current library
-        val libraryName = if (currentLibraryIndex == 0) "DotLottie" else "Airbnb Lottie"
+        val libraryName = if (libraryIndex == 0) "DotLottie" else "Airbnb Lottie"
         
-        // Update UI
-        val progress = (currentTestIndex * 100f) / totalTestConfigs
+        // Update UI 
+        val progress = (calculateTestsCompleted() * 100f) / totalTestCount
         binding.progressBar.progress = progress.toInt()
         binding.tvStatus.text = "Testing $libraryName"
-        binding.tvSubStatus.text = "$animationCount animations, ${animationSize}dp, Interpolation: $useInterpolation"
+        
+        val interpolationText = if (libraryIndex == 1 && useInterpolation) 
+            "N/A (not supported)" 
+        else 
+            useInterpolation.toString()
+            
+        binding.tvSubStatus.text = "$animationCount animations, ${animationSize}dp, Interpolation: $interpolationText"
         
         // Clear previous animations
         clearAnimations()
         
-        // Create new animations based on the current test configuration
-        createAnimations(animationCount, animationSize, useInterpolation)
-        
-        // Start the test with a warmup period
-        testStartupTime = System.currentTimeMillis()
-        
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Warmup complete, start recording metrics
-            startTime = System.currentTimeMillis()
+        try {
+            // Create new animations based on the current test configuration
+            createAnimations(animationCount, animationSize, useInterpolation)
             
-            // End test after duration
-            Handler(Looper.getMainLooper()).postDelayed({
-                // Record metrics
-                val metrics = performanceMonitor.getCurrentMetrics()
-                val startupTime = testStartupTime - System.currentTimeMillis()
-                
-                // Create result object
-                val result = BenchmarkResult(
-                    library = libraryName,
-                    animationCount = animationCount,
-                    animationSize = animationSize,
-                    useFrameInterpolation = useInterpolation,
-                    fps = metrics.fps,
-                    memoryUsageMb = metrics.memoryUsageMb,
-                    jankPercentage = metrics.jankPercentage,
-                    startupTimeMs = startupTime
-                )
-                
-                testResults.add(result)
-                
-                // Update results display
-                updateResults(result)
-                
-                // Move to next test
-                currentLibraryIndex++
-                runNextTest()
-                
-            }, TEST_DURATION_MS)
+            // Start the test with a warmup period
+            testStartupTime = System.currentTimeMillis()
             
-        }, WARMUP_DURATION_MS)
+            mainHandler.postDelayed({
+                if (!isRunning.get()) return@postDelayed
+                
+                // Warmup complete, start recording metrics
+                startTime = System.currentTimeMillis()
+                
+                // End test after duration
+                mainHandler.postDelayed({
+                    if (!isRunning.get()) return@postDelayed
+                    
+                    // Record metrics
+                    val metrics = performanceMonitor.getCurrentMetrics()
+                    val startupTime = System.currentTimeMillis() - testStartupTime
+                    
+                    // Create result object
+                    val result = BenchmarkResult(
+                        library = libraryName,
+                        animationCount = animationCount,
+                        animationSize = animationSize,
+                        useFrameInterpolation = if (libraryIndex == 1) "N/A" else useInterpolation.toString(),
+                        fps = metrics.fps,
+                        memoryUsageMb = metrics.memoryUsageMb,
+                        jankPercentage = metrics.jankPercentage,
+                        cpuUsage = metrics.cpuUsage,
+                        startupTimeMs = startupTime
+                    )
+                    
+                    // Add to results list
+                    synchronized(testResults) {
+                        testResults.add(result)
+                    }
+                    
+                    // Update results display
+                    updateResults(result)
+                    
+                    // Move to next test
+                    currentLibraryIndex.incrementAndGet()
+                    runNextTest()
+                    
+                }, TEST_DURATION_MS)
+                
+            }, WARMUP_DURATION_MS)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error during test execution: ${e.message}", e)
+            
+            // Try to recover by moving to the next test
+            currentLibraryIndex.incrementAndGet()
+            mainHandler.postDelayed({ runNextTest() }, 1000)
+        }
+    }
+    
+    /**
+     * Calculate how many tests have been completed so far
+     */
+    private fun calculateTestsCompleted(): Int {
+        val testIndex = currentTestIndex.get()
+        val libraryIndex = currentLibraryIndex.get()
+        return testIndex * 2 + libraryIndex  // 2 libraries per test configuration
     }
     
     private fun createAnimations(count: Int, size: Int, useInterpolation: Boolean) {
         val container = binding.animationContainer
         
-        if (currentLibraryIndex == 0) {
+        if (currentLibraryIndex.get() == 0) {
             // Create DotLottie animations
             for (i in 0 until count) {
                 val view = LottieView(this)
@@ -248,7 +333,7 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
             for (i in 0 until count) {
                 val view = AirbnbLottieView(this)
                 view.setAnimationUrl(ANIMATION_URL_JSON)
-                view.setFrameInterpolation(useInterpolation)
+                // Airbnb Lottie doesn't support interpolation, ignore the parameter
                 
                 val params = FrameLayout.LayoutParams(size, size)
                 container.addView(view, params)
@@ -279,7 +364,7 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
         val count = dotLottieViews.size + airbnbLottieViews.size
         if (count == 0) return
         
-        val views = if (currentLibraryIndex == 0) dotLottieViews else airbnbLottieViews
+        val views = if (currentLibraryIndex.get() == 0) dotLottieViews else airbnbLottieViews
         
         val columns = max(1, sqrt(count.toFloat()).toInt())
         val rows = (count + columns - 1) / columns
@@ -311,57 +396,101 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     }
     
     private fun updateResults(result: BenchmarkResult) {
+        val interpolationText = if (result.library == "Airbnb Lottie") "N/A" else result.useFrameInterpolation
+        
         val resultText = "${result.library}: ${result.animationCount} animations, " +
                 "${result.animationSize}dp, " +
+                "Interpolation: $interpolationText, " +
                 "FPS: ${String.format("%.1f", result.fps)}, " +
                 "Jank: ${String.format("%.1f", result.jankPercentage)}%, " +
+                "CPU: ${String.format("%.1f", result.cpuUsage)}%, " +
                 "Memory: ${String.format("%.1f", result.memoryUsageMb)} MB\n"
                 
         binding.tvResults.append(resultText)
     }
     
     private fun finalizeBenchmark() {
-        isRunning = false
+        isRunning.set(false)
         binding.btnStartBenchmark.isEnabled = true
         binding.btnStopBenchmark.isEnabled = false
         binding.btnShareResults.isEnabled = true
         binding.progressBar.visibility = View.INVISIBLE
         binding.tvStatus.text = "Benchmark completed"
         
-        // Generate comparison report
-        val reportFile = generateReport()
-        reportFile?.let {
-            binding.tvSubStatus.text = "Report saved: ${it.name}"
+        // Make a copy to avoid concurrent modification
+        val resultsCopy: List<BenchmarkResult>
+        synchronized(testResults) {
+            resultsCopy = testResults.toList()
         }
+        
+        // Generate comparison report in background
+        Thread {
+            val reportFile = generateReport(resultsCopy)
+            
+            // Update UI on main thread
+            mainHandler.post {
+                if (reportFile != null) {
+                    binding.tvSubStatus.text = "Report saved: ${reportFile.name}"
+                    Toast.makeText(
+                        this@ComparativeBenchmarkActivity,
+                        "Benchmark report saved",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    binding.tvSubStatus.text = "Failed to save report"
+                    Toast.makeText(
+                        this@ComparativeBenchmarkActivity,
+                        "Failed to save benchmark report",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }.start()
     }
     
-    private fun generateReport(): File? {
-        if (testResults.isEmpty()) return null
+    private fun generateReport(results: List<BenchmarkResult>): File? {
+        if (results.isEmpty()) return null
         
         try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val fileName = "lottie_comparison_$timestamp.csv"
             
-            val file = File(getExternalFilesDir(null), fileName)
-            FileOutputStream(file).use { fos ->
-                // Write header
-                val header = "# DotLottie vs Airbnb Lottie Performance Comparison\n"
-                fos.write(header.toByteArray())
-                
-                // Write column names
-                val columns = "Library,Animation Count,Size (dp),Frame Interpolation,FPS,Memory (MB),Jank %,Startup Time (ms)\n"
-                fos.write(columns.toByteArray())
-                
-                // Write data rows
-                for (result in testResults) {
-                    val row = "${result.library},${result.animationCount},${result.animationSize},${result.useFrameInterpolation}," +
-                            "${String.format("%.1f", result.fps)},${String.format("%.1f", result.memoryUsageMb)}," +
-                            "${String.format("%.1f", result.jankPercentage)},${result.startupTimeMs}\n"
-                    fos.write(row.toByteArray())
-                }
-            }
+            // Use app-specific directory that doesn't require special permissions
+            val storageDir = permissionsHelper.getBenchmarkStorageDirectory()
+                ?: getExternalFilesDir(null)
+                ?: throw IOException("Could not access external storage")
             
-            return file
+            val file = File(storageDir, fileName)
+            
+            try {
+                FileOutputStream(file).use { fos ->
+                    // Write header
+                    val header = "# DotLottie vs Airbnb Lottie Performance Comparison\n"
+                    fos.write(header.toByteArray())
+                    
+                    // Add a note about interpolation
+                    val note = "# Note: Frame interpolation is only supported in DotLottie, not in Airbnb Lottie\n"
+                    fos.write(note.toByteArray())
+                    
+                    // Write column names
+                    val columns = "Library,Animation Count,Size (dp),Frame Interpolation,FPS,Memory (MB),Jank %,CPU %,Startup Time (ms)\n"
+                    fos.write(columns.toByteArray())
+                    
+                    // Write data rows
+                    for (result in results) {
+                        val row = "${result.library},${result.animationCount},${result.animationSize},${result.useFrameInterpolation}," +
+                                "${String.format("%.1f", result.fps)},${String.format("%.1f", result.memoryUsageMb)}," +
+                                "${String.format("%.1f", result.jankPercentage)},${String.format("%.1f", result.cpuUsage)}," +
+                                "${result.startupTimeMs}\n"
+                        fos.write(row.toByteArray())
+                    }
+                }
+                
+                return file
+            } catch (e: IOException) {
+                Log.e(TAG, "Error writing report file", e)
+                return null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error generating report", e)
             return null
@@ -369,8 +498,11 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
     }
     
     private fun shareResults() {
-        val filesDir = getExternalFilesDir(null) ?: return
-        val files = filesDir.listFiles { file -> file.name.startsWith("lottie_comparison_") && file.extension == "csv" }
+        val storageDir = permissionsHelper.getBenchmarkStorageDirectory() ?: getExternalFilesDir(null)
+        val files = storageDir?.listFiles { file -> 
+            file.name.startsWith("lottie_comparison_") && file.extension == "csv" 
+        }
+        
         val reportFile = files?.maxByOrNull { it.lastModified() }
         
         reportFile?.let { file ->
@@ -420,10 +552,11 @@ class ComparativeBenchmarkActivity : AppCompatActivity() {
         val library: String,
         val animationCount: Int,
         val animationSize: Int,
-        val useFrameInterpolation: Boolean,
+        val useFrameInterpolation: String,
         val fps: Float,
         val memoryUsageMb: Float,
         val jankPercentage: Float,
+        val cpuUsage: Float = 0f,
         val startupTimeMs: Long
     )
 } 

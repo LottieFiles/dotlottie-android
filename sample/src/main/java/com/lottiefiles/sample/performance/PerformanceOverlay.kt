@@ -8,11 +8,12 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
 import java.text.DecimalFormat
 
 /**
  * A custom view that displays performance metrics as an overlay on the screen.
- * Shows FPS, memory usage, and jank percentage.
+ * Shows FPS, memory usage, CPU usage, and jank percentage.
  */
 class PerformanceOverlay @JvmOverloads constructor(
     context: Context,
@@ -30,15 +31,19 @@ class PerformanceOverlay @JvmOverloads constructor(
         textSize = 36f
         typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
         isAntiAlias = true
+        // Add shadow for better visibility
+        setShadowLayer(1.5f, 1f, 1f, Color.BLACK)
     }
     
     private val fpsRect = Rect()
     private val memoryRect = Rect()
     private val jankRect = Rect()
+    private val cpuRect = Rect()
     
     private var fps: Float = 0f
     private var memoryUsageMb: Float = 0f
     private var jankPercentage: Float = 0f
+    private var cpuUsage: Float = 0f
     
     private val decimalFormat = DecimalFormat("#0.0")
     
@@ -57,7 +62,7 @@ class PerformanceOverlay @JvmOverloads constructor(
         super.onDraw(canvas)
         
         // Background for better readability
-        canvas.drawRect(0f, 0f, width.toFloat(), (padding * 2 + lineHeight * 3).toFloat(), bgPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), (padding * 2 + lineHeight * 4).toFloat(), bgPaint)
         
         // Draw performance metrics
         val fpsColor = when {
@@ -69,6 +74,7 @@ class PerformanceOverlay @JvmOverloads constructor(
         val fpsText = "FPS: ${decimalFormat.format(fps)}"
         val memoryText = "Memory: ${decimalFormat.format(memoryUsageMb)} MB"
         val jankText = "Jank: ${decimalFormat.format(jankPercentage)}%"
+        val cpuText = "CPU: ${decimalFormat.format(cpuUsage)}%"
         
         // Draw FPS
         textPaint.color = fpsColor
@@ -100,6 +106,22 @@ class PerformanceOverlay @JvmOverloads constructor(
             (padding + fpsRect.height() + lineHeight * 2).toFloat(),
             textPaint
         )
+        
+        // Draw CPU Usage
+        val cpuColor = when {
+            cpuUsage <= 20 -> Color.GREEN
+            cpuUsage <= 50 -> Color.YELLOW
+            else -> Color.RED
+        }
+        
+        textPaint.color = cpuColor
+        textPaint.getTextBounds(cpuText, 0, cpuText.length, cpuRect)
+        canvas.drawText(
+            cpuText,
+            padding.toFloat(),
+            (padding + fpsRect.height() + lineHeight * 3).toFloat(),
+            textPaint
+        )
     }
     
     /**
@@ -109,6 +131,7 @@ class PerformanceOverlay @JvmOverloads constructor(
         fps = metrics.fps
         memoryUsageMb = metrics.memoryUsageMb
         jankPercentage = metrics.jankPercentage
+        cpuUsage = metrics.cpuUsage
         invalidate()
     }
     

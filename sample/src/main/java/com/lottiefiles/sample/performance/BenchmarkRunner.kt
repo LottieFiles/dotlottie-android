@@ -4,11 +4,16 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Manages automated benchmark tests for Lottie animations.
@@ -22,16 +27,19 @@ class BenchmarkRunner(private val context: Context) {
     }
     
     private val performanceMonitor = PerformanceMonitor(context)
-    private val handler = Handler(Looper.getMainLooper())
+    private val permissionsHelper = PermissionsHelper(context)
+    private val mainHandler = Handler(Looper.getMainLooper())
     
-    private var currentTestIndex = 0
+    // Thread-safe state variables
+    private val isRunning = AtomicBoolean(false)
+    private val currentTestIndex = AtomicInteger(0)
+    
     private val testResults = mutableListOf<BenchmarkResult>()
     private var testConfig = BenchmarkConfig()
     private var onTestCompletedListener: OnTestCompletedListener? = null
     private var startupTimestamp: Long = 0
     
     private var benchmarkTitle: String = "Lottie Performance Benchmark"
-    private var isRunning = false
     private var lastMetrics: PerformanceMonitor.PerformanceMetrics? = null
     private val metricsListener = object : PerformanceMonitor.PerformanceListener {
         override fun onMetricsUpdated(metrics: PerformanceMonitor.PerformanceMetrics) {
@@ -64,14 +72,15 @@ class BenchmarkRunner(private val context: Context) {
      * Start running the benchmark tests
      */
     fun startBenchmark() {
-        if (isRunning) {
+        if (isRunning.getAndSet(true)) {
             Log.w(TAG, "Benchmark is already running")
             return
         }
         
-        isRunning = true
-        currentTestIndex = 0
-        testResults.clear()
+        currentTestIndex.set(0)
+        synchronized(testResults) {
+            testResults.clear()
+        }
         
         // Start monitoring
         performanceMonitor.addListener(metricsListener)
@@ -86,45 +95,49 @@ class BenchmarkRunner(private val context: Context) {
      * Stop the benchmark prematurely
      */
     fun stopBenchmark() {
-        if (!isRunning) return
+        if (!isRunning.getAndSet(false)) return
         
-        isRunning = false
-        handler.removeCallbacksAndMessages(null)
+        mainHandler.removeCallbacksAndMessages(null)
         performanceMonitor.stopMonitoring()
         performanceMonitor.removeListener(metricsListener)
         
-        onTestCompletedListener?.onAllTestsCompleted(testResults)
+        // Make a copy to avoid concurrent modification
+        val resultsCopy: List<BenchmarkResult>
+        synchronized(testResults) {
+            resultsCopy = testResults.toList()
+        }
+        
+        mainHandler.post {
+            onTestCompletedListener?.onAllTestsCompleted(resultsCopy)
+        }
     }
     
     /**
      * Run the next test in the sequence
      */
     private fun runNextTest() {
-        if (!isRunning || currentTestIndex >= testConfig.animationCounts.size) {
+        if (!isRunning.get() || currentTestIndex.get() >= testConfig.animationCounts.size) {
             // All tests are complete
-            isRunning = false
-            performanceMonitor.stopMonitoring()
-            performanceMonitor.removeListener(metricsListener)
-            
-            // Generate report
-            val reportFile = generateReport()
-            Log.d(TAG, "Benchmark completed, report saved to: ${reportFile?.absolutePath}")
-            
-            onTestCompletedListener?.onAllTestsCompleted(testResults)
+            finalizeBenchmark()
             return
         }
         
-        val animationCount = testConfig.animationCounts[currentTestIndex]
-        val size = testConfig.animationSizes[Math.min(currentTestIndex, testConfig.animationSizes.size - 1)]
+        val testIndex = currentTestIndex.get()
+        val animationCount = testConfig.animationCounts[testIndex]
+        val size = testConfig.animationSizes[Math.min(testIndex, testConfig.animationSizes.size - 1)]
         val useInterpolation = testConfig.useFrameInterpolation
         
-        Log.d(TAG, "Starting test #${currentTestIndex + 1}: $animationCount animations, size: $size, interpolation: $useInterpolation")
+        Log.d(TAG, "Starting test #${testIndex + 1}: $animationCount animations, size: $size, interpolation: $useInterpolation")
         
-        // Notify listener of test start
-        onTestCompletedListener?.onTestStarted(currentTestIndex, animationCount, size, useInterpolation)
+        // Notify listener of test start on main thread
+        mainHandler.post {
+            onTestCompletedListener?.onTestStarted(testIndex, animationCount, size, useInterpolation)
+        }
         
         // First, do warmup
-        handler.postDelayed({
+        mainHandler.postDelayed({
+            if (!isRunning.get()) return@postDelayed
+            
             // After warmup, start recording metrics
             Log.d(TAG, "Warmup completed, recording metrics...")
             
@@ -132,7 +145,9 @@ class BenchmarkRunner(private val context: Context) {
             lastMetrics = null
             
             // End test and record metrics after duration
-            handler.postDelayed({
+            mainHandler.postDelayed({
+                if (!isRunning.get()) return@postDelayed
+                
                 // Record results
                 val metrics = lastMetrics ?: performanceMonitor.getCurrentMetrics()
                 
@@ -143,16 +158,22 @@ class BenchmarkRunner(private val context: Context) {
                     fps = metrics.fps,
                     memoryUsageMb = metrics.memoryUsageMb,
                     jankPercentage = metrics.jankPercentage,
+                    cpuUsage = metrics.cpuUsage,
                     startupTimeMs = System.currentTimeMillis() - startupTimestamp
                 )
                 
-                testResults.add(testResult)
+                // Add result to list
+                synchronized(testResults) {
+                    testResults.add(testResult)
+                }
                 
-                // Notify listener
-                onTestCompletedListener?.onTestCompleted(currentTestIndex, testResult)
+                // Notify listener on main thread
+                mainHandler.post {
+                    onTestCompletedListener?.onTestCompleted(testIndex, testResult)
+                }
                 
                 // Move to next test
-                currentTestIndex++
+                currentTestIndex.incrementAndGet()
                 runNextTest()
                 
             }, TEST_DURATION_MS)
@@ -161,35 +182,83 @@ class BenchmarkRunner(private val context: Context) {
     }
     
     /**
+     * Finalize the benchmark and generate report
+     */
+    private fun finalizeBenchmark() {
+        isRunning.set(false)
+        performanceMonitor.stopMonitoring()
+        performanceMonitor.removeListener(metricsListener)
+        
+        // Make a copy to avoid concurrent modification
+        val resultsCopy: List<BenchmarkResult>
+        synchronized(testResults) {
+            resultsCopy = testResults.toList()
+        }
+        
+        // Generate report in background
+        Thread {
+            val reportFile = generateReport(resultsCopy)
+            
+            // Notify on main thread
+            mainHandler.post {
+                if (reportFile != null) {
+                    Log.d(TAG, "Benchmark completed, report saved to: ${reportFile.absolutePath}")
+                    Toast.makeText(context, "Benchmark report saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.e(TAG, "Failed to save benchmark report")
+                    Toast.makeText(context, "Failed to save benchmark report", Toast.LENGTH_SHORT).show()
+                }
+                
+                onTestCompletedListener?.onAllTestsCompleted(resultsCopy)
+            }
+        }.start()
+    }
+    
+    /**
      * Generate a CSV report of the benchmark results
      */
-    private fun generateReport(): File? {
-        if (testResults.isEmpty()) return null
+    private fun generateReport(results: List<BenchmarkResult>): File? {
+        if (results.isEmpty()) return null
         
         try {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
             val fileName = "lottie_benchmark_$timestamp.csv"
             
-            val file = File(context.getExternalFilesDir(null), fileName)
-            FileOutputStream(file).use { fos ->
-                // Write header
-                val header = "# $benchmarkTitle\n"
-                fos.write(header.toByteArray())
-                
-                // Write column names
-                val columns = "Animation Count,Size (dp),Frame Interpolation,FPS,Memory (MB),Jank %,Startup Time (ms)\n"
-                fos.write(columns.toByteArray())
-                
-                // Write data rows
-                for (result in testResults) {
-                    val row = "${result.animationCount},${result.animationSize},${result.useFrameInterpolation}," +
-                            "${String.format("%.1f", result.fps)},${String.format("%.1f", result.memoryUsageMb)}," +
-                            "${String.format("%.1f", result.jankPercentage)},${result.startupTimeMs}\n"
-                    fos.write(row.toByteArray())
-                }
-            }
+            // Use app-specific directory that doesn't require special permissions
+            val storageDir = permissionsHelper.getBenchmarkStorageDirectory()
+                ?: context.getExternalFilesDir(null)
+                ?: throw IOException("Could not access external storage")
             
-            return file
+            val file = File(storageDir, fileName)
+            
+            try {
+                FileOutputStream(file).use { fos ->
+                    // Write header
+                    val header = "# $benchmarkTitle\n"
+                    fos.write(header.toByteArray())
+                    
+                    // Write column names
+                    val columns = "Animation Count,Size (dp),Frame Interpolation,FPS,Memory (MB),Jank %,CPU %,Startup Time (ms)\n"
+                    fos.write(columns.toByteArray())
+                    
+                    // Write data rows
+                    for (result in results) {
+                        val row = "${result.animationCount},${result.animationSize},${result.useFrameInterpolation}," +
+                                "${String.format("%.1f", result.fps)},${String.format("%.1f", result.memoryUsageMb)}," +
+                                "${String.format("%.1f", result.jankPercentage)},${String.format("%.1f", result.cpuUsage)}," +
+                                "${result.startupTimeMs}\n"
+                        fos.write(row.toByteArray())
+                    }
+                }
+                
+                return file
+            } catch (e: FileNotFoundException) {
+                Log.e(TAG, "FileNotFoundException while generating report", e)
+                return null
+            } catch (e: IOException) {
+                Log.e(TAG, "IOException while generating report", e)
+                return null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error generating report", e)
             return null
@@ -215,6 +284,7 @@ class BenchmarkRunner(private val context: Context) {
         val fps: Float,
         val memoryUsageMb: Float,
         val jankPercentage: Float,
+        val cpuUsage: Float = 0f,
         val startupTimeMs: Long
     )
     

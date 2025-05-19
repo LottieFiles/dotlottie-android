@@ -23,6 +23,7 @@ import com.dotlottie.dlplayer.Mode
 /**
  * A wrapper component for Airbnb's Lottie library with a similar API to our DotLottieView
  * for easier comparison benchmarking.
+ * 
  */
 @Composable
 fun AirbnbLottieView(
@@ -32,7 +33,6 @@ fun AirbnbLottieView(
     autoPlay: Boolean = true,
     loop: Boolean = true,
     speed: Float = 1f,
-    useFrameInterpolation: Boolean = true, // This parameter has no direct equivalent in Airbnb Lottie
     playMode: Mode = Mode.FORWARD // We'll simulate this with speed
 ) {
     // Handle play mode via speed direction
@@ -43,8 +43,8 @@ fun AirbnbLottieView(
     
     val iterations = if (loop) LottieConstants.IterateForever else 1
     
-    // Force recomposition when interpolation changes
-    key(url, useFrameInterpolation, playMode) {
+    // Force recomposition when key parameters change (ignoring interpolation)
+    key(url, playMode) {
         // Load the composition from URL
         val composition by rememberLottieComposition(
             spec = LottieCompositionSpec.Url(url)
@@ -53,14 +53,12 @@ fun AirbnbLottieView(
         // Control animation state
         var isPlaying by remember { mutableStateOf(autoPlay) }
         
-        // Animation progress state - we can only control speed in Airbnb Lottie
-        // Frame interpolation is handled internally by the library
+        // Animation progress state - Airbnb Lottie doesn't support frame interpolation
         val progress by animateLottieCompositionAsState(
             composition = composition,
             iterations = iterations,
             isPlaying = isPlaying,
             speed = effectiveSpeed
-            // There's no direct equivalent to frame interpolation in Airbnb Lottie
         )
         
         // Handle playMode for bounce effects

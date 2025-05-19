@@ -189,7 +189,10 @@ private fun IdleStateContent(onStartBenchmark: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 BenchmarkInfoItem(title = "Animation Counts", value = "4, 9, 16, 25")
-                BenchmarkInfoItem(title = "With/Without Frame Interpolation", value = "Tests both modes")
+                BenchmarkInfoItem(
+                    title = "Frame Interpolation", 
+                    value = "Tests both modes for DotLottie\nNot available in Airbnb Lottie"
+                )
                 BenchmarkInfoItem(title = "Metrics", value = "FPS, CPU Usage, Memory, Jank %")
                 BenchmarkInfoItem(title = "Duration", value = "Approximately 5-10 minutes")
                 
@@ -316,18 +319,67 @@ private fun CompletedStateContent(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Group results by library and animation count
-        val groupedResults = results.groupBy { 
-            "${it.config.library} - ${it.config.animationCount} animations" 
-        }
+        // Filter and group results by library for clearer comparison
+        val dotLottieResults = results.filter { it.config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE }
+        val airbnbLottieResults = results.filter { it.config.library == BenchmarkRunner.LibraryType.AIRBNB_LOTTIE }
         
-        groupedResults.forEach { (group, groupResults) ->
-            ResultGroup(
-                title = group,
-                results = groupResults
+        // First show DotLottie results grouped by animation count
+        if (dotLottieResults.isNotEmpty()) {
+            Text(
+                text = "DotLottie Library Results",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            val dotLottieGrouped = dotLottieResults.groupBy { 
+                "${it.config.animationCount} animations" 
+            }
+            
+            dotLottieGrouped.forEach { (group, groupResults) ->
+                ResultGroup(
+                    title = group,
+                    results = groupResults
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+        
+        // Then show Airbnb Lottie results
+        if (airbnbLottieResults.isNotEmpty()) {
+            Text(
+                text = "Airbnb Lottie Library Results",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Note: Frame interpolation is not available in Airbnb Lottie",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            val airbnbLottieGrouped = airbnbLottieResults.groupBy { 
+                "${it.config.animationCount} animations" 
+            }
+            
+            airbnbLottieGrouped.forEach { (group, groupResults) ->
+                ResultGroup(
+                    title = group,
+                    results = groupResults
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
         
         Button(
@@ -368,7 +420,11 @@ private fun ResultGroup(
 
 @Composable
 private fun ResultItem(result: BenchmarkRunner.BenchmarkResult) {
-    val interpolationText = if (result.config.useInterpolation) "With Interpolation" else "No Interpolation"
+    val interpolationText = if (result.config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE) {
+        if (result.config.useInterpolation) "With Interpolation" else "No Interpolation"
+    } else {
+        "Interpolation N/A" // Airbnb Lottie doesn't support interpolation
+    }
     
     Row(
         modifier = Modifier
@@ -469,7 +525,7 @@ private fun DotLottieContainer(
 @Composable
 private fun AirbnbLottieContainer(
     count: Int,
-    useInterpolation: Boolean,
+    useInterpolation: Boolean, // This parameter is ignored for Airbnb Lottie
     size: Int,
     modifier: Modifier = Modifier
 ) {
@@ -482,12 +538,13 @@ private fun AirbnbLottieContainer(
     ) {
         items(
             count = count,
-            // Add a key that includes the interpolation setting to force recomposition
-            key = { index -> "$index-$useInterpolation" }
+            // Add a key to force recomposition - note that useInterpolation has no effect
+            key = { index -> "$index" }
         ) { index ->
             AirbnbLottieView(
                 url = lottieUrl,
-                useFrameInterpolation = useInterpolation,
+                // Interpolation is not supported in Airbnb Lottie, but kept for API consistency
+                useFrameInterpolation = useInterpolation, 
                 modifier = Modifier
                     .padding(4.dp)
                     .size(size.dp)

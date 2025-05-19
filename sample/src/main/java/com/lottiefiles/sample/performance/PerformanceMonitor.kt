@@ -6,137 +6,224 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Choreographer
 import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 /**
  * Monitors and tracks performance metrics for Lottie animations.
- * Tracks: FPS, memory usage, and frame jank percentage.
+ * Tracks: FPS, memory usage, CPU usage, and frame jank percentage.
  */
 class PerformanceMonitor(context: Context) {
     private val contextRef = WeakReference(context)
     private val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    private val handler = Handler(Looper.getMainLooper())
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val cpuMonitor = CpuMonitor(context)
     
+    // Thread safety
+    private val isMonitoring = AtomicBoolean(false)
+    private val frameCount = AtomicInteger(0)
+    private val jankyFrames = AtomicInteger(0)
+    
+    // Monitoring thread management
+    private var metricsExecutor: ScheduledExecutorService? = null
+    private var metricsUpdateTask: ScheduledFuture<*>? = null
+    
+    // Frame timing
     private var frameCallback: Choreographer.FrameCallback? = null
     private var lastFrameTimeNanos: Long = 0
-    private var frameCount: Int = 0
     private var totalFrameTime: Long = 0
-    private var jankyFrames: Int = 0
     
+    // Target frame rate
     private val targetFrameTimeNanos = (1000000000 / 60.0).toLong() // 16.7ms for 60fps
     private var fpsUpdateInterval = 1000L // Update FPS every second
     
+    // Current metrics
     private var currentFps: Float = 0f
     private var currentMemoryUsageMb: Float = 0f
     private var currentJankPercentage: Float = 0f
+    private var currentCpuUsage: Float = 0f
     
-    private var isMonitoring = false
-    private var listeners = mutableListOf<PerformanceListener>()
+    private val listeners = mutableListOf<PerformanceListener>()
     
     /**
      * Start monitoring performance metrics
      */
     fun startMonitoring() {
-        if (isMonitoring) return
+        if (isMonitoring.getAndSet(true)) return
         
-        isMonitoring = true
+        // Reset counters
+        frameCount.set(0)
+        jankyFrames.set(0)
         lastFrameTimeNanos = System.nanoTime()
-        frameCount = 0
         totalFrameTime = 0
-        jankyFrames = 0
         
-        frameCallback = Choreographer.FrameCallback { frameTimeNanos ->
-            val frameTimeDiff = frameTimeNanos - lastFrameTimeNanos
-            if (lastFrameTimeNanos > 0 && frameTimeDiff > 0) {
-                frameCount++
-                totalFrameTime += frameTimeDiff
-                
-                // Frame is considered janky if it took more than 150% of the target frame time
-                if (frameTimeDiff > (targetFrameTimeNanos * 1.5)) {
-                    jankyFrames++
-                }
-            }
-            
-            lastFrameTimeNanos = frameTimeNanos
-            Choreographer.getInstance().postFrameCallback(frameCallback!!)
+        // Start CPU monitoring
+        cpuMonitor.startMonitoring()
+        
+        // Create a new executor if needed
+        if (metricsExecutor == null || metricsExecutor?.isShutdown == true) {
+            metricsExecutor = Executors.newSingleThreadScheduledExecutor()
         }
         
-        Choreographer.getInstance().postFrameCallback(frameCallback!!)
+        // Start frame monitoring
+        setupFrameCallback()
         
-        // Schedule periodic updates
-        handler.post(object : Runnable {
-            override fun run() {
-                if (!isMonitoring) return
-                
-                updateMetrics()
-                handler.postDelayed(this, fpsUpdateInterval)
-            }
-        })
+        // Schedule periodic updates on a background thread
+        metricsUpdateTask = metricsExecutor?.scheduleWithFixedDelay(
+            { updateMetrics() },
+            0,
+            fpsUpdateInterval,
+            TimeUnit.MILLISECONDS
+        )
     }
     
     /**
      * Stop monitoring performance metrics
      */
     fun stopMonitoring() {
-        if (!isMonitoring) return
+        if (!isMonitoring.getAndSet(false)) return
         
-        isMonitoring = false
+        // Remove frame callback
         frameCallback?.let { Choreographer.getInstance().removeFrameCallback(it) }
         frameCallback = null
+        
+        // Stop CPU monitoring
+        cpuMonitor.stopMonitoring()
+        
+        // Cancel and shutdown the executor safely
+        metricsUpdateTask?.cancel(false)
+        metricsExecutor?.apply {
+            shutdown()
+            try {
+                if (!awaitTermination(1, TimeUnit.SECONDS)) {
+                    shutdownNow()
+                }
+            } catch (e: InterruptedException) {
+                shutdownNow()
+            }
+        }
+        metricsExecutor = null
+    }
+    
+    /**
+     * Setup the Choreographer frame callback
+     */
+    private fun setupFrameCallback() {
+        frameCallback = Choreographer.FrameCallback { frameTimeNanos ->
+            val frameTimeDiff = frameTimeNanos - lastFrameTimeNanos
+            if (lastFrameTimeNanos > 0 && frameTimeDiff > 0) {
+                frameCount.incrementAndGet()
+                totalFrameTime += frameTimeDiff
+                
+                // Frame is considered janky if it took more than 150% of the target frame time
+                if (frameTimeDiff > (targetFrameTimeNanos * 1.5)) {
+                    jankyFrames.incrementAndGet()
+                }
+            }
+            
+            lastFrameTimeNanos = frameTimeNanos
+            
+            // Only post next frame callback if still monitoring
+            if (isMonitoring.get()) {
+                try {
+                    Choreographer.getInstance().postFrameCallback(frameCallback!!)
+                } catch (e: Exception) {
+                    // Handle potential choreographer issues
+                }
+            }
+        }
+        
+        // Post initial frame callback on main thread
+        mainHandler.post {
+            try {
+                Choreographer.getInstance().postFrameCallback(frameCallback!!)
+            } catch (e: Exception) {
+                // Handle potential choreographer issues
+            }
+        }
     }
     
     /**
      * Add a listener to receive performance metric updates
      */
     fun addListener(listener: PerformanceListener) {
-        listeners.add(listener)
+        synchronized(listeners) {
+            if (!listeners.contains(listener)) {
+                listeners.add(listener)
+            }
+        }
     }
     
     /**
      * Remove a performance listener
      */
     fun removeListener(listener: PerformanceListener) {
-        listeners.remove(listener)
+        synchronized(listeners) {
+            listeners.remove(listener)
+        }
     }
     
+    /**
+     * Update metrics and notify listeners
+     */
     private fun updateMetrics() {
-        // Calculate FPS
-        val elapsedSeconds = totalFrameTime / 1_000_000_000.0f
-        currentFps = if (elapsedSeconds > 0) frameCount / elapsedSeconds else 0f
-        currentFps = min(currentFps, 60f) // Cap at 60fps which is the Android display refresh rate
+        if (!isMonitoring.get()) return
         
-        // Reset counters for next interval
-        frameCount = 0
-        totalFrameTime = 0
-        
-        // Calculate jank percentage
-        currentJankPercentage = if (frameCount > 0) {
-            (jankyFrames.toFloat() / frameCount) * 100f
-        } else {
-            0f
+        try {
+            // Calculate FPS
+            val currentFrameCount = frameCount.getAndSet(0)
+            val elapsedSeconds = totalFrameTime / 1_000_000_000.0f
+            currentFps = if (elapsedSeconds > 0) currentFrameCount / elapsedSeconds else 0f
+            currentFps = min(currentFps, 60f) // Cap at 60fps
+            
+            // Reset frame time counter
+            totalFrameTime = 0
+            
+            // Calculate jank percentage
+            val currentJankyCount = jankyFrames.getAndSet(0)
+            currentJankPercentage = if (currentFrameCount > 0) {
+                (currentJankyCount.toFloat() / currentFrameCount) * 100f
+            } else {
+                0f
+            }
+            
+            // Get CPU usage
+            currentCpuUsage = cpuMonitor.getCpuUsage()
+            
+            // Calculate memory usage
+            val memInfo = ActivityManager.MemoryInfo()
+            contextRef.get()?.let { context ->
+                (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(memInfo)
+                val nativeHeapSize = memInfo.totalMem - memInfo.availMem
+                currentMemoryUsageMb = nativeHeapSize / (1024f * 1024f)
+            }
+            
+            // Notify listeners on main thread
+            mainHandler.post { notifyListeners() }
+        } catch (e: Exception) {
+            // Handle any errors during metrics update
         }
-        jankyFrames = 0
-        
-        // Calculate memory usage
-        val memInfo = ActivityManager.MemoryInfo()
-        contextRef.get()?.let { context ->
-            (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(memInfo)
-            val nativeHeapSize = memInfo.totalMem - memInfo.availMem
-            currentMemoryUsageMb = nativeHeapSize / (1024f * 1024f)
-        }
-        
-        // Notify listeners
-        notifyListeners()
     }
     
+    /**
+     * Notify all listeners of updated metrics
+     */
     private fun notifyListeners() {
         val metrics = PerformanceMetrics(
             fps = currentFps,
             memoryUsageMb = currentMemoryUsageMb,
-            jankPercentage = currentJankPercentage
+            jankPercentage = currentJankPercentage,
+            cpuUsage = currentCpuUsage
         )
         
-        listeners.forEach { it.onMetricsUpdated(metrics) }
+        synchronized(listeners) {
+            listeners.forEach { it.onMetricsUpdated(metrics) }
+        }
     }
     
     /**
@@ -146,7 +233,8 @@ class PerformanceMonitor(context: Context) {
         return PerformanceMetrics(
             fps = currentFps,
             memoryUsageMb = currentMemoryUsageMb,
-            jankPercentage = currentJankPercentage
+            jankPercentage = currentJankPercentage,
+            cpuUsage = currentCpuUsage
         )
     }
     
@@ -156,7 +244,8 @@ class PerformanceMonitor(context: Context) {
     data class PerformanceMetrics(
         val fps: Float,
         val memoryUsageMb: Float,
-        val jankPercentage: Float
+        val jankPercentage: Float,
+        val cpuUsage: Float = 0f
     )
     
     /**
