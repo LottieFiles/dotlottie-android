@@ -8,7 +8,6 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.content.ContextCompat
 import java.text.DecimalFormat
 
 /**

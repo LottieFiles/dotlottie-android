@@ -86,11 +86,9 @@ class AirbnbLottieView @JvmOverloads constructor(
      * This is included only for API compatibility with DotLottie.
      */
     fun setFrameInterpolation(enabled: Boolean) {
-        // Frame interpolation is not supported in Airbnb Lottie
         if (enabled) {
-            Log.w(TAG, "Frame interpolation is not supported in Airbnb Lottie, ignoring")
+            Log.w(TAG, "Frame interpolation is not supported in Airbnb Lottie")
         }
-        // No-op, not supported
     }
     
     /**

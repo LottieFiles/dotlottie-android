@@ -51,21 +51,15 @@ class CpuMonitor(private val context: Context) {
      * Start CPU usage monitoring
      */
     fun startMonitoring() {
-        if (monitoringActive.getAndSet(true)) {
-            // Already running
-            return
-        }
+        if (monitoringActive.getAndSet(true)) return
         
-        // Create a new executor if needed
         if (cpuExecutor == null || cpuExecutor?.isShutdown == true) {
             cpuExecutor = Executors.newSingleThreadScheduledExecutor()
         }
         
-        // Reset to default monitoring method
         currentMonitorMethod = MonitoringMethod.PROC_STAT
         methodSwitchCount = 0
         
-        // Schedule the monitoring task
         cpuMonitorTask = cpuExecutor?.scheduleWithFixedDelay(
             { updateCpuUsage() },
             0,
@@ -80,12 +74,8 @@ class CpuMonitor(private val context: Context) {
      * Stop CPU usage monitoring
      */
     fun stopMonitoring() {
-        if (!monitoringActive.getAndSet(false)) {
-            // Already stopped
-            return
-        }
+        if (!monitoringActive.getAndSet(false)) return
         
-        // Cancel and shutdown the executor safely
         cpuMonitorTask?.cancel(false)
         cpuExecutor?.apply {
             shutdown()
@@ -105,9 +95,7 @@ class CpuMonitor(private val context: Context) {
     /**
      * Get the current CPU usage percentage
      */
-    fun getCpuUsage(): Float {
-        return latestCpuUsage.get()
-    }
+    fun getCpuUsage(): Float = latestCpuUsage.get()
     
     /**
      * Update CPU usage using the current monitoring method
@@ -130,7 +118,7 @@ class CpuMonitor(private val context: Context) {
                 switchToNextMonitorMethod()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating CPU usage with method $currentMonitorMethod: ${e.message}")
+            Log.e(TAG, "Error updating CPU usage: ${e.message}")
             // Try next method on error
             switchToNextMonitorMethod()
         }
@@ -143,9 +131,7 @@ class CpuMonitor(private val context: Context) {
         methodSwitchCount++
         
         // Don't switch more than 3 times to avoid thrashing
-        if (methodSwitchCount > 3) {
-            return
-        }
+        if (methodSwitchCount > 3) return
         
         currentMonitorMethod = when (currentMonitorMethod) {
             MonitoringMethod.PROC_STAT -> MonitoringMethod.PROC_SELF_STAT
