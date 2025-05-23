@@ -1,17 +1,15 @@
 package com.lottiefiles.sample
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
-import com.lottiefiles.dotlottie.core.model.Config
 import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.dotlottie.core.model.Config
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.sample.databinding.MainBinding
-import com.lottiefiles.sample.performance.PerformanceTestActivity
 
 class MainActivity : ComponentActivity() {
 
@@ -89,9 +87,7 @@ class MainActivity : ComponentActivity() {
             .autoplay(true)
             .speed(1f)
             .loop(true)
-//            .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
-//            .source(DotLottieSource.Url("https://lottie.host/f8e7eccf-72da-40da-9dd1-0fdbdc93b9ea/yAX2Nay9jD.json"))
-            .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
+            .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
             .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
             .build()
@@ -176,11 +172,6 @@ class MainActivity : ComponentActivity() {
             } catch (e: Exception) {
                 Log.i(TAG, "Color parse failed", e)
             }
-        }
-        
-        // Performance test button
-        binding.btnPerformanceTest.setOnClickListener {
-            startActivity(Intent(this, PerformanceTestActivity::class.java))
         }
     }
 }

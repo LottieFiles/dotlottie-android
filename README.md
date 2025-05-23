@@ -247,3 +247,94 @@ android {
 }
 ```
 Refer to the [Android documentation](https://developer.android.com/ndk/guides/abis) for more information on ABI management.
+
+## Introduction
+
+DotLottie is a file format that enables efficient delivery of Lottie animations. This library provides a native Android player for DotLottie animations with advanced features like frame interpolation.
+
+## Usage
+
+```kotlin
+// Load a DotLottie animation from a URL
+val config = Config.Builder()
+    .autoplay(true)
+    .loop(true)
+    .source(DotLottieSource.Url("https://example.com/animation.lottie"))
+    .build()
+    
+dotLottieAnimation.load(config)
+
+// Or load from a JSON URL
+val config = Config.Builder()
+    .autoplay(true)
+    .loop(true)
+    .source(DotLottieSource.Url("https://example.com/animation.json"))
+    .build()
+    
+dotLottieAnimation.load(config)
+```
+
+## Performance Testing Framework
+
+The project includes a comprehensive performance testing framework that allows comparing DotLottie with Airbnb's Lottie animation library. This helps in benchmarking and optimizing animation performance.
+
+### Benchmark Features
+
+- **Comparative Testing**: Test both DotLottie and Airbnb Lottie with the same animations
+- **File Format Support**: Test DotLottie with both .json and .lottie formats to compare format efficiency
+- **Metrics Tracked**:
+  - Frames per second (FPS)
+  - Memory usage (MB)
+  - CPU usage (%)
+  - Frame jank percentage (%)
+  - Animation startup time (ms)
+- **Configurable Tests**:
+  - Number of animations (1, 5, 10, 20, 30 animations)
+  - Animation size (100dp, 200dp)
+  - Frame interpolation (DotLottie only)
+- **CSV Report Generation**: Export detailed benchmark results for analysis
+
+### Running the Benchmark
+
+1. Open the sample app
+2. Navigate to the "Performance" section
+3. Select "Comparative Benchmark"
+4. Press "Start Benchmark" to begin the tests
+5. Wait for all tests to complete (usually takes several minutes)
+6. View results on screen or share the CSV report
+
+### Understanding Benchmark Results
+
+The benchmark produces extensive data comparing the performance of both libraries. Here's how to interpret the results:
+
+1. **FPS (Frames Per Second)**: Higher is better. Shows how smoothly animations render.
+2. **Memory Usage**: Lower is better. Indicates memory efficiency.
+3. **CPU Usage**: Lower is better. Shows how CPU-intensive the animations are.
+4. **Jank Percentage**: Lower is better. Indicates frame rendering consistency.
+5. **Startup Time**: Lower is better. Shows how quickly animations initialize.
+
+Different patterns in the results can indicate various optimizations that might be possible:
+
+- **High CPU usage with low FPS**: The render thread might be the bottleneck.
+- **High memory usage with good FPS**: Memory optimization opportunities exist.
+- **Lower performance with many animations**: Test parallelization limits.
+- **Significant differences between formats**: Format-specific optimizations may be possible.
+
+### File Format Comparison
+
+The benchmark allows comparing DotLottie performance with both JSON and LOTTIE formats:
+
+- **JSON format**: The original Lottie format, widely compatible.
+- **LOTTIE format**: DotLottie's optimized container format, which can include multiple animations, fonts, and images.
+
+This comparison helps understand the performance trade-offs between formats and allows making informed decisions about which format to use for different use cases.
+
+### Frame Interpolation
+
+DotLottie supports frame interpolation, which Airbnb Lottie does not. The benchmark tests both with and without frame interpolation to measure its performance impact.
+
+Frame interpolation allows smoother animations by generating additional frames between existing ones, but has some CPU cost. The benchmark helps quantify this tradeoff.
+
+## License
+
+See the LICENSE file for details.

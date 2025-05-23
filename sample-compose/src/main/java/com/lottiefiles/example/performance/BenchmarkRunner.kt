@@ -42,21 +42,31 @@ class BenchmarkRunner(private val context: Context) {
     
     // Test configurations with library type
     val testConfigurations = listOf(
-        // DotLottie tests - with and without interpolation since DotLottie supports this feature
-        TestConfiguration(animationCount = 4, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 9, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 16, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 25, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
-        TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE),
+        // DotLottie tests with .json format
+        TestConfiguration(animationCount = 4, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 9, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 16, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 25, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.JSON),
+        
+        // DotLottie tests with .lottie format
+        TestConfiguration(animationCount = 4, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 9, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 16, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 25, useInterpolation = true, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
+        TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.DOT_LOTTIE, fileFormat = FileFormat.LOTTIE),
         
         // Airbnb Lottie tests - only one version since Airbnb Lottie doesn't truly support interpolation
-        TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE),
-        TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE)
+        TestConfiguration(animationCount = 4, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 9, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 16, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE, fileFormat = FileFormat.JSON),
+        TestConfiguration(animationCount = 25, useInterpolation = false, durationSeconds = 10, library = LibraryType.AIRBNB_LOTTIE, fileFormat = FileFormat.JSON)
     )
     
     private var currentTestIndex = 0
@@ -318,11 +328,19 @@ class BenchmarkRunner(private val context: Context) {
                 fos.write(header.toByteArray())
                 
                 // Add a note about interpolation
-                val note = "# Note: Frame interpolation is only available in DotLottie, not in Airbnb Lottie\n\n"
+                val note = "# Note: Frame interpolation is only available in DotLottie, not in Airbnb Lottie\n"
                 fos.write(note.toByteArray())
                 
+                // Add a note about using the same animation for both libraries
+                val animationNote = "# Both libraries are rendering the same animation (.json and .lottie formats)\n"
+                fos.write(animationNote.toByteArray())
+                
+                // Add a note about the file formats
+                val formatNote = "# DotLottie is tested with both .json and .lottie formats to compare performance differences\n\n"
+                fos.write(formatNote.toByteArray())
+                
                 // Write column names
-                val columns = "Test,Library,Animations,Interpolation,Avg FPS,Min FPS,Max FPS,Avg Memory (MB),Peak Memory (MB),Avg CPU (%),Peak CPU (%)\n"
+                val columns = "Test,Library,Animations,Interpolation,Format,Avg FPS,Min FPS,Max FPS,Avg Memory (MB),Peak Memory (MB),Avg CPU (%),Peak CPU (%)\n"
                 fos.write(columns.toByteArray())
                 
                 // Write data rows in a thread-safe way
@@ -339,7 +357,12 @@ class BenchmarkRunner(private val context: Context) {
                         result.config.useInterpolation.toString()
                     }
                     
-                    val line = "${index + 1},${result.config.library},${result.config.animationCount},$interpolationValue," +
+                    val formatValue = when (result.config.fileFormat) {
+                        FileFormat.JSON -> ".json"
+                        FileFormat.LOTTIE -> ".lottie"
+                    }
+                    
+                    val line = "${index + 1},${result.config.library},${result.config.animationCount},$interpolationValue,$formatValue," +
                             "%.2f,%.2f,%.2f,%d,%d,%.2f,%.2f\n".format(
                                 result.averageFps,
                                 result.minFps,
@@ -427,13 +450,22 @@ class BenchmarkRunner(private val context: Context) {
     }
     
     /**
+     * Enum representing the file format being tested
+     */
+    enum class FileFormat {
+        JSON,
+        LOTTIE
+    }
+    
+    /**
      * Data class representing a test configuration
      */
     data class TestConfiguration(
         val animationCount: Int,
         val useInterpolation: Boolean,
         val durationSeconds: Int,
-        val library: LibraryType
+        val library: LibraryType,
+        val fileFormat: FileFormat
     )
     
     /**

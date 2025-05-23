@@ -243,6 +243,7 @@ private fun RunningStateContent(
                 Text(text = "Library: ${config.library}")
                 Text(text = "Animations: ${config.animationCount}")
                 Text(text = "Frame Interpolation: ${if (config.useInterpolation) "ON" else "OFF"}")
+                Text(text = "File Format: ${config.fileFormat}")
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -255,16 +256,27 @@ private fun RunningStateContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Animations being tested - render different containers based on library type
+        // Animations being tested - render different containers based on library type and file format
         if (config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE) {
-            DotLottieContainer(
-                count = config.animationCount,
-                useInterpolation = config.useInterpolation,
-                size = animationSize,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            )
+            if (config.fileFormat == BenchmarkRunner.FileFormat.JSON) {
+                DotLottieJsonContainer(
+                    count = config.animationCount,
+                    useInterpolation = config.useInterpolation,
+                    size = animationSize,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                )
+            } else { // LOTTIE format
+                DotLottieDotLottieContainer(
+                    count = config.animationCount,
+                    useInterpolation = config.useInterpolation,
+                    size = animationSize,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                )
+            }
         } else {
             AirbnbLottieContainer(
                 count = config.animationCount,
@@ -306,16 +318,25 @@ private fun CompletedStateContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Filter and group results by library for clearer comparison
-        val dotLottieResults =
-            results.filter { it.config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE }
-        val airbnbLottieResults =
-            results.filter { it.config.library == BenchmarkRunner.LibraryType.AIRBNB_LOTTIE }
+        // Filter and group results by library and format
+        val dotLottieJsonResults = results.filter { 
+            it.config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE && 
+            it.config.fileFormat == BenchmarkRunner.FileFormat.JSON 
+        }
+        
+        val dotLottieLottieResults = results.filter { 
+            it.config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE && 
+            it.config.fileFormat == BenchmarkRunner.FileFormat.LOTTIE 
+        }
+        
+        val airbnbLottieResults = results.filter { 
+            it.config.library == BenchmarkRunner.LibraryType.AIRBNB_LOTTIE 
+        }
 
-        // First show DotLottie results grouped by animation count
-        if (dotLottieResults.isNotEmpty()) {
+        // Show DotLottie JSON results
+        if (dotLottieJsonResults.isNotEmpty()) {
             Text(
-                text = "DotLottie Library Results",
+                text = "DotLottie Library (.json format)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth()
@@ -323,11 +344,36 @@ private fun CompletedStateContent(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            val dotLottieGrouped = dotLottieResults.groupBy {
+            val dotLottieJsonGrouped = dotLottieJsonResults.groupBy {
                 "${it.config.animationCount} animations"
             }
 
-            dotLottieGrouped.forEach { (group, groupResults) ->
+            dotLottieJsonGrouped.forEach { (group, groupResults) ->
+                ResultGroup(
+                    title = group,
+                    results = groupResults
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+        
+        // Show DotLottie LOTTIE results
+        if (dotLottieLottieResults.isNotEmpty()) {
+            Text(
+                text = "DotLottie Library (.lottie format)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val dotLottieLottieGrouped = dotLottieLottieResults.groupBy {
+                "${it.config.animationCount} animations"
+            }
+
+            dotLottieLottieGrouped.forEach { (group, groupResults) ->
                 ResultGroup(
                     title = group,
                     results = groupResults
@@ -337,10 +383,10 @@ private fun CompletedStateContent(
             }
         }
 
-        // Then show Airbnb Lottie results
+        // Show Airbnb Lottie results
         if (airbnbLottieResults.isNotEmpty()) {
             Text(
-                text = "Airbnb Lottie Library Results",
+                text = "Airbnb Lottie Library",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.fillMaxWidth()
@@ -414,6 +460,11 @@ private fun ResultItem(result: BenchmarkRunner.BenchmarkResult) {
     } else {
         "Interpolation N/A" // Airbnb Lottie doesn't support interpolation
     }
+    
+    val formatText = when (result.config.library) {
+        BenchmarkRunner.LibraryType.DOT_LOTTIE -> result.config.fileFormat.toString()
+        BenchmarkRunner.LibraryType.AIRBNB_LOTTIE -> "JSON" // Airbnb Lottie only supports JSON
+    }
 
     Row(
         modifier = Modifier
@@ -423,7 +474,7 @@ private fun ResultItem(result: BenchmarkRunner.BenchmarkResult) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = interpolationText,
+                text = "$interpolationText - $formatText",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium
             )
@@ -495,15 +546,14 @@ private fun BenchmarkInfoItem(title: String, value: String) {
 }
 
 @Composable
-private fun DotLottieContainer(
+private fun DotLottieJsonContainer(
     count: Int,
     useInterpolation: Boolean,
     size: Int,
     modifier: Modifier = Modifier
 ) {
-    // Use the swag_sticker_piggy.lottie URL for testing
-    val lottieUrl =
-        "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
+    // JSON format animation for DotLottie
+    val lottieUrl = "https://lottie.host/e55c67db-398a-4b32-9c21-d5ccc374658c/C6ZURJ4vJP.json"
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(size.dp),
@@ -511,8 +561,38 @@ private fun DotLottieContainer(
     ) {
         items(
             count = count,
-            // Add a key that includes the interpolation setting to force recomposition
-            key = { index -> "$index-$useInterpolation" }
+            key = { index -> "$index-json-$useInterpolation" }
+        ) { index ->
+            LottieView(
+                url = lottieUrl,
+                useFrameInterpolation = useInterpolation,
+                modifier = Modifier
+                    .padding(4.dp)
+                    .size(size.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.LightGray.copy(alpha = 0.2f))
+            )
+        }
+    }
+}
+
+@Composable
+private fun DotLottieDotLottieContainer(
+    count: Int,
+    useInterpolation: Boolean,
+    size: Int,
+    modifier: Modifier = Modifier
+) {
+    // LOTTIE format animation for DotLottie
+    val lottieUrl = "https://lottie.host/d205a0a0-3e1c-4501-a036-7719e9668616/5sOh6gibkX.lottie"
+
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(size.dp),
+        modifier = modifier
+    ) {
+        items(
+            count = count,
+            key = { index -> "$index-lottie-$useInterpolation" }
         ) { index ->
             LottieView(
                 url = lottieUrl,
@@ -533,8 +613,8 @@ private fun AirbnbLottieContainer(
     size: Int,
     modifier: Modifier = Modifier
 ) {
-    // Use JSON URL for Airbnb Lottie
-    val lottieUrl = "https://lottie.host/f8e7eccf-72da-40da-9dd1-0fdbdc93b9ea/yAX2Nay9jD.json"
+    // Use the same JSON animation for Airbnb Lottie
+    val lottieUrl = "https://lottie.host/e55c67db-398a-4b32-9c21-d5ccc374658c/C6ZURJ4vJP.json"
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(size.dp),

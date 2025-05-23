@@ -53,7 +53,6 @@ fun AirbnbLottieView(
         // Control animation state
         var isPlaying by remember { mutableStateOf(autoPlay) }
         
-        // Animation progress state - Airbnb Lottie doesn't support frame interpolation
         val progress by animateLottieCompositionAsState(
             composition = composition,
             iterations = iterations,
