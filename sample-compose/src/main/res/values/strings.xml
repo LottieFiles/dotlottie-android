@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">Example</string>
+    <string name="app_name">LottieFiles Benchmark</string>
     <string name="home_featured_animations">Featured Animations</string>
     <string name="popular_animations">Popular Animations</string>
     <string name="recent_animations">Recent Animations</string>
-    <string name="see_all">See all</string>
 </resources>

@@ -27,7 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -46,14 +45,10 @@ import com.lottiefiles.example.util.MobilePortraitPreview
 @Composable
 fun HomeScreen(
     uiState: HomeUIState,
-    onSeeAllClick: (SectionType) -> Unit,
     onAnimationClick: (AnimationBundle) -> Unit,
     onBackClick: (() -> Unit)? = null
 ) {
     val scrollState = rememberScrollState()
-    
-    // Use swag_sticker_piggy.lottie as the default URL if no animations are provided
-    val defaultLottieUrl = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
 
     Scaffold(
         topBar = {
@@ -86,20 +81,14 @@ fun HomeScreen(
         ) {
             // Featured Banner
             if (uiState.featuredAnimations.isNotEmpty()) {
-                val firstFeaturedAnimation =
-                    uiState.featuredAnimations.firstOrNull()?.lottieUrl ?: defaultLottieUrl
-                LottieView(
-                    url = firstFeaturedAnimation,
-                    modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
-                )
-            } else {
-                // Show default animation if no featured animations
-                LottieView(
-                    url = defaultLottieUrl,
-                    modifier = Modifier.clickable { }
-                )
+                val firstFeaturedAnimation = uiState.featuredAnimations.firstOrNull()?.lottieUrl
+                firstFeaturedAnimation?.let {
+                    LottieView(
+                        url = it,
+                        modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
+                    )
+                }
             }
-
             // Rest of the sections
             if (uiState.featuredAnimations.isNotEmpty()) {
                 AnimationSection(
@@ -110,8 +99,6 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
-                    onSeeAllClick = onSeeAllClick,
-                    defaultLottieUrl = defaultLottieUrl
                 )
             }
 
@@ -123,8 +110,6 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
-                    onSeeAllClick = onSeeAllClick,
-                    defaultLottieUrl = defaultLottieUrl
                 )
             }
 
@@ -136,8 +121,6 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
-                    onSeeAllClick = onSeeAllClick,
-                    defaultLottieUrl = defaultLottieUrl
                 )
             }
         }
@@ -149,8 +132,6 @@ fun AnimationSection(
     sectionType: SectionType,
     animations: List<AnimationBundle>,
     onAnimationClick: (AnimationBundle) -> Unit,
-    onSeeAllClick: (SectionType) -> Unit,
-    defaultLottieUrl: String = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie",
     modifier: Modifier = Modifier.padding(vertical = 16.dp)
 ) {
     val lazyListState = rememberLazyListState()
@@ -178,14 +159,6 @@ fun AnimationSection(
                 text = title,
                 style = MaterialTheme.typography.titleLarge
             )
-
-            TextButton(onClick = { onSeeAllClick(sectionType) }) {
-                Text(
-                    text = stringResource(R.string.see_all),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.scrim
-                )
-            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -201,7 +174,6 @@ fun AnimationSection(
                 AnimationCard(
                     animation = animation,
                     onClick = { onAnimationClick(animation) },
-                    defaultLottieUrl = defaultLottieUrl
                 )
             }
         }
@@ -212,7 +184,6 @@ fun AnimationSection(
 fun AnimationCard(
     animation: AnimationBundle,
     onClick: () -> Unit,
-    defaultLottieUrl: String = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
 ) {
     Card(
         modifier =
@@ -224,7 +195,7 @@ fun AnimationCard(
         onClick = onClick) {
         Column {
             LottieView(
-                url = animation.lottieUrl ?: defaultLottieUrl,
+                url = animation.lottieUrl ?: "",
                 modifier =
                     Modifier
                         .aspectRatio(1f)
@@ -269,7 +240,6 @@ private fun HomeScreenPreview() {
 
     HomeScreen(
         previewState,
-        onSeeAllClick = { _ -> },
         onAnimationClick = { _ -> },
         onBackClick = null
     )
@@ -286,6 +256,5 @@ private fun AnimationCardPreview() {
             ),
         onClick = {}
     )
-
 }
 
