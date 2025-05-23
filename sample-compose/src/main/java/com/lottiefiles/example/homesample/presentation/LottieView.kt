@@ -26,9 +26,6 @@ import com.lottiefiles.dotlottie.core.util.LayoutUtil
 fun LottieView(
     url: String,
     modifier: Modifier = Modifier
-        .fillMaxWidth()
-        .height(200.dp)
-        .background(Color.LightGray.copy(alpha = 0.2f))
 ) {
     DotLottieAnimation(
         source = DotLottieSource.Url(url),
@@ -37,7 +34,7 @@ fun LottieView(
         useFrameInterpolation = true,
         playMode = Mode.FORWARD,
         layout = LayoutUtil.createLayout(Fit.CONTAIN, LayoutUtil.Alignment.Center.alignment),
-        modifier = modifier
+        modifier = modifier.aspectRatio(1f)
     )
 }
 
@@ -55,10 +52,10 @@ fun LottieView(
     alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center
 ) {
     // Create a new controller each time key parameters change to force recomposition
-    val controller = remember(url, useFrameInterpolation, playMode) { 
-        DotLottieController() 
+    val controller = remember(url, useFrameInterpolation, playMode) {
+        DotLottieController()
     }
-    
+
     // Set up controller parameters
     LaunchedEffect(controller, url, loop, speed, autoPlay, playMode, useFrameInterpolation) {
         // Apply all settings
@@ -66,13 +63,13 @@ fun LottieView(
         controller.setSpeed(speed)
         controller.setPlayMode(playMode)
         controller.setUseFrameInterpolation(useFrameInterpolation)
-        
+
         // Start playback if autoPlay is enabled
         if (autoPlay) {
             controller.play()
         }
     }
-    
+
     // Use key to force recomposition when interpolation changes
     key(url, useFrameInterpolation) {
         Box(modifier = modifier.background(backgroundColor)) {

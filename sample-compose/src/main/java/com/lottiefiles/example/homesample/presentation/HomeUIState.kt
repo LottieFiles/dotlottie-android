@@ -41,23 +41,9 @@ data class HomeUIState(
 val sampleAnimationBundle = AnimationBundle(
     id = 1,
     name = "Sample Animation",
-    downloads = 1000.0,
     bgColor = "#FFFFFF",
     lottieUrl = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie",
     createdBy = User(
         id = "1", firstName = "John", lastName = "Doe", email = "username@email.com"
-    ),
-    createdAt = "2023-10-01",
-    description = "This is a sample animation",
-    likesCount = 100,
-    commentsCount = 10,
-    isSelected = false,
-    status = 1,
-    isLiked = true,
-    gifUrl = "https://example.com/sample.gif",
-    videoUrl = "https://example.com/sample.mp4",
-    url = "https://example.com/sample",
-    imageUrl = "https://example.com/sample.png",
-    type = "animation",
-    animationJson = "{}"
+    )
 )
