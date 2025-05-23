@@ -3,14 +3,9 @@ package com.lottiefiles.example.performance
 import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,8 +18,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,10 +34,10 @@ import androidx.core.content.ContextCompat
  */
 object PermissionsHelper {
     private const val TAG = "PermissionsHelper"
-    
+
     // Make this public so it can be accessed from MainActivity
     const val STORAGE_PERMISSION_CODE = 1001
-    
+
     /**
      * Check if storage permission is granted
      */
@@ -56,12 +49,12 @@ object PermissionsHelper {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) == PackageManager.PERMISSION_GRANTED
         }
-        
+
         // For Android 11+ (API 30+), we don't need specific permissions for app-specific directories
         // But we'll check for general external files dir access
         return canWriteToExternalFilesDir(context)
     }
-    
+
     /**
      * Request storage permission
      */
@@ -77,7 +70,7 @@ object PermissionsHelper {
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
                 STORAGE_PERMISSION_CODE
             )
-            
+
             // We'll need to handle onRequestPermissionsResult in the activity
             // This result will come later
             onPermissionResult(false)
@@ -86,7 +79,7 @@ object PermissionsHelper {
             onPermissionResult(true)
         }
     }
-    
+
     /**
      * Handle the result of permission request
      */
@@ -95,10 +88,11 @@ object PermissionsHelper {
             STORAGE_PERMISSION_CODE -> {
                 grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
             }
+
             else -> false
         }
     }
-    
+
     /**
      * Helper to check if we have at least write permission on external files dir
      * This is always true for app-specific directories on Android 11+
@@ -107,13 +101,13 @@ object PermissionsHelper {
         val dir = context.getExternalFilesDir(null)
         return dir?.canWrite() == true
     }
-    
+
     /**
      * Get a directory suitable for writing benchmark reports
      */
     fun getBenchmarkReportsDir(context: Context): java.io.File? {
         val externalFilesDir = context.getExternalFilesDir(null)
-        
+
         // Create the directory if it doesn't exist
         if (externalFilesDir != null && !externalFilesDir.exists()) {
             if (!externalFilesDir.mkdirs()) {
@@ -121,13 +115,13 @@ object PermissionsHelper {
                 return null
             }
         }
-        
+
         return externalFilesDir
     }
 }
 
 /**
- * Composable that manages permissions or skips permission request 
+ * Composable that manages permissions or skips permission request
  * if not needed for the current Android version
  */
 @Composable
@@ -135,7 +129,7 @@ fun PermissionRequiredScreen(
     onPermissionGranted: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    
+
     // On Android 11+ (API 30+), we can always access app-specific directories
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         // Check if we can write to our own app directory
@@ -160,19 +154,19 @@ private fun StoragePermissionScreen(
 ) {
     val context = LocalContext.current
     var hasPermission by remember { mutableStateOf(PermissionsHelper.hasStoragePermission(context)) }
-    
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasPermission = isGranted
     }
-    
+
     // If permission is granted, show the content
     if (hasPermission) {
         onPermissionGranted()
         return
     }
-    
+
     // Otherwise show permission request UI
     Column(
         modifier = Modifier
@@ -185,19 +179,20 @@ private fun StoragePermissionScreen(
             text = "Storage Permission Required",
             style = MaterialTheme.typography.headlineSmall
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = "This app needs storage permission to save benchmark results."
         )
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         Button(
             onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
+                ) {
                     permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
             }
@@ -223,9 +218,9 @@ private fun StorageErrorScreen() {
             text = "Storage Access Error",
             style = MaterialTheme.typography.headlineSmall
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = "The app cannot access the storage to save benchmark results. Please check your device settings or contact support."
         )

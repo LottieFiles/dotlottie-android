@@ -3,7 +3,6 @@ package com.lottiefiles.example.performance
 import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
-import android.os.Build
 import android.os.Debug
 import android.os.Handler
 import android.os.Looper
@@ -17,13 +16,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import java.io.BufferedReader
 import java.io.FileReader
-import java.io.IOException
 import java.text.DecimalFormat
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -40,7 +37,7 @@ import kotlin.concurrent.withLock
 class PerformanceMonitor {
     companion object {
         private const val TAG = "PerformanceMonitor"
-        
+
         /**
          * Enable hardware acceleration for better performance
          */
@@ -69,13 +66,13 @@ class PerformanceMonitor {
     private val frameTimeHistory = mutableListOf<Long>()
     private val maxFrameTimeHistorySize = 120 // 2 seconds at 60 FPS
     private var totalFrameTime = 0L
-    
+
     // CPU usage tracking
     private var cpuExecutor: ScheduledExecutorService? = null
     private val cpuUsage = AtomicReference(0f)
     private var lastCpuUsageTotal = 0L
     private var lastCpuUsageApp = 0L
-    
+
     // CPU usage method - we'll try different methods based on Android version and permissions
     private var cpuUsageMethod = CpuUsageMethod.ACTIVITY_MANAGER
     private var activityManager: ActivityManager? = null
@@ -94,7 +91,7 @@ class PerformanceMonitor {
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             if (!isMonitoring.get()) return
-            
+
             val currentStartTimeNs = frameStartTimeNs.get()
             if (currentStartTimeNs > 0) {
                 val frameDurationNs = frameTimeNanos - currentStartTimeNs
@@ -107,7 +104,7 @@ class PerformanceMonitor {
             }
 
             frameStartTimeNs.set(frameTimeNanos)
-            
+
             lock.withLock {
                 framesRendered++
             }
@@ -116,21 +113,24 @@ class PerformanceMonitor {
             if (currentTimeMs - lastFpsUpdate >= fpsUpdateIntervalMs) {
                 val elapsedSeconds = (currentTimeMs - lastFpsUpdate) / 1000f
                 val localFramesRendered: Int
-                
+
                 lock.withLock {
                     localFramesRendered = framesRendered
                     framesRendered = 0
                     totalFrameTime = 0
                     lastFpsUpdate = currentTimeMs
                 }
-                
+
                 val fps = localFramesRendered / elapsedSeconds
 
                 fpsCallback?.invoke(fps)
 
                 // Log jank metrics
                 val jankMetrics = calculateJankMetrics()
-                Log.d(TAG, "FPS: ${df.format(fps)}, Jank %: ${jankMetrics.jankPercentage}%, Long frames: ${jankMetrics.longFrameCount}")
+                Log.d(
+                    TAG,
+                    "FPS: ${df.format(fps)}, Jank %: ${jankMetrics.jankPercentage}%, Long frames: ${jankMetrics.longFrameCount}"
+                )
             }
 
             if (isMonitoring.get()) {
@@ -171,7 +171,7 @@ class PerformanceMonitor {
         this.fpsCallback = fpsListener
         startMonitoring()
     }
-    
+
     /**
      * Set a callback for FPS updates
      */
@@ -210,7 +210,7 @@ class PerformanceMonitor {
                     startMonitoringOnMainThread()
                 }
             }
-            
+
             // Start CPU usage monitoring on a background thread
             startCpuMonitoring()
         }
@@ -225,11 +225,11 @@ class PerformanceMonitor {
             lastFpsUpdate = System.currentTimeMillis()
             frameTimeHistory.clear()
         }
-        
+
         Choreographer.getInstance().postFrameCallback(frameCallback)
         Log.d(TAG, "Performance monitoring started")
     }
-    
+
     /**
      * Start monitoring CPU usage
      */
@@ -239,10 +239,10 @@ class PerformanceMonitor {
             if (cpuExecutor == null || cpuExecutor?.isShutdown == true || cpuExecutor?.isTerminated == true) {
                 cpuExecutor = Executors.newSingleThreadScheduledExecutor()
             }
-            
+
             // Initialize CPU usage monitoring
             updateCpuUsage()
-            
+
             // Use scheduleWithFixedDelay instead of scheduleAtFixedRate to prevent task bursts 
             // when the app moves from cached to foreground state
             cpuExecutor?.scheduleWithFixedDelay(
@@ -257,7 +257,7 @@ class PerformanceMonitor {
             cpuUsage.set(0f)
         }
     }
-    
+
     /**
      * The different methods we can use to get CPU usage
      */
@@ -266,7 +266,7 @@ class PerformanceMonitor {
         ACTIVITY_MANAGER, // Using ActivityManager - safer but less precise
         DEBUG_API // Using Debug API - another alternative
     }
-    
+
     /**
      * Update CPU usage statistics
      */
@@ -275,26 +275,26 @@ class PerformanceMonitor {
         val currentTime = System.currentTimeMillis()
         val taskCount = taskExecutionCount.incrementAndGet()
         val lastReset = lastTaskCountResetTime.get()
-        
+
         // Reset the counter periodically
         if (currentTime - lastReset > TASK_COUNT_RESET_INTERVAL_MS) {
             taskExecutionCount.set(0)
             lastTaskCountResetTime.set(currentTime)
-        } 
+        }
         // If we detect a task burst, reset the CPU monitoring
         else if (taskCount > TASK_BURST_THRESHOLD) {
             Log.w(TAG, "Task burst detected! Resetting CPU monitoring")
             resetCpuMonitoring()
             return
         }
-        
+
         // Rate limiting to prevent excessive calls
         val lastUpdate = lastCpuUpdateTime.get()
         if (currentTime - lastUpdate < MIN_CPU_UPDATE_INTERVAL_MS) {
             return // Skip this update if it's too soon
         }
         lastCpuUpdateTime.set(currentTime)
-        
+
         try {
             when (cpuUsageMethod) {
                 CpuUsageMethod.PROC_FILES -> updateCpuUsageViaProcFiles()
@@ -303,17 +303,19 @@ class PerformanceMonitor {
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to update CPU usage with method $cpuUsageMethod: ${e.message}")
-            
+
             // Try a different method if the current one fails
             when (cpuUsageMethod) {
                 CpuUsageMethod.PROC_FILES -> {
                     cpuUsageMethod = CpuUsageMethod.ACTIVITY_MANAGER
                     updateCpuUsage() // Try again with the new method
                 }
+
                 CpuUsageMethod.ACTIVITY_MANAGER -> {
                     cpuUsageMethod = CpuUsageMethod.DEBUG_API
                     updateCpuUsage() // Try again with the new method
                 }
+
                 CpuUsageMethod.DEBUG_API -> {
                     // If all methods fail, just set a default value
                     cpuUsage.set(0f)
@@ -321,7 +323,7 @@ class PerformanceMonitor {
             }
         }
     }
-    
+
     /**
      * Update CPU usage using /proc files
      * Note: This requires special permissions on newer Android versions
@@ -330,58 +332,58 @@ class PerformanceMonitor {
         // Get app CPU time
         val pid = Process.myPid()
         var appCpuTime = 0L
-        
+
         BufferedReader(FileReader("/proc/$pid/stat")).use { reader ->
             val stats = reader.readLine().split(" ".toRegex())
-            
+
             // User and system time are at positions 13 and 14
             val utime = stats[13].toLong()
             val stime = stats[14].toLong()
             appCpuTime = utime + stime
         }
-        
+
         // Get total CPU time across all cores
         var cpuTimeTotal = 0L
-        
+
         BufferedReader(FileReader("/proc/stat")).use { reader ->
             val stats = reader.readLine().split("\\s+".toRegex())
-            
+
             // Sum all CPU time components (user, nice, system, idle, iowait, irq, softirq)
             for (i in 1 until minOf(stats.size, 8)) {
                 cpuTimeTotal += stats[i].toLong()
             }
         }
-        
+
         // Calculate CPU usage percentage if we have previous measurements
         if (lastCpuUsageTotal > 0 && lastCpuUsageApp > 0) {
             val totalDelta = cpuTimeTotal - lastCpuUsageTotal
             val appDelta = appCpuTime - lastCpuUsageApp
-            
+
             if (totalDelta > 0) {
                 val usage = (appDelta.toFloat() / totalDelta) * 100f
-                
+
                 // CPU usage may be multiplied by core count, cap at 100%
                 cpuUsage.set(usage.coerceAtMost(100f))
             }
         }
-        
+
         // Update previous values
         lastCpuUsageTotal = cpuTimeTotal
         lastCpuUsageApp = appCpuTime
     }
-    
+
     /**
      * Update CPU usage using ActivityManager
      * This is a safer alternative that works on all Android versions
      */
     private fun updateCpuUsageViaActivityManager() {
         val am = activityManager ?: return
-        
+
         // Get process memory info
         val pid = Process.myPid()
         val pids = intArrayOf(pid)
         val procMemInfo = am.getProcessMemoryInfo(pids)
-        
+
         if (procMemInfo.isNotEmpty()) {
             // For CPU approximation, we can use memory info indirectly
             // Higher memory pressure often correlates with higher CPU usage
@@ -389,12 +391,12 @@ class PerformanceMonitor {
             val memInfo = procMemInfo[0]
             val totalPss = memInfo.totalPss.toFloat()
             val totalPrivateDirty = memInfo.totalPrivateDirty.toFloat()
-            
+
             // Get total available memory
             val memoryInfo = ActivityManager.MemoryInfo()
             am.getMemoryInfo(memoryInfo)
             val totalMem = memoryInfo.totalMem / 1024f
-            
+
             // Calculate an approximate CPU usage based on memory pressure
             // This is not accurate, but gives us a relative indication
             val approxCpuUsage = if (totalPss > 0 && totalMem > 0) {
@@ -402,12 +404,12 @@ class PerformanceMonitor {
             } else {
                 0f
             }
-            
+
             // Set to a reasonable range
             cpuUsage.set(approxCpuUsage.coerceIn(0f, 100f))
         }
     }
-    
+
     /**
      * Update CPU usage using Debug API
      * Another alternative method
@@ -417,18 +419,18 @@ class PerformanceMonitor {
         val threadCpuTimeNs = Debug.threadCpuTimeNanos()
         val processTime = Process.getElapsedCpuTime()
         val totalCpuTimeNs = threadCpuTimeNs + processTime
-        
+
         // If we have previous values, calculate the change
         if (lastCpuUsageTotal > 0 && lastCpuUsageApp > 0) {
             val appDelta = threadCpuTimeNs - lastCpuUsageApp
             val totalDelta = totalCpuTimeNs - lastCpuUsageTotal
-            
+
             if (totalDelta > 0) {
                 val usage = (appDelta.toFloat() / totalDelta.toFloat()) * 100f
                 cpuUsage.set(usage.coerceIn(0f, 100f))
             }
         }
-        
+
         // Update previous values
         lastCpuUsageTotal = totalCpuTimeNs
         lastCpuUsageApp = threadCpuTimeNs
@@ -445,10 +447,10 @@ class PerformanceMonitor {
                 stopMonitoringOnMainThread()
             } else {
                 handler.post {
-                    stopMonitoringOnMainThread() 
+                    stopMonitoringOnMainThread()
                 }
             }
-            
+
             // Stop CPU monitoring - this can run on any thread
             try {
                 cpuExecutor?.let { executor ->
@@ -460,7 +462,7 @@ class PerformanceMonitor {
             } catch (e: Exception) {
                 Log.e(TAG, "Error shutting down CPU monitoring", e)
             }
-            
+
             Log.d(TAG, "Performance monitoring stopped")
         }
     }
@@ -481,17 +483,17 @@ class PerformanceMonitor {
         if (activityManager == null) {
             initialize(context)
         }
-        
+
         val memoryMetrics = getMemoryMetrics(context)
         val jankMetrics = calculateJankMetrics()
-        
+
         // Calculate FPS based on current data
         val currentTimeMs = System.currentTimeMillis()
         val fps: Float
-        
+
         lock.withLock {
             val elapsedMs = currentTimeMs - lastFpsUpdate
-            
+
             // If we've been running for a while, calculate the current rate
             fps = if (elapsedMs > 0) {
                 (framesRendered.toFloat() / elapsedMs) * 1000
@@ -499,7 +501,7 @@ class PerformanceMonitor {
                 0f
             }
         }
-        
+
         return PerformanceMetrics(
             fps = fps,
             memoryUsageMb = memoryMetrics.usedMemoryMb,
@@ -518,7 +520,10 @@ class PerformanceMonitor {
         val freeMemory = runtime.freeMemory() / (1024 * 1024)
         val maxMemory = runtime.maxMemory() / (1024 * 1024)
 
-        Log.d(TAG, "Memory - Used: $usedMemory MB, Free: $freeMemory MB, Total: $totalMemory MB, Max: $maxMemory MB")
+        Log.d(
+            TAG,
+            "Memory - Used: $usedMemory MB, Free: $freeMemory MB, Total: $totalMemory MB, Max: $maxMemory MB"
+        )
         Log.d(TAG, "CPU Usage: ${cpuUsage.get()}%")
 
         return MemoryMetrics(
@@ -537,7 +542,7 @@ class PerformanceMonitor {
         val maxMemoryMb: Long,
         val cpuUsagePercent: Float = 0f
     )
-    
+
     /**
      * Performance metrics data class (combined metrics)
      */
@@ -559,20 +564,20 @@ class PerformanceMonitor {
                     executor.shutdownNow()
                 }
             }
-            
+
             // Create a new executor
             cpuExecutor = Executors.newSingleThreadScheduledExecutor()
-            
+
             // Reset counters
             taskExecutionCount.set(0)
             lastTaskCountResetTime.set(System.currentTimeMillis())
-            
+
             // Schedule task with a delay to avoid immediate execution
             cpuExecutor?.schedule(
-                { 
+                {
                     // Only restart if monitoring is still active
                     if (isMonitoring.get()) {
-                        startCpuMonitoring() 
+                        startCpuMonitoring()
                     }
                 },
                 1,
@@ -610,7 +615,7 @@ fun PerformanceMonitorEffect(
             val runnable = object : Runnable {
                 override fun run() {
                     if (!enabled) return
-                    
+
                     val metrics = performanceMonitor.getMemoryMetrics(context)
                     memoryUsage = metrics.usedMemoryMb
                     cpuUsage = metrics.cpuUsagePercent
@@ -627,7 +632,7 @@ fun PerformanceMonitorEffect(
         if (enabled) {
             // Use no-argument startMonitoring to avoid ambiguity
             performanceMonitor.startMonitoring()
-            
+
             // Add a manual FPS callback
             performanceMonitor.setFpsCallback { newFps ->
                 fps = newFps

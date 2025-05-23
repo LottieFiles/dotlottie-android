@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,7 +32,7 @@ fun PerformanceOverlay(
     var fps by remember { mutableFloatStateOf(0f) }
     var memoryUsage by remember { mutableLongStateOf(0L) }
     var cpuUsage by remember { mutableFloatStateOf(0f) }
-    
+
     // Add the performance monitor effect
     PerformanceMonitorEffect(
         enabled = enabled,
@@ -43,7 +42,7 @@ fun PerformanceOverlay(
             cpuUsage = newCpuUsage
         }
     )
-    
+
     if (enabled) {
         Column(
             modifier = modifier
@@ -64,17 +63,17 @@ fun PerformanceOverlay(
                 },
                 fontSize = 14.sp
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
                 text = "Memory: $memoryUsage MB",
                 color = Color.White,
                 fontSize = 14.sp
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             // CPU usage might be approximate on newer Android versions
             Text(
                 text = "CPU: ${df.format(cpuUsage)}% (approx)",

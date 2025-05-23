@@ -16,9 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -41,12 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
-import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.example.homesample.presentation.LottieView
 import kotlin.math.roundToInt
 
@@ -66,17 +60,18 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
     var showControls by remember { mutableStateOf(true) }
     var useInterpolation by remember { mutableStateOf(true) }
     var animationSize by remember { mutableIntStateOf(120) }
-    
+
     // Use the swag_sticker_piggy.lottie URL for better performance testing
-    val lottieUrl = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
-    
+    val lottieUrl =
+        "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"
+
     // Generate animation items once
     val animationItems = remember(animationCount, useInterpolation) {
-        List(animationCount) { index -> 
+        List(animationCount) { index ->
             AnimationItem(id = index, useInterpolation = useInterpolation)
         }
     }
-    
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -117,7 +112,7 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                         onAnimationSizeChanged = { animationSize = it }
                     )
                 }
-                
+
                 // Grid of animations using LottieView
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(animationSize.dp),
@@ -144,7 +139,7 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                     }
                 }
             }
-            
+
             // Toggle button for controls
             Button(
                 onClick = { showControls = !showControls },
@@ -154,7 +149,7 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
             ) {
                 Text(text = if (showControls) "Hide Controls" else "Show Controls")
             }
-            
+
             // Overlay with performance metrics
             PerformanceOverlay(
                 modifier = Modifier.align(Alignment.TopStart)
@@ -186,16 +181,20 @@ private fun ControlPanel(
             .padding(16.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                RoundedCornerShape(8.dp)
+            )
             .padding(16.dp)
     ) {
         Text(
             text = "Performance Test Controls",
             style = MaterialTheme.typography.titleMedium
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Number of animations
         Text(text = "Number of animations: $animationCount")
         Slider(
@@ -204,9 +203,9 @@ private fun ControlPanel(
             valueRange = 1f..50f,
             steps = 48
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Animation size
         Text(text = "Animation size: ${animationSize}dp")
         Slider(
@@ -215,9 +214,9 @@ private fun ControlPanel(
             valueRange = 50f..200f,
             steps = 14
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Frame interpolation
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -230,9 +229,9 @@ private fun ControlPanel(
                 Text(text = if (useInterpolation) "ON" else "OFF")
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Test buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -241,11 +240,11 @@ private fun ControlPanel(
             Button(onClick = { onAnimationCountChanged(4) }) {
                 Text(text = "4 animations")
             }
-            
+
             Button(onClick = { onAnimationCountChanged(9) }) {
                 Text(text = "9 animations")
             }
-            
+
             Button(onClick = { onAnimationCountChanged(16) }) {
                 Text(text = "16 animations")
             }

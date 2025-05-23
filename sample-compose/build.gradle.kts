@@ -53,7 +53,7 @@ android {
 
 dependencies {
     implementation(project(":dotlottie"))
-    implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation(libs.androidx.palette.ktx)
     implementation(libs.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx.v262)
     implementation(libs.activity.compose)
@@ -62,11 +62,8 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
-    
-    // Airbnb Lottie library for comparison
-    implementation("com.airbnb.android:lottie:6.1.0")
-    implementation("com.airbnb.android:lottie-compose:6.1.0")
-    
+    implementation(libs.lottie)
+    implementation(libs.lottie.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -74,6 +71,4 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
-    
-    // Performance monitoring - using Android's built-in logging
 }
