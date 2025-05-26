@@ -41,19 +41,25 @@ import com.lottiefiles.example.homesample.data.SectionType
 import com.lottiefiles.example.homesample.data.User
 import com.lottiefiles.example.util.MobilePortraitPreview
 
+enum class LottieLibraryType {
+    DOT_LOTTIE,
+    AIRBNB_LOTTIE
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     uiState: HomeUIState,
     onAnimationClick: (AnimationBundle) -> Unit,
-    onBackClick: (() -> Unit)? = null
+    onBackClick: (() -> Unit)? = null,
+    libraryType: LottieLibraryType = LottieLibraryType.DOT_LOTTIE
 ) {
     val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Home") },
+                title = { Text("Home (${libraryType.name})") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -81,12 +87,28 @@ fun HomeScreen(
         ) {
             // Featured Banner
             if (uiState.featuredAnimations.isNotEmpty()) {
-                val firstFeaturedAnimation = uiState.featuredAnimations.firstOrNull()?.lottieUrl
+                val firstFeaturedAnimation =
+                    if (libraryType == LottieLibraryType.DOT_LOTTIE) {
+                        uiState.featuredAnimations.firstOrNull()?.lottieUrl
+                    } else {
+                        uiState.featuredAnimations.firstOrNull()?.jsonUrl
+                    }
                 firstFeaturedAnimation?.let {
-                    LottieView(
-                        url = it,
-                        modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
-                    )
+                    when (libraryType) {
+                        LottieLibraryType.DOT_LOTTIE -> {
+                            DotLottieView(
+                                url = it,
+                                modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
+                            )
+                        }
+
+                        LottieLibraryType.AIRBNB_LOTTIE -> {
+                            AirbnbLottieView(
+                                url = it,
+                                modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
+                            )
+                        }
+                    }
                 }
             }
             // Rest of the sections
@@ -99,6 +121,7 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
+                    libraryType = libraryType
                 )
             }
 
@@ -110,6 +133,7 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
+                    libraryType = libraryType
                 )
             }
 
@@ -121,6 +145,7 @@ fun HomeScreen(
                             !it.lottieUrl.isNullOrEmpty()
                         },
                     onAnimationClick = onAnimationClick,
+                    libraryType = libraryType
                 )
             }
         }
@@ -132,6 +157,7 @@ fun AnimationSection(
     sectionType: SectionType,
     animations: List<AnimationBundle>,
     onAnimationClick: (AnimationBundle) -> Unit,
+    libraryType: LottieLibraryType,
     modifier: Modifier = Modifier.padding(vertical = 16.dp)
 ) {
     val lazyListState = rememberLazyListState()
@@ -174,6 +200,7 @@ fun AnimationSection(
                 AnimationCard(
                     animation = animation,
                     onClick = { onAnimationClick(animation) },
+                    libraryType = libraryType
                 )
             }
         }
@@ -184,6 +211,7 @@ fun AnimationSection(
 fun AnimationCard(
     animation: AnimationBundle,
     onClick: () -> Unit,
+    libraryType: LottieLibraryType
 ) {
     Card(
         modifier =
@@ -194,13 +222,27 @@ fun AnimationCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = onClick) {
         Column {
-            LottieView(
-                url = animation.lottieUrl ?: "",
-                modifier =
-                    Modifier
-                        .aspectRatio(1f)
-                        .align(Alignment.CenterHorizontally)
-            )
+            when (libraryType) {
+                LottieLibraryType.DOT_LOTTIE -> {
+                    DotLottieView(
+                        url = animation.lottieUrl ?: "",
+                        modifier =
+                            Modifier
+                                .aspectRatio(1f)
+                                .align(Alignment.CenterHorizontally)
+                    )
+                }
+
+                LottieLibraryType.AIRBNB_LOTTIE -> {
+                    AirbnbLottieView(
+                        url = animation.jsonUrl ?: "",
+                        modifier =
+                            Modifier
+                                .aspectRatio(1f)
+                                .align(Alignment.CenterHorizontally)
+                    )
+                }
+            }
 
             Column(
                 modifier =
@@ -241,7 +283,8 @@ private fun HomeScreenPreview() {
     HomeScreen(
         previewState,
         onAnimationClick = { _ -> },
-        onBackClick = null
+        onBackClick = null,
+        libraryType = LottieLibraryType.DOT_LOTTIE
     )
 }
 
@@ -254,7 +297,8 @@ private fun AnimationCardPreview() {
                 name = "Cool Animation",
                 createdBy = User(username = "John Doe")
             ),
-        onClick = {}
+        onClick = {},
+        libraryType = LottieLibraryType.DOT_LOTTIE
     )
 }
 

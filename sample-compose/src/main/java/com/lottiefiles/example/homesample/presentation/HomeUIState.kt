@@ -42,7 +42,8 @@ val sampleAnimationBundle = AnimationBundle(
     id = 1,
     name = "Sample Animation",
     bgColor = "#FFFFFF",
-    lottieUrl = "https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie",
+    jsonUrl = "https://lottie.host/e55c67db-398a-4b32-9c21-d5ccc374658c/C6ZURJ4vJP.json",
+    lottieUrl = "https://lottie.host/d205a0a0-3e1c-4501-a036-7719e9668616/5sOh6gibkX.lottie",
     createdBy = User(
         id = "1", firstName = "John", lastName = "Doe", email = "username@email.com"
     )

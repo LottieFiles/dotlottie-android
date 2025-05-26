@@ -41,7 +41,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.lottiefiles.example.homesample.presentation.LottieView
+import com.lottiefiles.example.homesample.presentation.AirbnbLottieView
+import com.lottiefiles.example.homesample.presentation.DotLottieView
 
 private object BenchmarkConstants {
     const val JSON_ANIMATION_URL =
@@ -299,7 +300,7 @@ private fun RunningStateContent(
                 }
 
                 config.library == BenchmarkRunner.LibraryType.DOT_LOTTIE -> {
-                    DotLottieDotLottieContainer(
+                    DotLottieContainer(
                         count = config.animationCount,
                         useInterpolation = config.useInterpolation,
                         size = BenchmarkConstants.DEFAULT_ANIMATION_SIZE,
@@ -574,7 +575,7 @@ private fun DotLottieJsonContainer(
             count = count,
             key = { index -> "$index-json-$useInterpolation" }
         ) { index ->
-            LottieView(
+            DotLottieView(
                 url = BenchmarkConstants.JSON_ANIMATION_URL,
                 useFrameInterpolation = useInterpolation,
                 modifier = Modifier
@@ -588,7 +589,7 @@ private fun DotLottieJsonContainer(
 }
 
 @Composable
-private fun DotLottieDotLottieContainer(
+private fun DotLottieContainer(
     count: Int,
     useInterpolation: Boolean,
     size: Int,
@@ -602,7 +603,7 @@ private fun DotLottieDotLottieContainer(
             count = count,
             key = { index -> "$index-lottie-$useInterpolation" }
         ) { index ->
-            LottieView(
+            DotLottieView(
                 url = BenchmarkConstants.LOTTIE_ANIMATION_URL,
                 useFrameInterpolation = useInterpolation,
                 modifier = Modifier

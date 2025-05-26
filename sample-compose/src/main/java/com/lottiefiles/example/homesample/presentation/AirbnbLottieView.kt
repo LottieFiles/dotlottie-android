@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performance
+package com.lottiefiles.example.homesample.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

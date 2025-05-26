@@ -41,7 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.example.homesample.presentation.LottieView
+import com.lottiefiles.example.homesample.presentation.DotLottieView
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,7 +124,7 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                         items = animationItems,
                         key = { item -> "${item.id}-${item.useInterpolation}" }
                     ) { item ->
-                        LottieView(
+                        DotLottieView(
                             url = lottieUrl,
                             autoPlay = true,
                             loop = true,

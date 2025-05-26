@@ -3,15 +3,12 @@ package com.lottiefiles.example.homesample.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
@@ -23,7 +20,7 @@ import com.lottiefiles.dotlottie.core.util.LayoutUtil
  * A wrapper component for DotLottieAnimation to handle Lottie animations with consistent settings.
  */
 @Composable
-fun LottieView(
+fun DotLottieView(
     url: String,
     modifier: Modifier = Modifier
 ) {
@@ -39,7 +36,7 @@ fun LottieView(
 }
 
 @Composable
-fun LottieView(
+fun DotLottieView(
     url: String,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.White,

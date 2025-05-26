@@ -6,6 +6,7 @@ data class AnimationBundle(
     var name: String? = null,
     var bgColor: String? = null,
     var lottieUrl: String? = null,
+    var jsonUrl: String? = null,
     var createdBy: User? = null,
 )
 

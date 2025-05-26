@@ -15,19 +15,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.lottiefiles.example.homesample.presentation.HomeScreen
 import com.lottiefiles.example.homesample.presentation.HomeUIState
+import com.lottiefiles.example.homesample.presentation.LottieLibraryType
 import com.lottiefiles.example.performance.BenchmarkScreen
 import com.lottiefiles.example.performance.PerformanceTestScreen
 import com.lottiefiles.example.performance.PermissionsHelper
@@ -134,7 +139,8 @@ fun MainScreen(
             HomeScreen(
                 uiState = HomeUIState(),
                 onAnimationClick = {},
-                onBackClick = { onScreenSelected(Screen.Menu) }
+                onBackClick = { onScreenSelected(Screen.Menu) },
+                libraryType = selectedScreen.libraryType
             )
         }
 
@@ -154,6 +160,8 @@ fun MainScreen(
 
 @Composable
 fun MenuScreen(onScreenSelected: (Screen) -> Unit) {
+    var showLibrarySelectionDialog by remember { mutableStateOf(false) }
+
     Scaffold { paddingValues ->
         Column(
             modifier = Modifier
@@ -170,7 +178,7 @@ fun MenuScreen(onScreenSelected: (Screen) -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onScreenSelected(Screen.Home) },
+                onClick = { showLibrarySelectionDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "HomeScreen (Normal UI)")
@@ -195,11 +203,39 @@ fun MenuScreen(onScreenSelected: (Screen) -> Unit) {
             }
         }
     }
+
+    if (showLibrarySelectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showLibrarySelectionDialog = false },
+            title = { Text("Select Lottie Library") },
+            text = { Text("Choose which Lottie library to use for the HomeScreen") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLibrarySelectionDialog = false
+                        onScreenSelected(Screen.Home(LottieLibraryType.DOT_LOTTIE))
+                    }
+                ) {
+                    Text("DotLottie")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = {
+                        showLibrarySelectionDialog = false
+                        onScreenSelected(Screen.Home(LottieLibraryType.AIRBNB_LOTTIE))
+                    }
+                ) {
+                    Text("Airbnb Lottie")
+                }
+            }
+        )
+    }
 }
 
 sealed class Screen {
     object Menu : Screen()
-    object Home : Screen()
+    data class Home(val libraryType: LottieLibraryType) : Screen()
     object PerformanceTest : Screen()
     object Benchmark : Screen()
 }
