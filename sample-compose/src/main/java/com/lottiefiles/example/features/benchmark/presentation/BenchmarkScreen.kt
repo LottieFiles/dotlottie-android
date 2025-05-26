@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,7 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -135,7 +138,10 @@ fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
                 is BenchmarkRunner.BenchmarkState.Running -> {
                     RunningStateContent(
                         state = state,
-                        onStopBenchmark = { benchmarkRunner.stopBenchmark() }
+                        onStopBenchmark = { 
+                            benchmarkRunner.stopBenchmark()
+                            onBackClick?.invoke()
+                        }
                     )
                 }
 
@@ -235,6 +241,7 @@ private fun RunningStateContent(
     onStopBenchmark: () -> Unit
 ) {
     val config = state.config
+    var showStopConfirmation by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -322,11 +329,36 @@ private fun RunningStateContent(
         }
 
         Button(
-            onClick = onStopBenchmark,
+            onClick = { showStopConfirmation = true },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(text = "Stop Benchmark")
         }
+    }
+
+    if (showStopConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showStopConfirmation = false },
+            title = { Text("Stop Benchmark?") },
+            text = { Text("Are you sure you want to stop the benchmark? This will discard the current test results.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showStopConfirmation = false
+                        onStopBenchmark()
+                    }
+                ) {
+                    Text("Stop")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showStopConfirmation = false }
+                ) {
+                    Text("Continue")
+                }
+            }
+        )
     }
 }
 
