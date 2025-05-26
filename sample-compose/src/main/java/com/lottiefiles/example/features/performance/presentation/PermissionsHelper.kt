@@ -1,11 +1,9 @@
 package com.lottiefiles.example.features.performance.presentation
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +16,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +30,6 @@ import androidx.core.content.ContextCompat
  * Helper class for handling storage permissions in the app
  */
 object PermissionsHelper {
-    private const val TAG = "PermissionsHelper"
 
     /**
      * Check if storage permission is granted
@@ -60,22 +56,6 @@ object PermissionsHelper {
         return dir?.canWrite() == true
     }
 
-    /**
-     * Get a directory suitable for writing benchmark reports
-     */
-    fun getBenchmarkReportsDir(context: Context): java.io.File? {
-        val externalFilesDir = context.getExternalFilesDir(null)
-
-        // Create the directory if it doesn't exist
-        if (externalFilesDir != null && !externalFilesDir.exists()) {
-            if (!externalFilesDir.mkdirs()) {
-                Log.e(TAG, "Failed to create external files directory")
-                return null
-            }
-        }
-
-        return externalFilesDir
-    }
 }
 
 /**
@@ -137,8 +117,7 @@ fun PermissionRequiredScreen(
 
         Button(
             onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
                 ) {
                     permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
