@@ -1,5 +1,6 @@
 package com.lottiefiles.example.features.benchmark.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,6 +90,12 @@ fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
     val context = LocalContext.current
     val benchmarkRunner = remember { BenchmarkRunner(context) }
     val benchmarkState by benchmarkRunner.benchmarkState.collectAsState()
+    var showStopConfirmation by remember { mutableStateOf(false) }
+
+    // Handle back button press
+    BackHandler(enabled = benchmarkState is BenchmarkRunner.BenchmarkState.Running) {
+        showStopConfirmation = true
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -101,7 +108,15 @@ fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
                 ),
                 navigationIcon = {
                     if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
+                        IconButton(
+                            onClick = {
+                                if (benchmarkState is BenchmarkRunner.BenchmarkState.Running) {
+                                    showStopConfirmation = true
+                                } else {
+                                    onBackClick()
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
                                 contentDescription = "Back"
@@ -158,6 +173,33 @@ fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
                 modifier = Modifier.align(Alignment.TopStart)
             )
         }
+    }
+
+    // Show confirmation dialog when trying to exit during benchmark
+    if (showStopConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showStopConfirmation = false },
+            title = { Text("Stop Benchmark?") },
+            text = { Text("Are you sure you want to stop the benchmark? This will discard the current test results.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showStopConfirmation = false
+                        benchmarkRunner.stopBenchmark()
+                        onBackClick?.invoke()
+                    }
+                ) {
+                    Text("Stop")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showStopConfirmation = false }
+                ) {
+                    Text("Continue")
+                }
+            }
+        )
     }
 
     // Ensure benchmark is stopped when leaving the screen

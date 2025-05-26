@@ -1,9 +1,11 @@
 package com.lottiefiles.example.features.performance.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -16,9 +18,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lottiefiles.example.core.util.PerformanceMonitorEffect
+import kotlin.math.roundToInt
 import java.text.DecimalFormat
 
 /**
@@ -34,6 +39,10 @@ fun PerformanceOverlay(
     var memoryUsage by remember { mutableLongStateOf(0L) }
     var cpuUsage by remember { mutableFloatStateOf(0f) }
 
+    // Position state for dragging
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+
     // Add the performance monitor effect
     PerformanceMonitorEffect(
         enabled = enabled,
@@ -47,6 +56,14 @@ fun PerformanceOverlay(
     if (enabled) {
         Column(
             modifier = modifier
+                .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                .pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        offsetX += dragAmount.x
+                        offsetY += dragAmount.y
+                    }
+                }
                 .padding(16.dp)
                 .background(
                     color = Color.Black.copy(alpha = 0.7f),
