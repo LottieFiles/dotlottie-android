@@ -2,6 +2,7 @@ package com.lottiefiles.example.homesample.presentation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -39,6 +42,8 @@ import com.lottiefiles.example.R
 import com.lottiefiles.example.homesample.data.AnimationBundle
 import com.lottiefiles.example.homesample.data.SectionType
 import com.lottiefiles.example.homesample.data.User
+import com.lottiefiles.example.performance.PerformanceMonitor
+import com.lottiefiles.example.performance.PerformanceOverlay
 import com.lottiefiles.example.util.MobilePortraitPreview
 
 enum class LottieLibraryType {
@@ -55,6 +60,15 @@ fun HomeScreen(
     libraryType: LottieLibraryType = LottieLibraryType.DOT_LOTTIE
 ) {
     val scrollState = rememberScrollState()
+    val performanceMonitor = remember { PerformanceMonitor() }
+
+    // Start performance monitoring
+    DisposableEffect(Unit) {
+        performanceMonitor.startMonitoring()
+        onDispose {
+            performanceMonitor.stopMonitoring()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -77,77 +91,84 @@ fun HomeScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(paddingValues)
-                    .padding(bottom = 60.dp)
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Featured Banner
-            if (uiState.featuredAnimations.isNotEmpty()) {
-                val firstFeaturedAnimation =
-                    if (libraryType == LottieLibraryType.DOT_LOTTIE) {
-                        uiState.featuredAnimations.firstOrNull()?.lottieUrl
-                    } else {
-                        uiState.featuredAnimations.firstOrNull()?.jsonUrl
-                    }
-                firstFeaturedAnimation?.let {
-                    when (libraryType) {
-                        LottieLibraryType.DOT_LOTTIE -> {
-                            DotLottieView(
-                                url = it,
-                                modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
-                            )
-                        }
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(paddingValues)
+                        .padding(bottom = 60.dp)
+            ) {
+                // Featured Banner
+                if (uiState.featuredAnimations.isNotEmpty()) {
+                    val firstFeaturedAnimation = uiState.featuredAnimations.firstOrNull()?.jsonUrl
 
-                        LottieLibraryType.AIRBNB_LOTTIE -> {
-                            AirbnbLottieView(
-                                url = it,
-                                modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
-                            )
+                    firstFeaturedAnimation?.let {
+                        when (libraryType) {
+                            LottieLibraryType.DOT_LOTTIE -> {
+                                DotLottieView(
+                                    url = it,
+                                    modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
+                                )
+                            }
+
+                            LottieLibraryType.AIRBNB_LOTTIE -> {
+                                AirbnbLottieView(
+                                    url = it,
+                                    modifier = Modifier.clickable { onAnimationClick(uiState.featuredAnimations.first()) }
+                                )
+                            }
                         }
                     }
                 }
-            }
-            // Rest of the sections
-            if (uiState.featuredAnimations.isNotEmpty()) {
-                AnimationSection(
-                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
-                    sectionType = SectionType.FeaturedAnimations,
-                    animations =
-                        uiState.featuredAnimations.filter {
-                            !it.lottieUrl.isNullOrEmpty()
-                        },
-                    onAnimationClick = onAnimationClick,
-                    libraryType = libraryType
-                )
+                // Rest of the sections
+                if (uiState.featuredAnimations.isNotEmpty()) {
+                    AnimationSection(
+                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                        sectionType = SectionType.FeaturedAnimations,
+                        animations =
+                            uiState.featuredAnimations.filter {
+                                !it.lottieUrl.isNullOrEmpty()
+                            },
+                        onAnimationClick = onAnimationClick,
+                        libraryType = libraryType
+                    )
+                }
+
+                if (uiState.popularAnimations.isNotEmpty()) {
+                    AnimationSection(
+                        sectionType = SectionType.PopularAnimations,
+                        animations =
+                            uiState.popularAnimations.filter {
+                                !it.lottieUrl.isNullOrEmpty()
+                            },
+                        onAnimationClick = onAnimationClick,
+                        libraryType = libraryType
+                    )
+                }
+
+                if (uiState.recentAnimations.isNotEmpty()) {
+                    AnimationSection(
+                        sectionType = SectionType.RecentAnimations,
+                        animations =
+                            uiState.recentAnimations.filter {
+                                !it.lottieUrl.isNullOrEmpty()
+                            },
+                        onAnimationClick = onAnimationClick,
+                        libraryType = libraryType
+                    )
+                }
             }
 
-            if (uiState.popularAnimations.isNotEmpty()) {
-                AnimationSection(
-                    sectionType = SectionType.PopularAnimations,
-                    animations =
-                        uiState.popularAnimations.filter {
-                            !it.lottieUrl.isNullOrEmpty()
-                        },
-                    onAnimationClick = onAnimationClick,
-                    libraryType = libraryType
-                )
-            }
-
-            if (uiState.recentAnimations.isNotEmpty()) {
-                AnimationSection(
-                    sectionType = SectionType.RecentAnimations,
-                    animations =
-                        uiState.recentAnimations.filter {
-                            !it.lottieUrl.isNullOrEmpty()
-                        },
-                    onAnimationClick = onAnimationClick,
-                    libraryType = libraryType
-                )
-            }
+            // Performance overlay
+            PerformanceOverlay(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 56.dp)
+            )
         }
     }
 }
@@ -225,7 +246,7 @@ fun AnimationCard(
             when (libraryType) {
                 LottieLibraryType.DOT_LOTTIE -> {
                     DotLottieView(
-                        url = animation.lottieUrl ?: "",
+                        url = animation.jsonUrl ?: "",
                         modifier =
                             Modifier
                                 .aspectRatio(1f)
