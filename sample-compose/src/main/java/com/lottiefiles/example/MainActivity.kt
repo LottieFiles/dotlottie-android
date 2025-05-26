@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
         setupBackButtonHandling()
 
         // Request storage permissions early - for Android 10 and below
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE

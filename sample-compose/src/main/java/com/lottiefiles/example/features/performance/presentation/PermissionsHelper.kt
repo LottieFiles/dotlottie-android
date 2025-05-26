@@ -43,7 +43,7 @@ object PermissionsHelper {
      */
     fun hasStoragePermission(context: Context): Boolean {
         // For Android 10 and below, we need explicit permissions
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
             return ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE

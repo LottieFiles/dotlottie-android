@@ -26,8 +26,8 @@ import java.text.DecimalFormat
  */
 @Composable
 fun PerformanceOverlay(
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     val df = remember { DecimalFormat("#.##") }
     var fps by remember { mutableFloatStateOf(0f) }

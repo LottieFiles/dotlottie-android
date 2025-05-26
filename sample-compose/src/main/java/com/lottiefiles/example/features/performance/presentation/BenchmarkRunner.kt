@@ -1,5 +1,6 @@
 package com.lottiefiles.example.features.performance.presentation
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -372,16 +373,16 @@ class BenchmarkRunner(private val context: Context) {
                 maxFps = fpsValues.maxOrNull() ?: 0f
             }
 
-            var avgMemory = 0L
-            var peakMemory = 0L
+            var avgMemory: Long
+            var peakMemory: Long
 
             synchronized(memoryValues) {
                 avgMemory = if (memoryValues.isNotEmpty()) memoryValues.average().toLong() else 0L
                 peakMemory = memoryValues.maxOrNull() ?: 0L
             }
 
-            var avgCpu = 0f
-            var peakCpu = 0f
+            var avgCpu: Float
+            var peakCpu: Float
 
             synchronized(cpuValues) {
                 avgCpu = if (cpuValues.isNotEmpty()) cpuValues.average().toFloat() else 0f
@@ -416,6 +417,7 @@ class BenchmarkRunner(private val context: Context) {
     /**
      * Generate a CSV report with the benchmark results
      */
+    @SuppressLint("DefaultLocale")
     private fun generateReport() {
         scope.launch {
             try {
