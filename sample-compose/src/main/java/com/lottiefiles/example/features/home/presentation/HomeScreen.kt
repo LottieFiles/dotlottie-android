@@ -1,4 +1,4 @@
-package com.lottiefiles.example.home.presentation
+package com.lottiefiles.example.features.home.presentation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,12 +39,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lottiefiles.example.R
-import com.lottiefiles.example.home.data.AnimationBundle
-import com.lottiefiles.example.home.data.SectionType
-import com.lottiefiles.example.home.data.User
-import com.lottiefiles.example.util.PerformanceMonitor
-import com.lottiefiles.example.performancetest.PerformanceOverlay
-import com.lottiefiles.example.util.MobilePortraitPreview
+import com.lottiefiles.example.core.util.MobilePortraitPreview
+import com.lottiefiles.example.core.util.PerformanceMonitor
+import com.lottiefiles.example.features.home.data.AnimationBundle
+import com.lottiefiles.example.features.home.data.SectionType
+import com.lottiefiles.example.features.home.data.User
+import com.lottiefiles.example.features.performance.presentation.PerformanceOverlay
 
 enum class LottieLibraryType {
     DOT_LOTTIE,

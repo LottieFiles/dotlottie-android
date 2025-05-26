@@ -1,4 +1,4 @@
-package com.lottiefiles.example.util
+package com.lottiefiles.example.core.util
 
 import android.app.Activity
 import android.app.ActivityManager

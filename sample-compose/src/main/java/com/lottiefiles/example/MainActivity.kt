@@ -30,14 +30,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.lottiefiles.example.home.presentation.HomeScreen
-import com.lottiefiles.example.home.presentation.HomeUIState
-import com.lottiefiles.example.home.presentation.LottieLibraryType
-import com.lottiefiles.example.benchmark.BenchmarkScreen
-import com.lottiefiles.example.performancetest.PerformanceTestScreen
-import com.lottiefiles.example.performancetest.PermissionsHelper
-import com.lottiefiles.example.util.enableHardwareAcceleration
-import com.lottiefiles.example.ui.theme.ExampleTheme
+import com.lottiefiles.example.core.theme.ExampleTheme
+import com.lottiefiles.example.core.util.enableHardwareAcceleration
+import com.lottiefiles.example.features.benchmark.presentation.BenchmarkScreen
+import com.lottiefiles.example.features.home.presentation.HomeScreen
+import com.lottiefiles.example.features.home.presentation.HomeUIState
+import com.lottiefiles.example.features.home.presentation.LottieLibraryType
+import com.lottiefiles.example.features.performance.presentation.PerformanceTestScreen
+import com.lottiefiles.example.features.performance.presentation.PermissionsHelper
 
 class MainActivity : ComponentActivity() {
     // Store the current screen to handle back navigation

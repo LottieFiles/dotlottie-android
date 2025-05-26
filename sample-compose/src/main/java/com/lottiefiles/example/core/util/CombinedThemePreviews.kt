@@ -1,4 +1,4 @@
-package com.lottiefiles.example.util
+package com.lottiefiles.example.core.util
 
 import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview

@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performancetest
+package com.lottiefiles.example.features.performance.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,7 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dotlottie.dlplayer.Mode
-import com.lottiefiles.example.home.presentation.DotLottieView
+import com.lottiefiles.example.features.home.presentation.DotLottieView
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,4 +1,4 @@
-package com.lottiefiles.example.ui.theme
+package com.lottiefiles.example.core.theme
 
 import android.app.Activity
 import android.os.Build

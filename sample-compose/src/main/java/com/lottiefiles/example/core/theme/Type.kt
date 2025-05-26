@@ -1,4 +1,4 @@
-package com.lottiefiles.example.ui.theme
+package com.lottiefiles.example.core.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

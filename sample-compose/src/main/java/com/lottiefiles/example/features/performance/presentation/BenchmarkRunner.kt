@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performancetest
+package com.lottiefiles.example.features.performance.presentation
 
 import android.content.Context
 import android.content.Intent
@@ -7,7 +7,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.lottiefiles.example.util.PerformanceMonitor
+import com.lottiefiles.example.core.util.PerformanceMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
