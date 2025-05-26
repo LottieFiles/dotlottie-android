@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 /**
@@ -34,9 +34,6 @@ import androidx.core.content.ContextCompat
  */
 object PermissionsHelper {
     private const val TAG = "PermissionsHelper"
-
-    // Make this public so it can be accessed from MainActivity
-    const val STORAGE_PERMISSION_CODE = 1001
 
     /**
      * Check if storage permission is granted
@@ -51,46 +48,7 @@ object PermissionsHelper {
         }
 
         // For Android 11+ (API 30+), we don't need specific permissions for app-specific directories
-        // But we'll check for general external files dir access
         return canWriteToExternalFilesDir(context)
-    }
-
-    /**
-     * Request storage permission
-     */
-    fun requestStoragePermission(activity: Activity, onPermissionResult: (Boolean) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // For Android 11+, we only need specific permissions for accessing other apps' files
-            // For our own app files, we don't need special permissions
-            onPermissionResult(canWriteToExternalFilesDir(activity))
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // For Android 6-10, request runtime permissions
-            ActivityCompat.requestPermissions(
-                activity,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                STORAGE_PERMISSION_CODE
-            )
-
-            // We'll need to handle onRequestPermissionsResult in the activity
-            // This result will come later
-            onPermissionResult(false)
-        } else {
-            // For Android 5 and below, permissions are granted at install time
-            onPermissionResult(true)
-        }
-    }
-
-    /**
-     * Handle the result of permission request
-     */
-    fun handlePermissionResult(requestCode: Int, grantResults: IntArray): Boolean {
-        return when (requestCode) {
-            STORAGE_PERMISSION_CODE -> {
-                grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            }
-
-            else -> false
-        }
     }
 
     /**
@@ -129,6 +87,7 @@ fun PermissionRequiredScreen(
     onPermissionGranted: @Composable () -> Unit
 ) {
     val context = LocalContext.current
+    var hasPermission by remember { mutableStateOf(PermissionsHelper.hasStoragePermission(context)) }
 
     // On Android 11+ (API 30+), we can always access app-specific directories
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -139,22 +98,10 @@ fun PermissionRequiredScreen(
             // This should rarely happen - show a simple error message
             StorageErrorScreen()
         }
-    } else {
-        // For older Android versions, we need to request permissions
-        StoragePermissionScreen(onPermissionGranted)
+        return
     }
-}
 
-/**
- * Screen that requests storage permissions for Android 6-10
- */
-@Composable
-private fun StoragePermissionScreen(
-    onPermissionGranted: @Composable () -> Unit
-) {
-    val context = LocalContext.current
-    var hasPermission by remember { mutableStateOf(PermissionsHelper.hasStoragePermission(context)) }
-
+    // For older Android versions, we need to request permissions
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->

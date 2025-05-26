@@ -43,17 +43,6 @@ class MainActivity : ComponentActivity() {
     // Store the current screen to handle back navigation
     private val currentScreen = mutableStateOf<Screen>(Screen.Menu)
 
-    // Permission request launchers
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            Toast.makeText(this, "Storage permission granted", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -62,17 +51,6 @@ class MainActivity : ComponentActivity() {
 
         // Set up back button handling
         setupBackButtonHandling()
-
-        // Request storage permissions early - for Android 10 and below
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-        }
 
         setContent {
             ExampleTheme {
@@ -105,23 +83,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        // Handle the permission result
-        if (requestCode == PermissionsHelper.STORAGE_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Storage permission granted", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Storage permission denied", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 }
 
