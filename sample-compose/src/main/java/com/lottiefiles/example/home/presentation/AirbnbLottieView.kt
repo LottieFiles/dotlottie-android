@@ -1,4 +1,4 @@
-package com.lottiefiles.example.homesample.presentation
+package com.lottiefiles.example.home.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performance
+package com.lottiefiles.example.performancetest
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lottiefiles.example.util.PerformanceMonitorEffect
 import java.text.DecimalFormat
 
 /**

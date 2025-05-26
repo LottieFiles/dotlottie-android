@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performance
+package com.lottiefiles.example.benchmark
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,8 +41,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.lottiefiles.example.homesample.presentation.AirbnbLottieView
-import com.lottiefiles.example.homesample.presentation.DotLottieView
+import com.lottiefiles.example.home.presentation.AirbnbLottieView
+import com.lottiefiles.example.home.presentation.DotLottieView
+import com.lottiefiles.example.performancetest.BenchmarkRunner
+import com.lottiefiles.example.performancetest.PerformanceOverlay
+import com.lottiefiles.example.performancetest.PermissionRequiredScreen
 
 private object BenchmarkConstants {
     const val JSON_ANIMATION_URL =

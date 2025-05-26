@@ -30,13 +30,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.lottiefiles.example.homesample.presentation.HomeScreen
-import com.lottiefiles.example.homesample.presentation.HomeUIState
-import com.lottiefiles.example.homesample.presentation.LottieLibraryType
-import com.lottiefiles.example.performance.BenchmarkScreen
-import com.lottiefiles.example.performance.PerformanceTestScreen
-import com.lottiefiles.example.performance.PermissionsHelper
-import com.lottiefiles.example.performance.enableHardwareAcceleration
+import com.lottiefiles.example.home.presentation.HomeScreen
+import com.lottiefiles.example.home.presentation.HomeUIState
+import com.lottiefiles.example.home.presentation.LottieLibraryType
+import com.lottiefiles.example.benchmark.BenchmarkScreen
+import com.lottiefiles.example.performancetest.PerformanceTestScreen
+import com.lottiefiles.example.performancetest.PermissionsHelper
+import com.lottiefiles.example.util.enableHardwareAcceleration
 import com.lottiefiles.example.ui.theme.ExampleTheme
 
 class MainActivity : ComponentActivity() {

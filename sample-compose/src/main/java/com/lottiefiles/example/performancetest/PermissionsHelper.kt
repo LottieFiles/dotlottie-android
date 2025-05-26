@@ -1,4 +1,4 @@
-package com.lottiefiles.example.performance
+package com.lottiefiles.example.performancetest
 
 import android.Manifest
 import android.app.Activity

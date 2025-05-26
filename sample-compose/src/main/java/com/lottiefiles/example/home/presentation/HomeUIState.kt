@@ -1,7 +1,7 @@
-package com.lottiefiles.example.homesample.presentation
+package com.lottiefiles.example.home.presentation
 
-import com.lottiefiles.example.homesample.data.AnimationBundle
-import com.lottiefiles.example.homesample.data.User
+import com.lottiefiles.example.home.data.AnimationBundle
+import com.lottiefiles.example.home.data.User
 
 data class HomeUIState(
     val isLoading: Boolean = true,

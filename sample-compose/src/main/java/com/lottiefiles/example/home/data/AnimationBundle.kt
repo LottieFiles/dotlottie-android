@@ -1,4 +1,4 @@
-package com.lottiefiles.example.homesample.data
+package com.lottiefiles.example.home.data
 
 
 data class AnimationBundle(
