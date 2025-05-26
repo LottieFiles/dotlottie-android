@@ -153,7 +153,7 @@ fun BenchmarkScreenContent(onBackClick: (() -> Unit)? = null) {
                 is BenchmarkRunner.BenchmarkState.Running -> {
                     RunningStateContent(
                         state = state,
-                        onStopBenchmark = { 
+                        onStopBenchmark = {
                             benchmarkRunner.stopBenchmark()
                             onBackClick?.invoke()
                         }

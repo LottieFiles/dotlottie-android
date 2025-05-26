@@ -1,14 +1,9 @@
 package com.lottiefiles.example
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.lottiefiles.example.core.theme.ExampleTheme
 import com.lottiefiles.example.core.util.enableHardwareAcceleration
 import com.lottiefiles.example.features.benchmark.presentation.BenchmarkScreen
@@ -37,7 +31,6 @@ import com.lottiefiles.example.features.home.presentation.HomeScreen
 import com.lottiefiles.example.features.home.presentation.HomeUIState
 import com.lottiefiles.example.features.home.presentation.LottieLibraryType
 import com.lottiefiles.example.features.performance.presentation.PerformanceTestScreen
-import com.lottiefiles.example.features.performance.presentation.PermissionsHelper
 
 class MainActivity : ComponentActivity() {
     // Store the current screen to handle back navigation
