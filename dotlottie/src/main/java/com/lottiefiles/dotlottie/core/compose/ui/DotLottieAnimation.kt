@@ -71,7 +71,8 @@ fun DotLottieAnimation(
             marker = marker ?: "",
             layout = layout,
             themeId = themeId ?: "",
-            stateMachineId = ""
+            stateMachineId = "",
+            animationId = ""
         )
     }
 

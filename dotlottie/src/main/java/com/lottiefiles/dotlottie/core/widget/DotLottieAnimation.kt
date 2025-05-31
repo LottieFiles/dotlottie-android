@@ -299,6 +299,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         layout = config.layout,
                         themeId = config.themeId,
                         stateMachineId = "", // TODO: implement stateMachine
+                        animationId = ""
                     )
                 )
 
@@ -348,6 +349,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         layout = createDefaultLayout(),
                         themeId = attributes.themeId ?: "",
                         stateMachineId = "", // TODO: implement statMachine
+                        animationId = ""
                     )
                 )
                 mLottieDrawable?.callback = this@DotLottieAnimation
