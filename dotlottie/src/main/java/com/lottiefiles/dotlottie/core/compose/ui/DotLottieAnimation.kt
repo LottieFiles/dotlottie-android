@@ -122,6 +122,8 @@ fun DotLottieAnimation(
             val height = layoutSize.height.toUInt()
             val width = layoutSize.width.toUInt()
             val isLoaded = dlPlayer.isLoaded()
+            // Pass the size to the controller
+            rController.resize(height, width)
 
             when (animationData) {
                 is DotLottieContent.Json -> {
