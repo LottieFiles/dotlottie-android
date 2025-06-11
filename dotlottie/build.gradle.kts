@@ -12,7 +12,7 @@ android {
     compileSdk = 33
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 21
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -40,7 +40,13 @@ android {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
-        jniLibs.pickFirsts.add("**/libjnidispatch.so")
+        jniLibs {
+            pickFirsts.add("**/libjnidispatch.so")
+            pickFirsts.add("lib/x86/libjnidispatch.so")
+            pickFirsts.add("lib/x86_64/libjnidispatch.so")
+            pickFirsts.add("lib/arm64-v8a/libjnidispatch.so")
+            pickFirsts.add("lib/armeabi-v7a/libjnidispatch.so")
+        }
     }
 }
 

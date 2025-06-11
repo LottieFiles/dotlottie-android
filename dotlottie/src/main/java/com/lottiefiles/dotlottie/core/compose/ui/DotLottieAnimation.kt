@@ -35,6 +35,8 @@ import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 
+private const val BYTES_PER_PIXEL = 4
+
 @OptIn(InternalDotLottieApi::class)
 @Composable
 fun DotLottieAnimation(
@@ -137,7 +139,7 @@ fun DotLottieAnimation(
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
 
@@ -209,7 +211,7 @@ fun DotLottieAnimation(
             bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             imageBitmap = bitmap!!.asImageBitmap()
         }
     }

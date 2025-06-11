@@ -25,6 +25,8 @@ import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
 
+private const val BYTES_PER_PIXEL = 4
+
 class DotLottieDrawable(
     private val animationData: DotLottieContent,
     private var width: Int = 0,
@@ -392,7 +394,7 @@ class DotLottieDrawable(
         dlPlayer!!.setFrame(nextFrame)
         dlPlayer!!.render()
 
-        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong())
+        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
         bufferBytes.rewind()
         bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
         bufferBytes.rewind()
