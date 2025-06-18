@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.lottiefiles.sample"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.lottiefiles.sample"
@@ -47,13 +47,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-        jniLibs {
-            pickFirsts.add("**/libjnidispatch.so")
-            pickFirsts.add("lib/x86/libjnidispatch.so")
-            pickFirsts.add("lib/x86_64/libjnidispatch.so")
-            pickFirsts.add("lib/arm64-v8a/libjnidispatch.so")
-            pickFirsts.add("lib/armeabi-v7a/libjnidispatch.so")
         }
     }
 }
