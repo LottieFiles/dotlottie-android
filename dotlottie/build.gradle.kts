@@ -5,14 +5,14 @@ plugins {
 }
 
 group = "com.github.LottieFiles"
-version = "0.8.0"
+version = "0.9.0"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
-    compileSdk = 33
+    compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 21
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -39,9 +39,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }
-    packaging {
-        jniLibs.pickFirsts.add("**/libjnidispatch.so")
-    }
 }
 
 publishing {
@@ -61,7 +58,7 @@ publishing {
 }
 
 dependencies {
-    implementation("net.java.dev.jna:jna:5.14.0@aar")
+    implementation("net.java.dev.jna:jna:5.17.0@aar")
     implementation(libs.core.ktx)
     // JitPack Compose
     implementation(libs.androidx.ui) {
