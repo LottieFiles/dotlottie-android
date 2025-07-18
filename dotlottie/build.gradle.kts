@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.LottieFiles"
-version = "0.9.0"
+version = "0.9.1"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
@@ -15,6 +15,12 @@ android {
         minSdk = 21
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+    }
+
+    packaging {
+        jniLibs {
+            pickFirsts += listOf("**/libjnidispatch.so")
+        }
     }
 
     buildTypes {
