@@ -17,6 +17,12 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    packaging {
+        jniLibs {
+            pickFirsts += listOf("**/libjnidispatch.so")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
