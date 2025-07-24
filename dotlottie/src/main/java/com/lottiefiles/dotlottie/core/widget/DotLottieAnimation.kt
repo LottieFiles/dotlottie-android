@@ -27,6 +27,7 @@ import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.isUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -57,6 +58,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val coroutineScope = CoroutineScope(SupervisorJob())
+    private var setupConfigJob: Job? = null
+    private var setupDrawableJob: Job? = null
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
@@ -218,6 +221,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun load(config: Config) {
         mLottieDrawable?.release()
         mLottieDrawable = null
+        setupConfigJob?.cancel()
         mConfig = config
         setupConfig()
     }
@@ -262,6 +266,7 @@ class DotLottieAnimation @JvmOverloads constructor(
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
+                    setupDrawableJob?.cancel()
                     setupDotLottieDrawable()
                     // Remove the listener to avoid redundant calls
                     viewTreeObserver.removeOnGlobalLayoutListener(this)
@@ -281,7 +286,7 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun setupConfig() {
         val config = mConfig ?: return
-        coroutineScope.launch {
+        setupConfigJob = coroutineScope.launch {
             try {
                 val content = DotLottieUtils.getContent(context, config.source)
                 mLottieDrawable = DotLottieDrawable(
@@ -326,7 +331,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun setupDotLottieDrawable() {
-        coroutineScope.launch {
+        setupDrawableJob = coroutineScope.launch {
             if (attributes.src.isNotBlank()) {
                 val content: DotLottieContent = if (attributes.src.isUrl()) {
                     DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
@@ -382,6 +387,8 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        setupConfigJob?.cancel()
+        setupDrawableJob?.cancel()
         coroutineScope.cancel()
         mLottieDrawable?.let { drawable ->
             drawable.release()
