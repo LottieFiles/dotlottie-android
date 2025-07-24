@@ -222,7 +222,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun load(config: Config) {
         mLottieDrawable?.release()
         mLottieDrawable = null
-        setupConfigJob?.cancel()
         mConfig = config
         setupConfig()
     }
@@ -266,7 +265,6 @@ class DotLottieAnimation @JvmOverloads constructor(
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
-                    setupDrawableJob?.cancel()
                     setupDotLottieDrawable()
                     // Remove the listener to avoid redundant calls
                     removeLayoutListener()
@@ -296,8 +294,9 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun setupConfig() {
         val config = mConfig ?: return
+        setupConfigJob?.cancel()
         setupConfigJob = coroutineScope.launch {
-            try {
+            runCatching {
                 val content = DotLottieUtils.getContent(context, config.source)
                 mLottieDrawable = DotLottieDrawable(
                     height = height,
@@ -325,7 +324,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     requestLayout()
                     invalidate()
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 mDotLottieEventListener.forEach {
                     it.onLoadError(e)
                 }
@@ -341,8 +340,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun setupDotLottieDrawable() {
+        setupDrawableJob?.cancel()
         setupDrawableJob = coroutineScope.launch {
-            try {
+            runCatching {
                 if (attributes.src.isNotBlank()) {
                     val content: DotLottieContent = if (attributes.src.isUrl()) {
                         DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
@@ -376,7 +376,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         invalidate()
                     }
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 withContext(Dispatchers.Main) {
                     mDotLottieEventListener.forEach {
                         it.onLoadError(e)
