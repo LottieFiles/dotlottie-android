@@ -216,6 +216,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun load(config: Config) {
+        mLottieDrawable?.release()
+        mLottieDrawable = null
         mConfig = config
         setupConfig()
     }
