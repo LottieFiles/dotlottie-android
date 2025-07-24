@@ -162,7 +162,10 @@ class DotLottieController {
 
             override fun onLoadError() {
                 _currentState.update { DotLottiePlayerState.ERROR }
-                eventListeners.forEach(DotLottieEventListener::onLoadError)
+                eventListeners.forEach { listener ->
+                    listener.onLoadError()
+                    listener.onLoadError(Throwable("Load error occurred"))
+                }
             }
         }
         dlplayer?.subscribe(observer!!)
@@ -293,7 +296,9 @@ class DotLottieController {
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
-        eventListeners.add(listener)
+        if (!eventListeners.contains(listener)) {
+            eventListeners.add(listener)
+        }
     }
 
     fun removeEventListener(listener: DotLottieEventListener) {
