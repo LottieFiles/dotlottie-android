@@ -299,4 +299,8 @@ class DotLottieController {
     fun removeEventListener(listener: DotLottieEventListener) {
         eventListeners.remove(listener)
     }
+
+    fun clearEventListeners() {
+        eventListeners.clear()
+    }
 }

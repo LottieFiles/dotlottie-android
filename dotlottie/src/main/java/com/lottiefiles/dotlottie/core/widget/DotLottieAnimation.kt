@@ -411,6 +411,11 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.removeEventListener(listener)
     }
 
+    fun clearEventListeners() {
+        mDotLottieEventListener.clear()
+        mLottieDrawable?.clearEventListeners()
+    }
+
 
     // TODO: Add stateMachine features
 //    fun startStateMachine(): Boolean {

@@ -322,6 +322,9 @@ class DotLottieDrawable(
         dotLottieEventListener.remove(listener)
     }
 
+    fun clearEventListeners() {
+        dotLottieEventListener.clear()
+    }
 
     fun pause() {
         dlPlayer!!.pause()
