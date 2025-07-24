@@ -342,37 +342,45 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun setupDotLottieDrawable() {
         setupDrawableJob = coroutineScope.launch {
-            if (attributes.src.isNotBlank()) {
-                val content: DotLottieContent = if (attributes.src.isUrl()) {
-                    DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
-                } else {
-                    DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
-                }
+            try {
+                if (attributes.src.isNotBlank()) {
+                    val content: DotLottieContent = if (attributes.src.isUrl()) {
+                        DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
+                    } else {
+                        DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
+                    }
 
-                mLottieDrawable = DotLottieDrawable(
-                    animationData = content,
-                    width = width,
-                    height = height,
-                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
-                    config = DLConfig(
-                        autoplay = attributes.autoplay,
-                        loopAnimation = attributes.loop,
-                        mode = getMode(attributes.playMode),
-                        speed = attributes.speed,
-                        useFrameInterpolation = attributes.useFrameInterpolation,
-                        backgroundColor = attributes.backgroundColor.toUInt(),
-                        segment = listOf(),
-                        marker = attributes.marker ?: "",
-                        layout = createDefaultLayout(),
-                        themeId = attributes.themeId ?: "",
-                        stateMachineId = "", // TODO: implement statMachine
-                        animationId = ""
+                    mLottieDrawable = DotLottieDrawable(
+                        animationData = content,
+                        width = width,
+                        height = height,
+                        dotLottieEventListener = mDotLottieEventListener.toMutableList(),
+                        config = DLConfig(
+                            autoplay = attributes.autoplay,
+                            loopAnimation = attributes.loop,
+                            mode = getMode(attributes.playMode),
+                            speed = attributes.speed,
+                            useFrameInterpolation = attributes.useFrameInterpolation,
+                            backgroundColor = attributes.backgroundColor.toUInt(),
+                            segment = listOf(),
+                            marker = attributes.marker ?: "",
+                            layout = createDefaultLayout(),
+                            themeId = attributes.themeId ?: "",
+                            stateMachineId = "", // TODO: implement statMachine
+                            animationId = ""
+                        )
                     )
-                )
-                mLottieDrawable?.callback = this@DotLottieAnimation
+                    mLottieDrawable?.callback = this@DotLottieAnimation
+                    withContext(Dispatchers.Main) {
+                        requestLayout()
+                        invalidate()
+                    }
+                }
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    requestLayout()
-                    invalidate()
+                    mDotLottieEventListener.forEach {
+                        it.onLoadError(e)
+                    }
                 }
             }
         }
