@@ -286,7 +286,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     height = height,
                     width = width,
                     animationData = content,
-                    dotLottieEventListener = mDotLottieEventListener,
+                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
                     config = DLConfig(
                         autoplay = config.autoplay,
                         loopAnimation = config.loop,
@@ -336,7 +336,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     animationData = content,
                     width = width,
                     height = height,
-                    dotLottieEventListener = mDotLottieEventListener,
+                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
                     config = DLConfig(
                         autoplay = attributes.autoplay,
                         loopAnimation = attributes.loop,
@@ -400,11 +400,15 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
-        mDotLottieEventListener.add(listener)
+        if (!mDotLottieEventListener.contains(listener)) {
+            mDotLottieEventListener.add(listener)
+            mLottieDrawable?.addEventListenter(listener)
+        }
     }
 
     fun removeEventListener(listener: DotLottieEventListener) {
         mDotLottieEventListener.remove(listener)
+        mLottieDrawable?.removeEventListener(listener)
     }
 
 

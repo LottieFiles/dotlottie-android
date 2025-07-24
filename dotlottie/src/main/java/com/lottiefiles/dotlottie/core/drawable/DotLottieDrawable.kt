@@ -31,7 +31,7 @@ class DotLottieDrawable(
     private val animationData: DotLottieContent,
     private var width: Int = 0,
     private var height: Int = 0,
-    private val dotLottieEventListener: List<DotLottieEventListener>,
+    private val dotLottieEventListener: MutableList<DotLottieEventListener>,
     private var config: Config,
 ) : Drawable(), Animatable {
 
@@ -194,7 +194,10 @@ class DotLottieDrawable(
             }
 
             override fun onLoadError() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onLoadError)
+                dotLottieEventListener.forEach { listener ->
+                    listener.onLoadError()
+                    listener.onLoadError(Throwable("Load error occurred"))
+                }
             }
         }
         dlPlayer?.subscribe(observer)
@@ -308,6 +311,17 @@ class DotLottieDrawable(
     fun manifest(): Manifest? {
         return dlPlayer?.manifest()
     }
+
+    fun addEventListenter(listener: DotLottieEventListener) {
+        if (!dotLottieEventListener.contains(listener)) {
+            dotLottieEventListener.add(listener)
+        }
+    }
+
+    fun removeEventListener(listener: DotLottieEventListener) {
+        dotLottieEventListener.remove(listener)
+    }
+
 
     fun pause() {
         dlPlayer!!.pause()
