@@ -60,6 +60,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val coroutineScope = CoroutineScope(SupervisorJob())
     private var setupConfigJob: Job? = null
     private var setupDrawableJob: Job? = null
+    private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
@@ -261,18 +262,27 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun waitForLayout() {
-        viewTreeObserver.addOnGlobalLayoutListener(object :
-            ViewTreeObserver.OnGlobalLayoutListener {
+        layoutListener = object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
                     setupDrawableJob?.cancel()
                     setupDotLottieDrawable()
                     // Remove the listener to avoid redundant calls
-                    viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    removeLayoutListener()
                 }
             }
-        })
+        }
+        viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+    }
+
+    private fun removeLayoutListener() {
+        layoutListener?.let { listener ->
+            if (viewTreeObserver.isAlive()) {
+                viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            }
+            layoutListener = null
+        }
     }
 
     private fun String.isJsonAsset(): Boolean {
@@ -387,6 +397,7 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        removeLayoutListener()
         setupConfigJob?.cancel()
         setupDrawableJob?.cancel()
         coroutineScope.cancel()
