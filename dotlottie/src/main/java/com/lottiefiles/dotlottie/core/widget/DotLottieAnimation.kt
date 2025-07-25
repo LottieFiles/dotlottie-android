@@ -27,6 +27,7 @@ import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.isUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -57,6 +58,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val coroutineScope = CoroutineScope(SupervisorJob())
+    private var setupConfigJob: Job? = null
+    private var setupDrawableJob: Job? = null
+    private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
@@ -216,6 +220,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun load(config: Config) {
+        mLottieDrawable?.release()
+        mLottieDrawable = null
         mConfig = config
         setupConfig()
     }
@@ -255,17 +261,26 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun waitForLayout() {
-        viewTreeObserver.addOnGlobalLayoutListener(object :
-            ViewTreeObserver.OnGlobalLayoutListener {
+        layoutListener = object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
                     setupDotLottieDrawable()
                     // Remove the listener to avoid redundant calls
-                    viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    removeLayoutListener()
                 }
             }
-        })
+        }
+        viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+    }
+
+    private fun removeLayoutListener() {
+        layoutListener?.let { listener ->
+            if (viewTreeObserver.isAlive()) {
+                viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            }
+            layoutListener = null
+        }
     }
 
     private fun String.isJsonAsset(): Boolean {
@@ -279,14 +294,15 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun setupConfig() {
         val config = mConfig ?: return
-        coroutineScope.launch {
-            try {
+        setupConfigJob?.cancel()
+        setupConfigJob = coroutineScope.launch {
+            runCatching {
                 val content = DotLottieUtils.getContent(context, config.source)
                 mLottieDrawable = DotLottieDrawable(
                     height = height,
                     width = width,
                     animationData = content,
-                    dotLottieEventListener = mDotLottieEventListener,
+                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
                     config = DLConfig(
                         autoplay = config.autoplay,
                         loopAnimation = config.loop,
@@ -308,7 +324,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     requestLayout()
                     invalidate()
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 mDotLottieEventListener.forEach {
                     it.onLoadError(e)
                 }
@@ -324,38 +340,47 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun setupDotLottieDrawable() {
-        coroutineScope.launch {
-            if (attributes.src.isNotBlank()) {
-                val content: DotLottieContent = if (attributes.src.isUrl()) {
-                    DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
-                } else {
-                    DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
-                }
+        setupDrawableJob?.cancel()
+        setupDrawableJob = coroutineScope.launch {
+            runCatching {
+                if (attributes.src.isNotBlank()) {
+                    val content: DotLottieContent = if (attributes.src.isUrl()) {
+                        DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
+                    } else {
+                        DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
+                    }
 
-                mLottieDrawable = DotLottieDrawable(
-                    animationData = content,
-                    width = width,
-                    height = height,
-                    dotLottieEventListener = mDotLottieEventListener,
-                    config = DLConfig(
-                        autoplay = attributes.autoplay,
-                        loopAnimation = attributes.loop,
-                        mode = getMode(attributes.playMode),
-                        speed = attributes.speed,
-                        useFrameInterpolation = attributes.useFrameInterpolation,
-                        backgroundColor = attributes.backgroundColor.toUInt(),
-                        segment = listOf(),
-                        marker = attributes.marker ?: "",
-                        layout = createDefaultLayout(),
-                        themeId = attributes.themeId ?: "",
-                        stateMachineId = "", // TODO: implement statMachine
-                        animationId = ""
+                    mLottieDrawable = DotLottieDrawable(
+                        animationData = content,
+                        width = width,
+                        height = height,
+                        dotLottieEventListener = mDotLottieEventListener.toMutableList(),
+                        config = DLConfig(
+                            autoplay = attributes.autoplay,
+                            loopAnimation = attributes.loop,
+                            mode = getMode(attributes.playMode),
+                            speed = attributes.speed,
+                            useFrameInterpolation = attributes.useFrameInterpolation,
+                            backgroundColor = attributes.backgroundColor.toUInt(),
+                            segment = listOf(),
+                            marker = attributes.marker ?: "",
+                            layout = createDefaultLayout(),
+                            themeId = attributes.themeId ?: "",
+                            stateMachineId = "", // TODO: implement statMachine
+                            animationId = ""
+                        )
                     )
-                )
-                mLottieDrawable?.callback = this@DotLottieAnimation
+                    mLottieDrawable?.callback = this@DotLottieAnimation
+                    withContext(Dispatchers.Main) {
+                        requestLayout()
+                        invalidate()
+                    }
+                }
+            }.onFailure { e ->
                 withContext(Dispatchers.Main) {
-                    requestLayout()
-                    invalidate()
+                    mDotLottieEventListener.forEach {
+                        it.onLoadError(e)
+                    }
                 }
             }
         }
@@ -380,6 +405,9 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        removeLayoutListener()
+        setupConfigJob?.cancel()
+        setupDrawableJob?.cancel()
         coroutineScope.cancel()
         mLottieDrawable?.let { drawable ->
             drawable.release()
@@ -400,11 +428,20 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
-        mDotLottieEventListener.add(listener)
+        if (!mDotLottieEventListener.contains(listener)) {
+            mDotLottieEventListener.add(listener)
+            mLottieDrawable?.addEventListenter(listener)
+        }
     }
 
     fun removeEventListener(listener: DotLottieEventListener) {
         mDotLottieEventListener.remove(listener)
+        mLottieDrawable?.removeEventListener(listener)
+    }
+
+    fun clearEventListeners() {
+        mDotLottieEventListener.clear()
+        mLottieDrawable?.clearEventListeners()
     }
 
 

@@ -120,7 +120,7 @@ fun DotLottieAnimation(
     }
 
     fun init(animationData: DotLottieContent, layoutSize: Size) {
-        try {
+        runCatching {
             val height = layoutSize.height.toUInt()
             val width = layoutSize.width.toUInt()
             val isLoaded = dlPlayer.isLoaded()
@@ -147,7 +147,7 @@ fun DotLottieAnimation(
                 rController.init()
             }
             choreographer.postFrameCallback(frameCallback)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             rController.eventListeners.forEach {
                 it.onLoadError(e)
             }
