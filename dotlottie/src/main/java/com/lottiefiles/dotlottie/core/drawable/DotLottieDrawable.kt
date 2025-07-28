@@ -7,8 +7,7 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.os.Handler
-import android.os.Looper
+import android.view.Choreographer
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
@@ -44,7 +43,7 @@ class DotLottieDrawable(
         set(value) {
             if (value) {
                 dotLottieEventListener.forEach(DotLottieEventListener::onFreeze)
-                mHandler.removeCallbacks(mNextFrameRunnable)
+                choreographer.removeFrameCallback(frameCallback)
                 dlPlayer!!.pause()
             } else {
                 dotLottieEventListener.forEach(DotLottieEventListener::onUnFreeze)
@@ -69,11 +68,19 @@ class DotLottieDrawable(
     // TODO: Implement repeatCount
 
     /**
-     * Animation handler used to schedule updates for this animation.
+     * Choreographer for display-synced animation - lazy init to ensure main thread
      */
-    private val mHandler = Handler(Looper.getMainLooper())
-    private val mNextFrameRunnable = Runnable {
-        invalidateSelf()
+    private val choreographer by lazy { Choreographer.getInstance() }
+    private val frameCallback = object : Choreographer.FrameCallback {
+        var isActive = true
+        override fun doFrame(frameTimeNanos: Long) {
+            // Check if callback is still active before proceeding
+            if (!isActive) {
+                choreographer.removeFrameCallback(this)
+                return
+            }
+            invalidateSelf()
+        }
     }
 
     override fun setAlpha(alpha: Int) {}
@@ -224,6 +231,8 @@ class DotLottieDrawable(
     }
 
     fun release() {
+        frameCallback.isActive = false
+        choreographer.removeFrameCallback(frameCallback)
         dlPlayer!!.destroy()
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
         if (bitmapBuffer != null) {
@@ -263,7 +272,7 @@ class DotLottieDrawable(
 
     override fun stop() {
         dlPlayer!!.stop()
-        mHandler.removeCallbacks(mNextFrameRunnable)
+        choreographer.removeFrameCallback(frameCallback)
     }
 
     fun isPaused(): Boolean {
@@ -275,7 +284,7 @@ class DotLottieDrawable(
     }
 
     fun setCurrentFrame(frame: Float) {
-        mHandler.removeCallbacks(mNextFrameRunnable)
+        choreographer.removeFrameCallback(frameCallback)
         dlPlayer!!.setFrame(frame)
         dlPlayer!!.render()
         invalidateSelf()
@@ -328,7 +337,7 @@ class DotLottieDrawable(
 
     fun pause() {
         dlPlayer!!.pause()
-        mHandler.removeCallbacks(mNextFrameRunnable)
+        choreographer.removeFrameCallback(frameCallback)
     }
 
 
@@ -417,10 +426,10 @@ class DotLottieDrawable(
         bufferBytes.rewind()
         canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
 
-        mHandler.postDelayed(
-            mNextFrameRunnable,
-            0
-        )
+        // Only schedule next frame if animation is actually playing and not frozen
+        if (dlPlayer!!.isPlaying() && !freeze) {
+            choreographer.postFrameCallback(frameCallback)
+        }
     }
 
     companion object {
