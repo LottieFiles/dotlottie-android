@@ -46,6 +46,49 @@ data class DotLottieAttributes(
     val themeId: String?
 )
 
+data class DotLottieRuntimeConfig(
+    val source: DotLottieSource?,
+    var autoplay: Boolean,
+    var loop: Boolean,
+    var speed: Float,
+    var useFrameInterpolation: Boolean,
+    var marker: String?,
+    var playMode: Mode,
+    var layout: Layout,
+    var themeId: String?,
+    var backgroundColor: Int,
+    var segment: Pair<Float, Float>?
+) {
+    companion object {
+        fun fromXmlAttributes(attributes: DotLottieAttributes): DotLottieRuntimeConfig {
+            val source = if (attributes.src.isNotBlank()) {
+                if (attributes.src.isUrl()) {
+                    DotLottieSource.Url(attributes.src)
+                } else {
+                    DotLottieSource.Asset(attributes.src)
+                }
+            } else null
+            
+            return DotLottieRuntimeConfig(
+                source = source,
+                autoplay = attributes.autoplay,
+                loop = attributes.loop,
+                speed = attributes.speed,
+                useFrameInterpolation = attributes.useFrameInterpolation,
+                marker = attributes.marker,
+                playMode = when (attributes.playMode) {
+                    1 -> Mode.FORWARD
+                    else -> Mode.REVERSE
+                },
+                layout = createDefaultLayout(),
+                themeId = attributes.themeId,
+                backgroundColor = attributes.backgroundColor,
+                segment = null
+            )
+        }
+    }
+}
+
 class DotLottieAnimation @JvmOverloads constructor(
     private val context: Context,
     private val attrs: AttributeSet? = null,
@@ -55,16 +98,15 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private var width: Int = 0
     private var height: Int = 0
-    private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val coroutineScope = CoroutineScope(SupervisorJob())
-    private var setupConfigJob: Job? = null
-    private var setupDrawableJob: Job? = null
+    private var setupJob: Job? = null
     private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
     private lateinit var attributes: DotLottieAttributes
+    private var runtimeConfig: DotLottieRuntimeConfig? = null
 
 
     @get:FloatRange(from = 0.0)
@@ -135,14 +177,17 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setUseFrameInterpolation(enable: Boolean) {
         mLottieDrawable?.useFrameInterpolation = enable
+        ensureRuntimeConfig().useFrameInterpolation = enable
     }
 
     fun setSegment(firstFrame: Float, lastFrame: Float) {
         mLottieDrawable?.setSegment(firstFrame, lastFrame)
+        ensureRuntimeConfig().segment = Pair(firstFrame, lastFrame)
     }
 
     fun setLoop(loop: Boolean) {
         mLottieDrawable?.loop = loop
+        ensureRuntimeConfig().loop = loop
     }
 
     fun loadAnimation(
@@ -165,26 +210,29 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setSpeed(speed: Float) {
         mLottieDrawable?.speed = speed
+        ensureRuntimeConfig().speed = speed
     }
 
     fun setMarker(marker: String) {
         mLottieDrawable?.marker = marker
+        ensureRuntimeConfig().marker = marker
     }
 
     fun setLayout(fit: Fit, alignment: LayoutUtil.Alignment) {
-        mLottieDrawable?.let {
-            it.layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
-        }
+        val layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
+        mLottieDrawable?.layout = layout
+        ensureRuntimeConfig().layout = layout
     }
 
     fun setLayout(fit: Fit, alignment: Pair<Float, Float>) {
-        mLottieDrawable?.let {
-            it.layout = Layout(fit, listOf(alignment.first, alignment.second))
-        }
+        val layout = Layout(fit, listOf(alignment.first, alignment.second))
+        mLottieDrawable?.layout = layout
+        ensureRuntimeConfig().layout = layout
     }
 
     fun setTheme(themeId: String) {
         mLottieDrawable?.setTheme(themeId)
+        ensureRuntimeConfig().themeId = themeId
     }
 
     fun setThemeData(themeData: String) {
@@ -209,6 +257,7 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setPlayMode(repeatMode: Mode) {
         mLottieDrawable?.setPlayMode(repeatMode)
+        ensureRuntimeConfig().playMode = repeatMode
     }
 
     fun pause() {
@@ -219,11 +268,55 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.release()
     }
 
-    fun load(config: Config) {
+    fun load(
+        source: DotLottieSource,
+        autoplay: Boolean = attributes.autoplay,
+        loop: Boolean = attributes.loop,
+        useFrameInterpolation: Boolean = attributes.useFrameInterpolation,
+        themeId: String? = attributes.themeId,
+        marker: String? = attributes.marker,
+        speed: Float = attributes.speed,
+        segment: Pair<Float, Float>? = null,
+        playMode: Mode = getMode(attributes.playMode),
+        layout: Layout = createDefaultLayout(),
+        backgroundColor: Int = attributes.backgroundColor
+    ) {
+        // Update runtime config with programmatic values
+        runtimeConfig = DotLottieRuntimeConfig(
+            source = source,
+            autoplay = autoplay,
+            loop = loop,
+            useFrameInterpolation = useFrameInterpolation,
+            themeId = themeId,
+            marker = marker,
+            speed = speed,
+            segment = segment,
+            playMode = playMode,
+            layout = layout,
+            backgroundColor = backgroundColor
+        )
+        
         mLottieDrawable?.release()
         mLottieDrawable = null
-        mConfig = config
-        setupConfig()
+        setupFromConfig()
+    }
+
+    @Deprecated(
+        "Use load(source, autoplay, loop, ...) instead for better consistency with Compose API",
+        ReplaceWith("load(source = config.source, autoplay = config.autoplay, loop = config.loop, useFrameInterpolation = config.useFrameInterpolator, themeId = config.themeId, marker = config.marker, speed = config.speed, playMode = config.playMode, layout = config.layout)")
+    )
+    fun load(config: Config) {
+        load(
+            source = config.source,
+            autoplay = config.autoplay,
+            loop = config.loop,
+            useFrameInterpolation = config.useFrameInterpolator,
+            themeId = config.themeId,
+            marker = config.marker,
+            speed = config.speed,
+            playMode = config.playMode,
+            layout = config.layout
+        )
     }
 
     init {
@@ -265,7 +358,7 @@ class DotLottieAnimation @JvmOverloads constructor(
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
-                    setupDotLottieDrawable()
+                    setupFromConfig()
                     // Remove the listener to avoid redundant calls
                     removeLayoutListener()
                 }
@@ -283,54 +376,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
-    private fun String.isJsonAsset(): Boolean {
-        return endsWith(".json")
-    }
-
-    private fun String.isDotLottieAsset(): Boolean {
-        return endsWith(".lottie")
-    }
-
-
-    private fun setupConfig() {
-        val config = mConfig ?: return
-        setupConfigJob?.cancel()
-        setupConfigJob = coroutineScope.launch {
-            runCatching {
-                val content = DotLottieUtils.getContent(context, config.source)
-                mLottieDrawable = DotLottieDrawable(
-                    height = height,
-                    width = width,
-                    animationData = content,
-                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
-                    config = DLConfig(
-                        autoplay = config.autoplay,
-                        loopAnimation = config.loop,
-                        mode = config.playMode,
-                        speed = config.speed,
-                        useFrameInterpolation = config.useFrameInterpolator,
-                        backgroundColor = Color.TRANSPARENT.toUInt(),
-                        segment = listOf(),
-                        marker = config.marker,
-                        layout = config.layout,
-                        themeId = config.themeId,
-                        stateMachineId = "", // TODO: implement stateMachine
-                        animationId = ""
-                    )
-                )
-
-                mLottieDrawable?.callback = this@DotLottieAnimation
-                withContext(Dispatchers.Main) {
-                    requestLayout()
-                    invalidate()
-                }
-            }.onFailure { e ->
-                mDotLottieEventListener.forEach {
-                    it.onLoadError(e)
-                }
-            }
-        }
-    }
 
     private fun getMode(mode: Int): Mode {
         return when (mode) {
@@ -339,45 +384,50 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
-    private fun setupDotLottieDrawable() {
-        setupDrawableJob?.cancel()
-        setupDrawableJob = coroutineScope.launch {
-            runCatching {
-                if (attributes.src.isNotBlank()) {
-                    val content: DotLottieContent = if (attributes.src.isUrl()) {
-                        DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
-                    } else {
-                        DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
-                    }
+    private fun getCurrentConfig(): DotLottieRuntimeConfig {
+        return runtimeConfig ?: DotLottieRuntimeConfig.fromXmlAttributes(attributes)
+    }
 
+    private fun ensureRuntimeConfig(): DotLottieRuntimeConfig {
+        return runtimeConfig ?: DotLottieRuntimeConfig.fromXmlAttributes(attributes).also {
+            runtimeConfig = it
+        }
+    }
+
+    private fun setupFromConfig() {
+        val config = getCurrentConfig()
+        config.source?.let { source ->
+            setupJob?.cancel()
+            setupJob = coroutineScope.launch {
+                runCatching {
+                    val content = DotLottieUtils.getContent(context, source)
                     mLottieDrawable = DotLottieDrawable(
-                        animationData = content,
-                        width = width,
                         height = height,
+                        width = width,
+                        animationData = content,
                         dotLottieEventListener = mDotLottieEventListener.toMutableList(),
                         config = DLConfig(
-                            autoplay = attributes.autoplay,
-                            loopAnimation = attributes.loop,
-                            mode = getMode(attributes.playMode),
-                            speed = attributes.speed,
-                            useFrameInterpolation = attributes.useFrameInterpolation,
-                            backgroundColor = attributes.backgroundColor.toUInt(),
-                            segment = listOf(),
-                            marker = attributes.marker ?: "",
-                            layout = createDefaultLayout(),
-                            themeId = attributes.themeId ?: "",
-                            stateMachineId = "", // TODO: implement statMachine
+                            autoplay = config.autoplay,
+                            loopAnimation = config.loop,
+                            mode = config.playMode,
+                            speed = config.speed,
+                            useFrameInterpolation = config.useFrameInterpolation,
+                            backgroundColor = config.backgroundColor.toUInt(),
+                            segment = config.segment?.let { listOf(it.first, it.second) } ?: listOf(),
+                            marker = config.marker ?: "",
+                            layout = config.layout,
+                            themeId = config.themeId ?: "",
+                            stateMachineId = "", // TODO: implement stateMachine
                             animationId = ""
                         )
                     )
+
                     mLottieDrawable?.callback = this@DotLottieAnimation
                     withContext(Dispatchers.Main) {
                         requestLayout()
                         invalidate()
                     }
-                }
-            }.onFailure { e ->
-                withContext(Dispatchers.Main) {
+                }.onFailure { e ->
                     mDotLottieEventListener.forEach {
                         it.onLoadError(e)
                     }
@@ -385,6 +435,7 @@ class DotLottieAnimation @JvmOverloads constructor(
             }
         }
     }
+
 
     fun resize(width: Int, height: Int) {
         mLottieDrawable?.resize(width, height)
@@ -406,8 +457,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         removeLayoutListener()
-        setupConfigJob?.cancel()
-        setupDrawableJob?.cancel()
+        setupJob?.cancel()
         coroutineScope.cancel()
         mLottieDrawable?.let { drawable ->
             drawable.release()

@@ -7,6 +7,10 @@ import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 
+@Deprecated(
+    "Config class will be removed in future versions. Use individual parameters in load() method instead.",
+    level = DeprecationLevel.WARNING
+)
 class Config private constructor(
     val autoplay: Boolean,
     val useFrameInterpolator: Boolean,
@@ -20,6 +24,10 @@ class Config private constructor(
     val themeId: String = ""
 ) {
 
+    @Deprecated(
+        "Config.Builder will be removed in future versions. Use individual parameters in load() method instead.",
+        level = DeprecationLevel.WARNING
+    )
     class Builder {
 
         private var autoplay: Boolean = false
