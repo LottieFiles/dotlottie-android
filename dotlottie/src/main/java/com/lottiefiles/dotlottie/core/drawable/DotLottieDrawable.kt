@@ -26,6 +26,12 @@ import com.sun.jna.Pointer
 
 private const val BYTES_PER_PIXEL = 4
 
+private enum class OnVisibleAction {
+    NONE,
+    PLAY,
+    RESUME
+}
+
 class DotLottieDrawable(
     private val animationData: DotLottieContent,
     private var width: Int = 0,
@@ -38,6 +44,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+    private var onVisibleAction: OnVisibleAction = OnVisibleAction.NONE
 
     var freeze: Boolean = false
         set(value) {
@@ -81,6 +88,31 @@ class DotLottieDrawable(
             }
             invalidateSelf()
         }
+    }
+
+    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
+        val wasNotVisibleAlready = !isVisible
+        val ret = super.setVisible(visible, restart)
+        
+        if (visible) {
+            when (onVisibleAction) {
+                OnVisibleAction.PLAY, OnVisibleAction.RESUME -> {
+                    play()
+                }
+                OnVisibleAction.NONE -> {
+                    // Do nothing
+                }
+            }
+        } else {
+            if (isRunning()) {
+                pause()
+                onVisibleAction = OnVisibleAction.RESUME
+            } else if (!wasNotVisibleAlready) {
+                onVisibleAction = OnVisibleAction.NONE
+            }
+        }
+        
+        return ret
     }
 
     override fun setAlpha(alpha: Int) {}
@@ -257,8 +289,13 @@ class DotLottieDrawable(
     }
 
     fun play() {
-        dlPlayer!!.play()
-        invalidateSelf()
+        if (isVisible) {
+            dlPlayer!!.play()
+            onVisibleAction = OnVisibleAction.NONE
+            invalidateSelf()
+        } else {
+            onVisibleAction = OnVisibleAction.PLAY
+        }
     }
 
     override fun start() {

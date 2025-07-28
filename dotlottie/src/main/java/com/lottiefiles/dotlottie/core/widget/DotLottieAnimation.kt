@@ -99,7 +99,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var width: Int = 0
     private var height: Int = 0
     private var mLottieDrawable: DotLottieDrawable? = null
-    private val coroutineScope = CoroutineScope(SupervisorJob())
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var setupJob: Job? = null
     private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
@@ -265,7 +265,12 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun destroy() {
-        mLottieDrawable?.release()
+        setupJob?.cancel()
+        coroutineScope.cancel()
+        mLottieDrawable?.let { drawable ->
+            drawable.release()
+            mLottieDrawable = null
+        }
     }
 
     fun load(
@@ -296,9 +301,11 @@ class DotLottieAnimation @JvmOverloads constructor(
             backgroundColor = backgroundColor
         )
         
-        mLottieDrawable?.release()
-        mLottieDrawable = null
-        setupFromConfig()
+        if (width > 0 && height > 0) {
+            setupFromConfig()
+        } else {
+            waitForLayout()
+        }
     }
 
     @Deprecated(
@@ -354,6 +361,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun waitForLayout() {
+        // Remove any existing listener to avoid duplicates
+        removeLayoutListener()
+        
         layoutListener = object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
@@ -401,7 +411,9 @@ class DotLottieAnimation @JvmOverloads constructor(
             setupJob = coroutineScope.launch {
                 runCatching {
                     val content = DotLottieUtils.getContent(context, source)
-                    mLottieDrawable = DotLottieDrawable(
+                    val oldDrawable = mLottieDrawable
+                    
+                    val newDrawable = DotLottieDrawable(
                         height = height,
                         width = width,
                         animationData = content,
@@ -422,14 +434,17 @@ class DotLottieAnimation @JvmOverloads constructor(
                         )
                     )
 
-                    mLottieDrawable?.callback = this@DotLottieAnimation
+                    newDrawable.callback = this@DotLottieAnimation
+                    
                     withContext(Dispatchers.Main) {
+                        mLottieDrawable = newDrawable
+                        oldDrawable?.release()
                         requestLayout()
                         invalidate()
                     }
                 }.onFailure { e ->
-                    mDotLottieEventListener.forEach {
-                        it.onLoadError(e)
+                    if (e !is kotlinx.coroutines.CancellationException) {
+                        mDotLottieEventListener.forEach { it.onLoadError(e) }
                     }
                 }
             }
@@ -454,15 +469,24 @@ class DotLottieAnimation @JvmOverloads constructor(
         }
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        val config = getCurrentConfig()
+        if (mLottieDrawable == null && config.source != null) {
+            if (width > 0 && height > 0) {
+                setupFromConfig()
+            } else {
+                waitForLayout()
+            }
+        } else if (config.autoplay && mLottieDrawable != null) {
+            play()
+        }
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         removeLayoutListener()
-        setupJob?.cancel()
-        coroutineScope.cancel()
-        mLottieDrawable?.let { drawable ->
-            drawable.release()
-            mLottieDrawable = null
-        }
+        mLottieDrawable?.pause()
     }
 
 
@@ -475,6 +499,13 @@ class DotLottieAnimation @JvmOverloads constructor(
     override fun invalidateDrawable(drawable: Drawable) {
         super.invalidateDrawable(drawable)
         invalidate()
+    }
+
+    override fun unscheduleDrawable(who: Drawable) {
+        if (who == mLottieDrawable && mLottieDrawable?.isRunning == true) {
+            pause()
+        }
+        super.unscheduleDrawable(who)
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
