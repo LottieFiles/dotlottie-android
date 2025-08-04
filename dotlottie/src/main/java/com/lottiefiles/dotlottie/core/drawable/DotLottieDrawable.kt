@@ -25,16 +25,19 @@ import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.OpenUrl
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrl
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
+import androidx.core.net.toUri
+import androidx.core.graphics.createBitmap
+
+private const val BYTES_PER_PIXEL = 4
 
 class DotLottieDrawable(
     private val animationData: DotLottieContent,
     private var width: Int = 0,
     private var height: Int = 0,
-    private val dotLottieEventListener: List<DotLottieEventListener>,
+    private val dotLottieEventListener: MutableList<DotLottieEventListener>,
     private var config: Config,
 ) : Drawable(), Animatable {
 
@@ -198,7 +201,10 @@ class DotLottieDrawable(
             }
 
             override fun onLoadError() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onLoadError)
+                dotLottieEventListener.forEach { listener ->
+                    listener.onLoadError()
+                    listener.onLoadError(Throwable("Load error occurred"))
+                }
             }
         }
         dlPlayer?.subscribe(observer)
@@ -219,7 +225,7 @@ class DotLottieDrawable(
                 dlPlayer!!.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
             }
         }
-        bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmapBuffer = createBitmap(width, height)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
         this.subscribe()
     }
@@ -238,7 +244,7 @@ class DotLottieDrawable(
         height = h
 
         bitmapBuffer?.recycle()
-        bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmapBuffer = createBitmap(width, height)
 
         dlPlayer!!.resize(width.toUInt(), height.toUInt())
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
@@ -311,6 +317,20 @@ class DotLottieDrawable(
 
     fun manifest(): Manifest? {
         return dlPlayer?.manifest()
+    }
+
+    fun addEventListenter(listener: DotLottieEventListener) {
+        if (!dotLottieEventListener.contains(listener)) {
+            dotLottieEventListener.add(listener)
+        }
+    }
+
+    fun removeEventListener(listener: DotLottieEventListener) {
+        dotLottieEventListener.remove(listener)
+    }
+
+    fun clearEventListeners() {
+        dotLottieEventListener.clear()
     }
 
     fun pause() {
@@ -400,7 +420,7 @@ class DotLottieDrawable(
                         val url = message.substringAfter("OpenUrl: ")
 
                         // Create and launch the intent to open the URL
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                     }
@@ -452,7 +472,7 @@ class DotLottieDrawable(
      * Internal function to notify the state machine of gesture input.
      */
     fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
-        var ret: Int = 1
+        var ret = 1
         // Extract the event name before the parenthesis
         val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
@@ -511,7 +531,7 @@ class DotLottieDrawable(
         dlPlayer!!.tick()
         dlPlayer!!.render()
 
-        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong())
+        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
         bufferBytes.rewind()
         bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
         bufferBytes.rewind()

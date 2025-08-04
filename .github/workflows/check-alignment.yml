@@ -1,0 +1,55 @@
+name: Check ELF Alignment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-alignment:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Install required tools
+      run: |
+        # Install latest build-tools for zipalign with -P support
+        sdkmanager "build-tools;35.0.0-rc3"
+        echo "$ANDROID_HOME/build-tools/35.0.0-rc3" >> $GITHUB_PATH
+        
+        # Install objdump
+        sudo apt-get update
+        sudo apt-get install -y binutils
+    
+    - name: Make script executable
+      run: chmod +x ./check_if_alignment.sh
+    
+    - name: Build APK
+      run: ./gradlew assembleRelease
+    
+    - name: Check alignment for APKs
+      run: |
+        echo "Checking alignment for all APK files..."
+        find . -name "*.apk" -type f | while read apk; do
+          echo "Checking: $apk"
+          ./check_if_alignment.sh "$apk"
+        done
+    
+    - name: Check alignment for .so files
+      run: |
+        echo "Checking alignment for all .so files..."
+        if find . -name "*.so" -type f | grep -q .; then
+          ./check_if_alignment.sh ./dotlottie/src/main/jniLibs || true
+        else
+          echo "No .so files found in the project"
+        fi

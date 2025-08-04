@@ -1,5 +1,6 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
+import com.dotlottie.dlplayer.Config
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -16,12 +17,16 @@ import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.OpenUrl
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrl
+import com.dotlottie.dlplayer.createDefaultConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import androidx.core.net.toUri
 
 enum class DotLottiePlayerState {
     PLAYING,
@@ -36,9 +41,12 @@ enum class DotLottiePlayerState {
 class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
     private var observer: Observer? = null
+    private var config: Config = createDefaultConfig()
 
     private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
     val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
+
+    private var shouldPlayOnInit = false
 
     private val _width = MutableStateFlow(0u)
     val width: StateFlow<UInt> = _width.asStateFlow()
@@ -115,20 +123,23 @@ class DotLottieController {
 
     fun play() {
         dlplayer?.play()
+        shouldPlayOnInit = true
     }
 
     fun pause() {
         dlplayer?.pause()
+        shouldPlayOnInit = false
     }
 
     fun stop() {
         dlplayer?.stop()
+        shouldPlayOnInit = false
     }
 
     private fun subscribe() {
         observer = object : Observer {
             override fun onComplete() {
-                _currentState.value = DotLottiePlayerState.COMPLETED
+                _currentState.update { DotLottiePlayerState.COMPLETED }
                 eventListeners.forEach(DotLottieEventListener::onComplete)
             }
 
@@ -137,22 +148,22 @@ class DotLottieController {
             }
 
             override fun onPause() {
-                _currentState.value = DotLottiePlayerState.PAUSED
+                _currentState.update { DotLottiePlayerState.PAUSED }
                 eventListeners.forEach(DotLottieEventListener::onPause)
             }
 
             override fun onStop() {
-                _currentState.value = DotLottiePlayerState.STOPPED
+                _currentState.update { DotLottiePlayerState.STOPPED }
                 eventListeners.forEach(DotLottieEventListener::onStop)
             }
 
             override fun onPlay() {
-                _currentState.value = DotLottiePlayerState.PLAYING
+                _currentState.update { DotLottiePlayerState.PLAYING }
                 eventListeners.forEach(DotLottieEventListener::onPlay)
             }
 
             override fun onLoad() {
-                _currentState.value = DotLottiePlayerState.LOADED
+                _currentState.update { DotLottiePlayerState.LOADED }
                 eventListeners.forEach(DotLottieEventListener::onLoad)
             }
 
@@ -165,8 +176,11 @@ class DotLottieController {
             }
 
             override fun onLoadError() {
-                _currentState.value = DotLottiePlayerState.ERROR
-                eventListeners.forEach(DotLottieEventListener::onLoadError)
+                _currentState.update { DotLottiePlayerState.ERROR }
+                eventListeners.forEach { listener ->
+                    listener.onLoadError()
+                    listener.onLoadError(Throwable("Load error occurred"))
+                }
             }
         }
         dlplayer?.subscribe(observer!!)
@@ -260,7 +274,7 @@ class DotLottieController {
                             val url = message.substringAfter("OpenUrl: ")
 
                             // Create and launch the intent to open the URL
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             context.startActivity(intent)
                         }
@@ -375,10 +389,24 @@ class DotLottieController {
         stateMachineListeners.remove(listener)
     }
 
-    fun setPlayerInstance(player: DotLottiePlayer) {
+    @InternalDotLottieApi
+    fun setPlayerInstance(player: DotLottiePlayer, config: Config) {
         dlplayer?.destroy()
         dlplayer = player
+        this.config = config
         subscribe()
+    }
+
+    @InternalDotLottieApi
+    fun init() {
+        dlplayer?.setConfig(config)
+
+        if (shouldPlayOnInit) {
+            this.play()
+            shouldPlayOnInit = false
+        } else if (dlplayer?.isPlaying() == false) {
+            _currentState.update { DotLottiePlayerState.PAUSED }
+        }
     }
 
     fun resize(width: UInt, height: UInt) {
@@ -393,44 +421,37 @@ class DotLottieController {
     fun setUseFrameInterpolation(enable: Boolean) {
         dlplayer?.let {
             val config = it.config()
-            config.useFrameInterpolation = enable;
+            config.useFrameInterpolation = enable
             it.setConfig(config)
         }
 
     }
 
     fun setSegment(firstFrame: Float, lastFrame: Float) {
-        dlplayer?.let {
-            val config = it.config()
-            config.segment = listOf(firstFrame, lastFrame);
-            it.setConfig(config)
-        }
+        config.segment = listOf(firstFrame, lastFrame)
+        dlplayer?.setConfig(config)
     }
 
     fun setLoop(loop: Boolean) {
-        dlplayer?.let {
-            val config = it.config()
-            config.loopAnimation = loop
-            it.setConfig(config)
-        }
+        config.loopAnimation = loop
+        dlplayer?.setConfig(config)
     }
 
     fun freeze() {
         dlplayer?.pause()
+        shouldPlayOnInit = false
         eventListeners.forEach(DotLottieEventListener::onFreeze)
     }
 
     fun unFreeze() {
         dlplayer?.play()
+        shouldPlayOnInit = true
         eventListeners.forEach(DotLottieEventListener::onUnFreeze)
     }
 
     fun setSpeed(speed: Float) {
-        dlplayer?.let {
-            val config = it.config()
-            config.speed = speed
-            it.setConfig(config)
-        }
+        config.speed = speed
+        dlplayer?.setConfig(config)
     }
 
     fun setMarker(marker: String) {
@@ -493,10 +514,16 @@ class DotLottieController {
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
-        eventListeners.add(listener)
+        if (!eventListeners.contains(listener)) {
+            eventListeners.add(listener)
+        }
     }
 
     fun removeEventListener(listener: DotLottieEventListener) {
         eventListeners.remove(listener)
+    }
+
+    fun clearEventListeners() {
+        eventListeners.clear()
     }
 }

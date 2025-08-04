@@ -3154,10 +3154,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(it, _status)
                 }
             },
         )
@@ -3166,10 +3163,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_state_machine_id(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_state_machine_id(it, _status)
                 }
             },
         )
@@ -3178,10 +3172,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(it, _status)
                 }
             },
         )
@@ -3190,10 +3181,7 @@ open class DotLottiePlayer :
         FfiConverterSequenceFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(it, _status)
                 }
             },
         )
@@ -3202,10 +3190,7 @@ open class DotLottiePlayer :
         FfiConverterULong.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(it, _status)
                 }
             },
         )
@@ -3214,10 +3199,7 @@ open class DotLottiePlayer :
         FfiConverterULong.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(it, _status)
                 }
             },
         )
@@ -3225,10 +3207,7 @@ open class DotLottiePlayer :
     override fun `clear`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(it, _status)
             }
         }
 
@@ -3236,10 +3215,7 @@ open class DotLottiePlayer :
         FfiConverterTypeConfig.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_config(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_config(it, _status)
                 }
             },
         )
@@ -3248,10 +3224,7 @@ open class DotLottiePlayer :
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(it, _status)
                 }
             },
         )
@@ -3260,10 +3233,7 @@ open class DotLottiePlayer :
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(it, _status)
                 }
             },
         )
@@ -3317,10 +3287,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(it, _status)
                 }
             },
         )
@@ -3329,10 +3296,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(it, _status)
                 }
             },
         )
@@ -3341,10 +3305,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(it, _status)
                 }
             },
         )
@@ -3353,10 +3314,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(it, _status)
                 }
             },
         )
@@ -3365,10 +3323,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(it, _status)
                 }
             },
         )
@@ -3377,10 +3332,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(it, _status)
                 }
             },
         )
@@ -3465,10 +3417,7 @@ open class DotLottiePlayer :
         FfiConverterUInt.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(it, _status)
                 }
             },
         )
@@ -3477,10 +3426,7 @@ open class DotLottiePlayer :
         FfiConverterOptionalTypeManifest.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(it, _status)
                 }
             },
         )
@@ -3489,10 +3435,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(it, _status)
                 }
             },
         )
@@ -3501,10 +3444,7 @@ open class DotLottiePlayer :
         FfiConverterSequenceTypeMarker.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(it, _status)
                 }
             },
         )
@@ -3513,10 +3453,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(it, _status)
                 }
             },
         )
@@ -3525,10 +3462,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_play(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_play(it, _status)
                 }
             },
         )
@@ -3537,10 +3471,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_render(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_render(it, _status)
                 }
             },
         )
@@ -3549,10 +3480,7 @@ open class DotLottiePlayer :
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(it, _status)
                 }
             },
         )
@@ -3561,10 +3489,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_reset_theme(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_reset_theme(it, _status)
                 }
             },
         )
@@ -3590,11 +3515,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(
-                        it,
-                        FfiConverterFloat.lower(`no`),
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(it, FfiConverterFloat.lower(`no`), _status)
                 }
             },
         )
@@ -3603,10 +3524,7 @@ open class DotLottiePlayer :
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(it, _status)
                 }
             },
         )
@@ -3699,10 +3617,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_current_state(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_current_state(it, _status)
                 }
             },
         )
@@ -3722,10 +3637,7 @@ open class DotLottiePlayer :
         FfiConverterSequenceString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_framework_setup(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_framework_setup(it, _status)
                 }
             },
         )
@@ -4021,10 +3933,7 @@ open class DotLottiePlayer :
         FfiConverterString.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_status(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_status(it, _status)
                 }
             },
         )
@@ -4033,10 +3942,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_stop(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_stop(it, _status)
                 }
             },
         )
@@ -4071,10 +3977,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(it, _status)
                 }
             },
         )
@@ -4094,10 +3997,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(it, _status)
                 }
             },
         )
@@ -4106,10 +4006,7 @@ open class DotLottiePlayer :
         FfiConverterFloat.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(it, _status)
                 }
             },
         )
@@ -4137,10 +4034,7 @@ open class DotLottiePlayer :
         FfiConverterBoolean.lift(
             callWithPointer {
                 uniffiRustCall { _status ->
-                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(
-                        it,
-                        _status,
-                    )
+                    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(it, _status)
                 }
             },
         )
@@ -4423,93 +4317,63 @@ open class ObserverImpl :
     override fun `onComplete`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_complete(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_complete(it, _status)
             }
         }
 
     override fun `onFrame`(`frameNo`: kotlin.Float) =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_frame(
-                    it,
-                    FfiConverterFloat.lower(`frameNo`),
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_frame(it, FfiConverterFloat.lower(`frameNo`), _status)
             }
         }
 
     override fun `onLoad`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load(it, _status)
             }
         }
 
     override fun `onLoadError`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load_error(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_load_error(it, _status)
             }
         }
 
     override fun `onLoop`(`loopCount`: kotlin.UInt) =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_loop(
-                    it,
-                    FfiConverterUInt.lower(`loopCount`),
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_loop(it, FfiConverterUInt.lower(`loopCount`), _status)
             }
         }
 
     override fun `onPause`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_pause(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_pause(it, _status)
             }
         }
 
     override fun `onPlay`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_play(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_play(it, _status)
             }
         }
 
     override fun `onRender`(`frameNo`: kotlin.Float) =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_render(
-                    it,
-                    FfiConverterFloat.lower(`frameNo`),
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_render(it, FfiConverterFloat.lower(`frameNo`), _status)
             }
         }
 
     override fun `onStop`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_stop(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_observer_on_stop(it, _status)
             }
         }
 
@@ -5027,10 +4891,7 @@ open class StateMachineObserverImpl :
     override fun `onStart`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_start(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_start(it, _status)
             }
         }
 
@@ -5059,10 +4920,7 @@ open class StateMachineObserverImpl :
     override fun `onStop`() =
         callWithPointer {
             uniffiRustCall { _status ->
-                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_stop(
-                    it,
-                    _status,
-                )
+                UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_statemachineobserver_on_stop(it, _status)
             }
         }
 
@@ -6440,27 +6298,21 @@ public object FfiConverterSequenceTypeMarker : FfiConverterRustBuffer<List<Marke
 fun `createDefaultConfig`(): Config =
     FfiConverterTypeConfig.lift(
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_config(
-                _status,
-            )
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_config(_status)
         },
     )
 
 fun `createDefaultLayout`(): Layout =
     FfiConverterTypeLayout.lift(
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_layout(
-                _status,
-            )
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_layout(_status)
         },
     )
 
 fun `createDefaultOpenUrl`(): OpenUrl =
     FfiConverterTypeOpenUrl.lift(
         uniffiRustCall { _status ->
-            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_open_url(
-                _status,
-            )
+            UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_func_create_default_open_url(_status)
         },
     )
 

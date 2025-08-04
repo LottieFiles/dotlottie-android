@@ -34,11 +34,15 @@ import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.sun.jna.Pointer
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import java.nio.ByteBuffer
+import androidx.core.graphics.createBitmap
+import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
+
 import kotlin.math.pow
 
+private const val BYTES_PER_PIXEL = 4
+
+@OptIn(InternalDotLottieApi::class)
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
@@ -76,7 +80,7 @@ fun DotLottieAnimation(
             layout = layout,
             themeId = themeId ?: "",
             stateMachineId = "",
-            animationId = "",
+            animationId = ""
         )
     }
 
@@ -91,6 +95,7 @@ fun DotLottieAnimation(
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
+    var animationData by remember { mutableStateOf<DotLottieContent?>(null) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -118,19 +123,19 @@ fun DotLottieAnimation(
         }
     }
 
-    LaunchedEffect(dlConfig, source, layoutSize?.height, layoutSize?.width) {
-        if (layoutSize == null || layoutSize?.height == 0.0f || layoutSize?.width == 0.0f) return@LaunchedEffect
+    LaunchedEffect(source) {
+        animationData = DotLottieUtils.getContent(context, source)
+    }
 
-        try {
-            val height = layoutSize!!.height.toUInt()
-            val width = layoutSize!!.width.toUInt()
+    fun init(animationData: DotLottieContent, layoutSize: Size) {
+        runCatching {
+            val height = layoutSize.height.toUInt()
+            val width = layoutSize.width.toUInt()
+            val isLoaded = dlPlayer.isLoaded()
+            // Pass the size to the controller
+            rController.resize(height, width)
 
-            // Register initial height/width to controller
-            if (!dlPlayer.isLoaded()) {
-                rController.resize(width, height)
-            }
-
-            when (val animationData = DotLottieUtils.getContent(context, source)) {
+            when (animationData) {
                 is DotLottieContent.Json -> {
                     dlPlayer.loadAnimationData(animationData.jsonString, width, height)
                 }
@@ -142,31 +147,25 @@ fun DotLottieAnimation(
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
-            bitmap = Bitmap.createBitmap(width.toInt(), height.toInt(), Bitmap.Config.ARGB_8888)
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+            bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
-            // Apply theme on initial load
-            choreographer.postFrameCallback(frameCallback)
-            // Renders initial frame if not autoplaying
-            val startTime = System.currentTimeMillis()
-            val timeout = 500L // 500 milliseconds
-            while (isActive && System.currentTimeMillis() - startTime < timeout) {
-                if (System.currentTimeMillis() - startTime > 100L && !rController.stateMachineIsActive && !dlPlayer.isPlaying()) {
-                    choreographer.removeFrameCallback(frameCallback)
-                    break
-                }
-                delay(16L)
+
+            if (!isLoaded) {
+                rController.init()
             }
-        } catch (e: Exception) {
+            choreographer.postFrameCallback(frameCallback)
+        }.onFailure { e ->
             rController.eventListeners.forEach {
                 it.onLoadError(e)
             }
         }
     }
 
-    // Self manage starting the state machine rather than using the config prop
-    // This is so that we can check if it loaded successfully, attach listeners etc.
-    LaunchedEffect(dlPlayer.isLoaded()) {
+    LaunchedEffect(animationData, layoutSize) {
+        if (animationData != null && layoutSize != null) {
+            init(animationData!!, layoutSize!!)
+        }
         if (initialStateMachineId != null) {
             if (initialStateMachineId.isNotEmpty()) {
                 rController.stateMachineLoad(initialStateMachineId)
@@ -223,16 +222,16 @@ fun DotLottieAnimation(
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
             bitmap?.recycle()
-            bitmap = Bitmap.createBitmap(_width.toInt(), _height.toInt(), Bitmap.Config.ARGB_8888)
+            bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             imageBitmap = bitmap!!.asImageBitmap()
         }
     }
 
     DisposableEffect(UInt) {
-        rController.setPlayerInstance(dlPlayer)
+        rController.setPlayerInstance(dlPlayer, dlConfig)
         eventListeners.forEach { rController.addEventListener(it) }
 
         onDispose {
@@ -248,7 +247,10 @@ fun DotLottieAnimation(
         modifier = modifier
             .defaultMinSize(200.dp, 200.dp)
             .onGloballyPositioned { layoutCoordinates ->
-                layoutSize = layoutCoordinates.size.toSize()
+                val newSize = layoutCoordinates.size.toSize()
+                if (layoutSize?.width != newSize.width || layoutSize?.height != newSize.height) {
+                    layoutSize = newSize
+                }
             }
             .pointerInput(Unit) {
                 awaitEachGesture {

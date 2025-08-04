@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.1"
+agp = "8.6.1"
 androidx-lifecycle-runtime-ktx = "2.6.2"
 androidx-material = "1.6.0"
 disklrucache = "2.0.2"

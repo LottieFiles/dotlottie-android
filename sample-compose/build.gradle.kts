@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.lottiefiles.example"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.lottiefiles.example"
