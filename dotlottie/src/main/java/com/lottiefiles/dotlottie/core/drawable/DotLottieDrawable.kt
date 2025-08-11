@@ -22,9 +22,9 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
-import com.dotlottie.dlplayer.OpenUrl
+import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachineObserver
-import com.dotlottie.dlplayer.createDefaultOpenUrl
+import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
@@ -338,7 +338,7 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
-    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context): Boolean {
+    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), context: Context): Boolean {
         val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
         // Start render loop
@@ -471,18 +471,15 @@ class DotLottieDrawable(
     /**
      * Internal function to notify the state machine of gesture input.
      */
-    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
-        var ret = 1
+    fun stateMachinePostEvent(event: Event, force: Boolean = false) {
         // Extract the event name before the parenthesis
         val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
         if (force) {
-            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+            dlPlayer?.stateMachinePostEvent(event)
         } else if (stateMachineGestureListeners.contains(eventName)) {
-            ret = dlPlayer?.stateMachinePostEvent(event) ?: 0
+            dlPlayer?.stateMachinePostEvent(event)
         }
-
-        return ret
     }
 
     fun stateMachineAddEventListener(listener: StateMachineEventListener) {

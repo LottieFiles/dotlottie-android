@@ -14,9 +14,9 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
-import com.dotlottie.dlplayer.OpenUrl
+import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachineObserver
-import com.dotlottie.dlplayer.createDefaultOpenUrl
+import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import androidx.core.net.toUri
+import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 enum class DotLottiePlayerState {
     PLAYING,
@@ -186,7 +187,7 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun stateMachineStart(openUrl: OpenUrl = createDefaultOpenUrl(), context: Context? = null): Boolean {
+    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), context: Context? = null): Boolean {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
@@ -260,14 +261,8 @@ class DotLottieController {
             })
 
             // For internal observer
-            dlplayer?.stateMachineFrameworkSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {}
-
-                override fun onCustomEvent(message: String) {
+            dlplayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
+                override fun onMessage(message: String) {
                     if (message.startsWith("OpenUrl: ")) {
                         if (context != null) {
                             // Extract the URL part after "OpenUrl: "
@@ -279,40 +274,6 @@ class DotLottieController {
                             context.startActivity(intent)
                         }
                     }
-                }
-
-                override fun onError(message: String) {}
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {
-                }
-
-                override fun onStart() {
-                }
-
-                override fun onStateEntered(enteringState: String) {
-                }
-
-                override fun onStateExit(leavingState: String) {
-                }
-
-                override fun onStop() {
-                }
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {
-                }
-
-                override fun onTransition(previousState: String, newState: String) {
-                }
-
-                override fun onInputFired(inputName: String) {
                 }
             })
         }
@@ -335,18 +296,15 @@ class DotLottieController {
     /**
      * Internal function to notify the state machine of gesture input.
      */
-    fun stateMachinePostEvent(event: Event, force: Boolean = false): Int {
-        var ret: Int = 1
+    fun stateMachinePostEvent(event: Event, force: Boolean = false) {
         // Extract the event name before the parenthesis
         val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
         if (force) {
-            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
+            dlplayer?.stateMachinePostEvent(event)
         } else if (stateMachineGestureListeners.contains(eventName)) {
-            ret = dlplayer?.stateMachinePostEvent(event) ?: 0
+            dlplayer?.stateMachinePostEvent(event)
         }
-
-        return ret
     }
 
     fun stateMachineFire(event: String) {

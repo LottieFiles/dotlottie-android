@@ -28,7 +28,7 @@
             "loop": false,
             "autoplay": true,
             "segment": "explosion",
-            "speed": 0.1,
+            "speed": 1,
             "transitions": [
                 {
                     "type": "Transition",

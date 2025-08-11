@@ -27,8 +27,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
-import com.dotlottie.dlplayer.OpenUrl
-import com.dotlottie.dlplayer.OpenUrlMode
+import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
@@ -96,6 +95,7 @@ fun StateMachineExample() {
                                         .weight(1f)
                                         .pointerInput(Unit) {
                                             detectTapGestures {
+                                                dotLottieController.stop()
                                                 selectedAnimation = imagePath
                                                 scope.launch { drawerState.close() }
                                             }
@@ -103,8 +103,8 @@ fun StateMachineExample() {
                                 ) {
                                     DotLottieAnimation(
                                         source = DotLottieSource.Asset(imagePath),
-                                        autoplay = true,
-                                        loop = true,
+                                        autoplay = false,
+                                        loop = false,
                                         speed = 1f,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -142,6 +142,8 @@ fun StateMachineExample() {
                     var loadedStateMachine by remember { mutableStateOf("") }
 
                     LaunchedEffect(selectedAnimation) {
+                        dotLottieController.stop()
+
                         dotLottieController.stateMachineStop()
 
                         val stateMachineDataFromFile = transformAssetPath(selectedAnimation!!)
@@ -151,8 +153,8 @@ fun StateMachineExample() {
                         loadedStateMachine = stateMachineDataFromFile
 
                         loadResult = dotLottieController.stateMachineLoadData(jsonString ?: "")
-                        val openUrl = OpenUrl(
-                            mode = OpenUrlMode.INTERACTION,
+                        val openUrl = OpenUrlPolicy(
+                            requireUserInteraction = true,
                             whitelist = emptyList()
                         );
                         if (loadResult) { startResult = dotLottieController.stateMachineStart(openUrl, context = context) }

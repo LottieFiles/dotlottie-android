@@ -14,10 +14,10 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
-import com.dotlottie.dlplayer.OpenUrl
+import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
-import com.dotlottie.dlplayer.createDefaultOpenUrl
+import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
@@ -446,7 +446,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun stateMachineStart(urlConfig: OpenUrl = createDefaultOpenUrl(),  context: Context): Boolean {
+    fun stateMachineStart(urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),  context: Context): Boolean {
         return mLottieDrawable?.stateMachineStart(urlConfig, context = context) ?: false
     }
 
@@ -467,8 +467,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.clearEventListeners()
         }
 
-    fun stateMachinePostEvent(event: Event): Int {
-        return mLottieDrawable?.stateMachinePostEvent(event) ?: 0
+    fun stateMachinePostEvent(event: Event) {
+        mLottieDrawable?.stateMachinePostEvent(event)
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
