@@ -15,7 +15,7 @@ import kotlin.coroutines.suspendCoroutine
 
 
 fun String.isJsonAsset(): Boolean {
-    return endsWith(".json")
+    return endsWith(".json") || endsWith( ".lot")
 }
 
 fun String.isDotLottieAsset(): Boolean {
