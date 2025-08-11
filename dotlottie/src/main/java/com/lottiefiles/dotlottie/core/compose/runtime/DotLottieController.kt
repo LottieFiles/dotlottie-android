@@ -3,9 +3,6 @@ package com.lottiefiles.dotlottie.core.compose.runtime
 import com.dotlottie.dlplayer.Config
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat.startActivity
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
@@ -55,8 +52,7 @@ class DotLottieController {
     private val _height = MutableStateFlow(0u)
     val height: StateFlow<UInt> = _height.asStateFlow()
 
-    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
-        private set
+    var stateMachineGestureListeners: MutableList<String> = mutableListOf()
 
     var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
         private set
@@ -195,10 +191,6 @@ class DotLottieController {
             if (dlplayer != null) {
                 stateMachineGestureListeners =
                     dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
-            }
-
-            if (this.isPlaying) {
-                this.play()
             }
 
             // For the users' observers

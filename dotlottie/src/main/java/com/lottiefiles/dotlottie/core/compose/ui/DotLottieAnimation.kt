@@ -37,7 +37,6 @@ import com.sun.jna.Pointer
 import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
-
 import kotlin.math.pow
 
 private const val BYTES_PER_PIXEL = 4
@@ -104,17 +103,17 @@ fun DotLottieAnimation(
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
-                dlPlayer.tick()
-                dlPlayer.render()
+                val ticked = dlPlayer.tick()
 
-                bufferBytes?.let { bytes ->
-                    bitmap?.let { bmp ->
-                        bytes.rewind()
-                        bmp.copyPixelsFromBuffer(bytes)
-                        imageBitmap = bmp.asImageBitmap()
-                    }
+                if (ticked || dlPlayer.render()) {
+                        bufferBytes?.let { bytes ->
+                            bitmap?.let { bmp ->
+                                bytes.rewind()
+                                bmp.copyPixelsFromBuffer(bytes)
+                                imageBitmap = bmp.asImageBitmap()
+                            }
+                        }
                 }
-
 
                 if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
                     choreographer.postFrameCallback(this)
@@ -175,11 +174,7 @@ fun DotLottieAnimation(
     }
 
     LaunchedEffect(dlPlayer.isPlaying(), currentState) {
-        if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
-            choreographer.postFrameCallback(frameCallback)
-        } else {
-            choreographer.removeFrameCallback(frameCallback)
-        }
+        choreographer.postFrameCallback(frameCallback)
     }
 
     LaunchedEffect(

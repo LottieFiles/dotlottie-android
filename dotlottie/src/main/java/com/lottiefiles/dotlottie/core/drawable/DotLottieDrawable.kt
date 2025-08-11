@@ -9,7 +9,6 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.FloatRange
@@ -525,14 +524,15 @@ class DotLottieDrawable(
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
-        dlPlayer!!.tick()
-        dlPlayer!!.render()
+        val ticked = dlPlayer!!.tick()
 
-        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
-        bufferBytes.rewind()
-        bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
-        bufferBytes.rewind()
-        canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        if (ticked || dlPlayer!!.render()) {
+            val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
+            bufferBytes.rewind()
+            bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
+            bufferBytes.rewind()
+            canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        }
 
         mHandler.postDelayed(
             mNextFrameRunnable,

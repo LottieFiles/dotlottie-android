@@ -1,11 +1,7 @@
 package com.lottiefiles.example
 
 import android.content.Context
-import android.content.Intent
 import android.util.Log
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -13,7 +9,6 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +26,7 @@ import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 
 fun transformAssetPath(input: String): String {
@@ -38,7 +34,7 @@ fun transformAssetPath(input: String): String {
     return "statemachines/sm-$baseName.json"
 }
 
-suspend fun loadJsonFromAssets(context: Context, path: String): String {
+fun loadJsonFromAssets(context: Context, path: String): String {
     return context.assets.open(path).bufferedReader().use { it.readText() }
 }
 
@@ -49,7 +45,47 @@ fun StateMachineExample() {
     val dotLottieController = remember { DotLottieController() }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedAnimation by remember { mutableStateOf<String?>("animations/smiley-slider.lottie") }
+    var selectedAnimation by remember { mutableStateOf<String?>("animations/pigeon.lottie") }
+    var isAnimationLoaded by remember { mutableStateOf(false) }
+
+// Reset the loaded state when animation changes
+    LaunchedEffect(selectedAnimation) {
+        isAnimationLoaded = false
+    }
+
+    val events = object : DotLottieEventListener {
+        override fun onLoad() {
+            Log.i("DotLottie", "Loaded")
+            isAnimationLoaded = true
+        }
+
+        override fun onPause() {
+            Log.i("DotLottie", "paused")
+        }
+
+        override fun onPlay() {
+            Log.i("DotLottie", "Play")
+        }
+
+        override fun onStop() {
+            Log.i("DotLottie", "Stop")
+        }
+
+        override fun onComplete() {
+            Log.i("DotLottie", "Completed")
+        }
+
+        override fun onUnFreeze() {
+            Log.i("DotLottie", "UnFreeze")
+        }
+
+        override fun onFrame(frame: Float) {
+        }
+
+        override fun onFreeze() {
+            Log.i("DotLottie", "Freeze")
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -103,8 +139,8 @@ fun StateMachineExample() {
                                 ) {
                                     DotLottieAnimation(
                                         source = DotLottieSource.Asset(imagePath),
-                                        autoplay = false,
-                                        loop = false,
+                                        autoplay = true,
+                                        loop = true,
                                         speed = 1f,
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -141,23 +177,24 @@ fun StateMachineExample() {
                     var startResult by remember { mutableStateOf(false) }
                     var loadedStateMachine by remember { mutableStateOf("") }
 
-                    LaunchedEffect(selectedAnimation) {
-                        dotLottieController.stop()
+                    LaunchedEffect(selectedAnimation, isAnimationLoaded) {
+                        if (selectedAnimation != null && isAnimationLoaded) {
+                            dotLottieController.stop()
+                            dotLottieController.stateMachineStop()
 
-                        dotLottieController.stateMachineStop()
+                            val stateMachineDataFromFile = transformAssetPath(selectedAnimation!!)
+                            jsonString = loadJsonFromAssets(context, stateMachineDataFromFile)
+                            loadedStateMachine = stateMachineDataFromFile
 
-                        val stateMachineDataFromFile = transformAssetPath(selectedAnimation!!)
-
-                        jsonString = loadJsonFromAssets(context, stateMachineDataFromFile)
-
-                        loadedStateMachine = stateMachineDataFromFile
-
-                        loadResult = dotLottieController.stateMachineLoadData(jsonString ?: "")
-                        val openUrl = OpenUrlPolicy(
-                            requireUserInteraction = true,
-                            whitelist = emptyList()
-                        );
-                        if (loadResult) { startResult = dotLottieController.stateMachineStart(openUrl, context = context) }
+                            loadResult = dotLottieController.stateMachineLoadData(jsonString ?: "")
+                            val openUrl = OpenUrlPolicy(
+                                requireUserInteraction = true,
+                                whitelist = emptyList()
+                            )
+                            if (loadResult) {
+                                startResult = dotLottieController.stateMachineStart(openUrl, context = context)
+                            }
+                        }
                     }
 
                     Column {
@@ -165,6 +202,7 @@ fun StateMachineExample() {
                             source = DotLottieSource.Asset(selectedAnimation!!),
                             autoplay = false,
                             loop = false,
+                            eventListeners = listOf(events),
                             controller = dotLottieController,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -182,7 +220,7 @@ fun StateMachineExample() {
                                             Log.d("DotLottie - set Input",
                                                 dotLottieController.stateMachineSetNumericInput("Progress", percentage)
                                                     .toString()
-                                            );
+                                            )
                                             Log.d("DotLottie - Fire", dotLottieController.stateMachineFire("Step").toString())
                                         }
                                     }

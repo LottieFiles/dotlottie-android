@@ -84,7 +84,7 @@
             "type": "PlaybackState",
             "name": "star_0",
             "animation": "",
-            "autoplay": true,
+            "autoplay": false,
             "segment": "star_0",
             "transitions": [],
             "entryActions": [
