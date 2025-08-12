@@ -1,8 +1,6 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
 import com.dotlottie.dlplayer.Config
-import android.content.Context
-import android.content.Intent
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
@@ -23,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import androidx.core.net.toUri
 import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 enum class DotLottiePlayerState {
@@ -183,7 +180,7 @@ class DotLottieController {
         dlplayer?.subscribe(observer!!)
     }
 
-    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), context: Context? = null): Boolean {
+    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
@@ -256,15 +253,8 @@ class DotLottieController {
             dlplayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
                 override fun onMessage(message: String) {
                     if (message.startsWith("OpenUrl: ")) {
-                        if (context != null) {
-                            // Extract the URL part after "OpenUrl: "
-                            val url = message.substringAfter("OpenUrl: ")
-
-                            // Create and launch the intent to open the URL
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        }
+                        val url = message.substringAfter("OpenUrl: ")
+                        onOpenUrl?.invoke(url)
                     }
                 }
             })

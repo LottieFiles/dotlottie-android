@@ -1,6 +1,7 @@
 package com.lottiefiles.example
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import androidx.core.net.toUri
 import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 
@@ -72,7 +74,7 @@ fun StateMachineExample() {
         }
 
         override fun onComplete() {
-            Log.i("DotLottie", "Completed")
+//            Log.i("DotLottie", "Completed")
         }
 
         override fun onUnFreeze() {
@@ -188,11 +190,16 @@ fun StateMachineExample() {
 
                             loadResult = dotLottieController.stateMachineLoadData(jsonString ?: "")
                             val openUrl = OpenUrlPolicy(
-                                requireUserInteraction = true,
-                                whitelist = emptyList()
+                                requireUserInteraction = false,
+                                whitelist = List(1) { "*"}
                             )
                             if (loadResult) {
-                                startResult = dotLottieController.stateMachineStart(openUrl, context = context)
+                                startResult = dotLottieController.stateMachineStart(openUrl) { url ->
+                                    // Handle the URL opening here
+                                    val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
+                                }
                             }
                         }
                     }

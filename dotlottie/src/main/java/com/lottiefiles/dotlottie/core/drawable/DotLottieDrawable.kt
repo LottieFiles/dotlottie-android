@@ -27,8 +27,8 @@ import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
-import androidx.core.net.toUri
 import androidx.core.graphics.createBitmap
+import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -337,7 +337,7 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
-    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), context: Context): Boolean {
+    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
         val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
         // Start render loop
@@ -406,50 +406,13 @@ class DotLottieDrawable(
             })
 
             // For internal observer
-            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {}
-
-                override fun onCustomEvent(message: String) {
+            dlPlayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
+                override fun onMessage(message: String) {
                     if (message.startsWith("OpenUrl: ")) {
-                        // Extract the URL part after "OpenUrl: "
                         val url = message.substringAfter("OpenUrl: ")
-
-                        // Create and launch the intent to open the URL
-                        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
+                        onOpenUrl?.invoke(url)
                     }
                 }
-
-                override fun onError(message: String) {}
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {}
-
-                override fun onStart() {}
-
-                override fun onStateEntered(enteringState: String) {}
-
-                override fun onStateExit(leavingState: String) {}
-
-                override fun onStop() {}
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {}
-
-                override fun onTransition(previousState: String, newState: String) {}
-
-                override fun onInputFired(inputName: String) {}
             })
         }
         return result

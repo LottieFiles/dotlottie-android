@@ -108,8 +108,8 @@
                 },
                 {
                     "type": "OpenUrl",
-                    "url": "https://www.reddit.com/",
-                    "target": "_self"
+                    "url": "https://www.reddit.com",
+                    "target": ""
                 }
             ]
         },
