@@ -1,7 +1,5 @@
 package com.lottiefiles.dotlottie.core.drawable
 
-import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
