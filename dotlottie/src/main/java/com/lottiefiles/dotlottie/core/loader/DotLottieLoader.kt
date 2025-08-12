@@ -1,10 +1,12 @@
 import android.content.Context
 import com.lottiefiles.dotlottie.core.loader.AssetLoader
 import com.lottiefiles.dotlottie.core.loader.NetworkLoader
+import com.lottiefiles.dotlottie.core.loader.ResLoader
 
 class DotLottieLoader(private val context: Context) {
     fun fromAsset(assetPath: String) = AssetLoader(context, assetPath)
     fun fromUrl(url: String) = NetworkLoader(context, url)
+    fun fromRes(resourceId: Int) = ResLoader(context, resourceId)
 
     companion object {
 
