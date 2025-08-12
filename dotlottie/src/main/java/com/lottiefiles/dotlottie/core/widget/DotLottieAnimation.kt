@@ -446,8 +446,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun stateMachineStart(urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),  context: Context): Boolean {
-        return mLottieDrawable?.stateMachineStart(urlConfig, context = context) ?: false
+    fun stateMachineStart(urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),  onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+        return mLottieDrawable?.stateMachineStart(urlConfig, onOpenUrl) ?: false
     }
 
     fun stateMachineStop(): Boolean {
