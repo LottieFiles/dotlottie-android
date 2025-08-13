@@ -19,11 +19,14 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.Observer
+import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachineObserver
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
+import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
+import androidx.core.graphics.createBitmap
+import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -39,6 +42,7 @@ class DotLottieDrawable(
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
+    private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
 
     var freeze: Boolean = false
         set(value) {
@@ -218,7 +222,7 @@ class DotLottieDrawable(
                 dlPlayer!!.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
             }
         }
-        bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmapBuffer = createBitmap(width, height)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
         this.subscribe()
     }
@@ -237,7 +241,7 @@ class DotLottieDrawable(
         height = h
 
         bitmapBuffer?.recycle()
-        bitmapBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmapBuffer = createBitmap(width, height)
 
         dlPlayer!!.resize(width.toUInt(), height.toUInt())
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
@@ -331,91 +335,165 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
+    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+        val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
-    // TODO: Add stateMachine features
-//    fun startStateMachine(): Boolean {
-//        val result = dlPlayer?.startStateMachine() ?: false
-//        if (result) {
-//            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-//                override fun onStateEntered(enteringState: String) {
-//                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-//                }
-//
-//                override fun onStateExit(leavingState: String) {
-//                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-//                }
-//
-//                override fun onTransition(previousState: String, newState: String) {
-//                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-//                }
-//            })
-//        }
-//        return result
-//    }
+        // Start render loop
+        if (result) {
+            if (dlPlayer != null) {
+                stateMachineGestureListeners =
+                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+            }
 
-//    fun stopStateMachine(): Boolean {
-//        return dlPlayer?.stopStateMachine() ?: false
-//    }
-//
-//    fun loadStateMachine(stateMachineId: String): Boolean {
-//        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
-//    }
-//
-//    fun postEvent(event: Event): Int {
-//        val result = dlPlayer?.postEvent(event) ?: 0
-//        when (result) {
-//            1 -> {
-//                dotLottieEventListener.forEach { it.onError(Throwable("Error posting event: $event")) }
-//            }
-//
-//            2 -> {
-//                this.play()
-//            }
-//
-//            3 -> {
-//                this.pause()
-//            }
-//
-//            4 -> {
-//                invalidateSelf()
-//            }
-//        }
-//
-//        return result
-//    }
-//
-//    fun addStateMachineEventListener(listener: StateMachineEventListener) {
-//        stateMachineListeners.add(listener)
-//    }
-//
-//    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-//        stateMachineListeners.remove(listener)
-//    }
+            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
+                override fun onBooleanInputValueChange(
+                    inputName: String,
+                    oldValue: Boolean,
+                    newValue: Boolean
+                ) {
+                    stateMachineListeners.forEach { it.onBooleanInputValueChange(inputName, oldValue, newValue) }
+                }
 
-//    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-//        return dlPlayer?.setStateMachineNumericContext(key, value) ?: false
-//    }
-//
-//    fun setStateMachineStringContext(key: String, value: String): Boolean {
-//        return dlPlayer?.setStateMachineStringContext(key, value) ?: false
-//    }
-//
-//    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-//        return dlPlayer?.setStateMachineBooleanContext(key, value) ?: false
-//    }
+                override fun onCustomEvent(message: String) {
+                    stateMachineListeners.forEach { it.onCustomEvent(message) }
+                }
+
+                override fun onError(message: String) {
+                    stateMachineListeners.forEach { it.onError(message) }
+                }
+
+                override fun onNumericInputValueChange(
+                    inputName: String,
+                    oldValue: Float,
+                    newValue: Float
+                ) {
+                    stateMachineListeners.forEach { it.onNumericInputValueChange(inputName, oldValue, newValue) }
+                }
+
+                override fun onStart() {
+                    stateMachineListeners.forEach { it.onStart() }
+                }
+
+                override fun onStateEntered(enteringState: String) {
+                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
+                }
+
+                override fun onStateExit(leavingState: String) {
+                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
+                }
+
+                override fun onStop() {
+                    stateMachineListeners.forEach { it.onStop() }
+                }
+
+                override fun onStringInputValueChange(
+                    inputName: String,
+                    oldValue: String,
+                    newValue: String
+                ) {
+                    stateMachineListeners.forEach { it.onStringInputValueChange(inputName,oldValue,newValue) }
+                }
+
+                override fun onTransition(previousState: String, newState: String) {
+                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
+                }
+
+                override fun onInputFired(inputName: String) {
+                    stateMachineListeners.forEach { it.onInputFired(inputName) }
+                }
+            })
+
+            // For internal observer
+            dlPlayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
+                override fun onMessage(message: String) {
+                    if (message.startsWith("OpenUrl: ")) {
+                        val url = message.substringAfter("OpenUrl: ")
+                        onOpenUrl?.invoke(url)
+                    }
+                }
+            })
+        }
+        return result
+    }
+
+    fun stateMachineStop(): Boolean {
+        return dlPlayer?.stateMachineStop() ?: false
+    }
+
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return dlPlayer?.stateMachineLoad(stateMachineId) ?: false
+    }
+
+    fun stateMachineLoadData(data: String): Boolean {
+        return dlPlayer?.stateMachineLoadData(data) ?: false
+    }
+
+    /**
+     * Internal function to notify the state machine of gesture input.
+     */
+    fun stateMachinePostEvent(event: Event, force: Boolean = false) {
+        // Extract the event name before the parenthesis
+        val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
+
+        if (force) {
+            dlPlayer?.stateMachinePostEvent(event)
+        } else if (stateMachineGestureListeners.contains(eventName)) {
+            dlPlayer?.stateMachinePostEvent(event)
+        }
+    }
+
+    fun stateMachineAddEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.add(listener)
+    }
+
+    fun stateMachineRemoveEventListener(listener: StateMachineEventListener) {
+        stateMachineListeners.remove(listener)
+    }
+
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return dlPlayer?.stateMachineSetNumericInput(key, value) ?: false
+    }
+
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return dlPlayer?.stateMachineSetStringInput(key, value) ?: false
+    }
+
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return dlPlayer?.stateMachineSetBooleanInput(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return dlPlayer?.stateMachineGetNumericInput(key)
+    }
+
+    fun stateMachineGetStringInput(key: String): String? {
+        return dlPlayer?.stateMachineGetStringInput(key)
+    }
+
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return dlPlayer?.stateMachineGetBooleanInput(key)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return dlPlayer?.stateMachineCurrentState()
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        dlPlayer?.stateMachineFireEvent(event)
+    }
 
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
-        val nextFrame = dlPlayer!!.requestFrame()
-        dlPlayer!!.setFrame(nextFrame)
-        dlPlayer!!.render()
+        val ticked = dlPlayer!!.tick()
 
-        val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
-        bufferBytes.rewind()
-        bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
-        bufferBytes.rewind()
-        canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        if (ticked || dlPlayer!!.render()) {
+            val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
+            bufferBytes.rewind()
+            bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
+            bufferBytes.rewind()
+            canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        }
 
         mHandler.postDelayed(
             mNextFrameRunnable,

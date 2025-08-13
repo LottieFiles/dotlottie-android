@@ -1,0 +1,48 @@
+{
+    "initial": "Start",
+    "states": [
+        {
+            "animation": "stats",
+            "type": "PlaybackState",
+            "name": "Start",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "Start",
+                    "guards": [
+                        {
+                            "type": "Event",
+                            "inputName": "Step"
+                        }
+                    ]
+                }
+            ],
+            "entryActions": [
+                {
+                    "type": "SetProgress",
+                    "value": "$Progress"
+                }
+            ]
+        }
+    ],
+    "interactions": [{
+        "type": "PointerDown",
+        "actions": [
+            {
+                "type": "Increment",
+                "inputName": "Progress"
+            }
+        ]
+    }],
+    "inputs": [
+        {
+            "type": "Numeric",
+            "name": "Progress",
+            "value": 0
+        },
+        {
+            "type": "Event",
+            "name": "Step"
+        }
+    ]
+}
