@@ -1092,6 +1092,8 @@ internal open class UniffiVTableCallbackInterfaceStateMachineObserver(
 
 
 
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -1119,6 +1121,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_fn_free_dotlottieplayer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Pointer
+    fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_with_threads(`config`: RustBuffer.ByValue,`threads`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1656,6 +1660,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new(
     ): Short
+    fun uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_with_threads(
+    ): Short
     fun ffi_dotlottie_player_uniffi_contract_version(
     ): Int
     
@@ -1977,6 +1983,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_new() != 34558.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_constructor_dotlottieplayer_with_threads() != 55397.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -3527,8 +3536,19 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     
 
     
+    companion object {
+         fun `withThreads`(`config`: Config, `threads`: kotlin.UInt): DotLottiePlayer {
+            return FfiConverterTypeDotLottiePlayer.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_constructor_dotlottieplayer_with_threads(
+        FfiConverterTypeConfig.lower(`config`),FfiConverterUInt.lower(`threads`),_status)
+}
+    )
+    }
     
-    companion object
+
+        
+    }
     
 }
 
