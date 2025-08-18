@@ -58,12 +58,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    DefaultAnimationDemo()
+//                    DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
+                    StateMachineExample()
                 }
             }
         }
@@ -540,7 +541,7 @@ fun LayoutExample() {
         Row {
             Column {
                 Button(onClick = {
-                    expandAlignment.value = true;
+                    expandAlignment.value = true
                 }) {
                     Text(text = "Alignment:: ${alignment.value}")
                 }
@@ -559,7 +560,7 @@ fun LayoutExample() {
                 }
 
                 Button(onClick = {
-                    expandFit.value = true;
+                    expandFit.value = true
                 }) {
                     Text(text = "Fit:: ${fit.value}")
                 }

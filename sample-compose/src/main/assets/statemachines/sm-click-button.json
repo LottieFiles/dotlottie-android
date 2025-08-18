@@ -1,0 +1,47 @@
+{  
+    "initial": "Start",
+    "states": [
+        {
+            "animation": "",
+            "type": "GlobalState",
+            "name": "Start",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "Forward",
+                    "guards": [
+                        {
+                            "type": "Event",
+                            "inputName": "Forward"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "animation": "",
+            "type": "PlaybackState",
+            "name": "Forward",
+            "mode": "Forward",
+            "autoplay": true,
+            "transitions": []
+        }
+    ],
+    "interactions": [
+        {
+            "type": "PointerDown",
+            "actions": [
+                {
+                    "type": "Fire",
+                    "inputName": "Forward"
+                }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "type": "Event",
+            "name": "Forward"
+        }
+    ]
+}
