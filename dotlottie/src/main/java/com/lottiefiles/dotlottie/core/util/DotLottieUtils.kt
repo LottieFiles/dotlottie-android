@@ -15,7 +15,7 @@ import kotlin.coroutines.suspendCoroutine
 
 
 fun String.isJsonAsset(): Boolean {
-    return endsWith(".json")
+    return endsWith(".json") || endsWith( ".lot")
 }
 
 fun String.isDotLottieAsset(): Boolean {
@@ -30,6 +30,20 @@ val ZIP_MAGIC: ByteArray = byteArrayOf(0x50, 0x4b, 0x03, 0x04)
 
 fun BufferedSource.isZipCompressed(): Boolean {
     return matchesMagicBytes(this, ZIP_MAGIC)
+}
+
+fun ByteArray.isZipCompressed(): Boolean {
+    return try {
+        if (size < ZIP_MAGIC.size) return false
+        for (i in ZIP_MAGIC.indices) {
+            if (this[i] != ZIP_MAGIC[i]) {
+                return false
+            }
+        }
+        true
+    } catch (e: Exception) {
+        false
+    }
 }
 
 fun Context.lifecycleOwner(): LifecycleOwner? {
@@ -85,6 +99,21 @@ object DotLottieUtils {
             is DotLottieSource.Asset -> {
                 return suspendCoroutine { cont ->
                     DotLottieLoader.with(context).fromAsset(source.assetPath).load(object :
+                        DotLottieResult {
+                        override fun onSuccess(result: DotLottieContent) {
+                            cont.resume(result)
+                        }
+
+                        override fun onError(throwable: Throwable) {
+                            cont.resumeWithException(throwable)
+                        }
+                    })
+                }
+            }
+
+            is DotLottieSource.Res -> {
+                return suspendCoroutine { cont ->
+                    DotLottieLoader.with(context).fromRes(source.resourceId).load(object :
                         DotLottieResult {
                         override fun onSuccess(result: DotLottieContent) {
                             cont.resume(result)
