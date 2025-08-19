@@ -64,7 +64,8 @@ class MainActivity : ComponentActivity() {
 //                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-                    StateMachineExample()
+                    ThreadCountExample()
+//                    StateMachineExample()
                 }
             }
         }
@@ -588,3 +589,25 @@ fun LayoutExample() {
     }
 }
 
+@Composable
+fun ThreadCountExample() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("6 Threads", fontSize = 16.sp)
+        DotLottieAnimation(
+            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
+            autoplay = true,
+            loop = true,
+            threads = 6u,
+            modifier = Modifier
+                .background(Color.LightGray)
+                .size(300.dp)
+                .border(BorderStroke(1.dp, Color.Gray)),
+        )
+    }
+}

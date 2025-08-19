@@ -58,6 +58,7 @@ fun DotLottieAnimation(
     controller: DotLottieController? = null,
     layout: Layout = createDefaultLayout(),
     eventListeners: List<DotLottieEventListener> = emptyList(),
+    threads: UInt? = null,
 ) {
     val context = LocalContext.current
 
@@ -84,7 +85,13 @@ fun DotLottieAnimation(
     }
 
     val initialStateMachineId = remember { stateMachineId }
-    val dlPlayer = remember { DotLottiePlayer(dlConfig) }
+    val dlPlayer = remember(threads) { 
+        if (threads != null) {
+            DotLottiePlayer.withThreads(dlConfig, threads)
+        } else {
+            DotLottiePlayer(dlConfig)
+        }
+    }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var nativeBuffer by remember { mutableStateOf<Pointer?>(null) }
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }

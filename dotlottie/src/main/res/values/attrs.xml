@@ -24,5 +24,6 @@
         <attr name="dotLottie_themeId" format="string" />
         <attr name="dotLottie_stateMachineId" format="string" />
         <attr name="dotLottie_animationId" format="string" />
+        <attr name="dotLottie_threads" format="integer" />
     </declare-styleable>
 </resources>

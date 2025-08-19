@@ -36,6 +36,7 @@ class DotLottieDrawable(
     private var height: Int = 0,
     private val dotLottieEventListener: MutableList<DotLottieEventListener>,
     private var config: Config,
+    private val threads: UInt? = null
 ) : Drawable(), Animatable {
 
     private var nativeBuffer: Pointer? = null
@@ -208,7 +209,11 @@ class DotLottieDrawable(
     }
 
     private fun initialize() {
-        dlPlayer = DotLottiePlayer(config)
+        dlPlayer = if (threads != null) {
+            DotLottiePlayer.withThreads(config, threads)
+        } else {
+            DotLottiePlayer(config)
+        }
         when (animationData) {
             is DotLottieContent.Json -> {
                 dlPlayer!!.loadAnimationData(
