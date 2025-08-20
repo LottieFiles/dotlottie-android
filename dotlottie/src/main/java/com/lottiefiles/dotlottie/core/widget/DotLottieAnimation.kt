@@ -48,7 +48,8 @@ data class DotLottieAttributes(
     val useFrameInterpolation: Boolean,
     val themeId: String?,
     val stateMachineId: String?,
-    val animationId: String?
+    val animationId: String?,
+    val threads: UInt?
 )
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -259,6 +260,9 @@ class DotLottieAnimation @JvmOverloads constructor(
                     themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId),
                     stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId),
                     animationId = getString(R.styleable.DotLottieAnimation_dotLottie_animationId),
+                    threads = if (hasValue(R.styleable.DotLottieAnimation_dotLottie_threads)) {
+                        getInt(R.styleable.DotLottieAnimation_dotLottie_threads, 0).toUInt()
+                    } else null
                 )
             } finally {
                 recycle()
@@ -322,7 +326,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         themeId = config.themeId,
                         stateMachineId = config.stateMachineId,
                         animationId = config.animationId
-                    )
+                    ),
+                    threads = config.threads
                 )
 
                 mLottieDrawable?.callback = this@DotLottieAnimation
@@ -374,7 +379,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                             themeId = attributes.themeId ?: "",
                             stateMachineId = attributes.stateMachineId ?: "",
                             animationId = attributes.animationId ?: ""
-                        )
+                        ),
+                        threads = attributes.threads
                     )
                     mLottieDrawable?.callback = this@DotLottieAnimation
                     withContext(Dispatchers.Main) {

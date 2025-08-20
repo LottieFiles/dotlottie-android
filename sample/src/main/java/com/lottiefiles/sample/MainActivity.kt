@@ -92,6 +92,7 @@ class MainActivity : ComponentActivity() {
 //            .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
             .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
+            .threads(6u)
             .build()
 
         binding.dotLottieView.load(config)
