@@ -14,7 +14,10 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.OpenUrlPolicy
+import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
+import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
 import com.lottiefiles.dotlottie.core.model.Config
@@ -27,6 +30,7 @@ import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.isUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -42,7 +46,10 @@ data class DotLottieAttributes(
     val autoplay: Boolean,
     val backgroundColor: Int,
     val useFrameInterpolation: Boolean,
-    val themeId: String?
+    val themeId: String?,
+    val stateMachineId: String?,
+    val animationId: String?,
+    val threads: UInt?
 )
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -57,6 +64,9 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
     private val coroutineScope = CoroutineScope(SupervisorJob())
+    private var setupConfigJob: Job? = null
+    private var setupDrawableJob: Job? = null
+    private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
@@ -113,7 +123,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     val markers: List<Marker>
         get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
-
 
     val activeThemeId: String
         get() = mLottieDrawable?.activeThemeId ?: ""
@@ -216,6 +225,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun load(config: Config) {
+        mLottieDrawable?.release()
+        mLottieDrawable = null
         mConfig = config
         setupConfig()
     }
@@ -246,7 +257,12 @@ class DotLottieAnimation @JvmOverloads constructor(
                         R.styleable.DotLottieAnimation_dotLottie_useFrameInterpolation,
                         false
                     ),
-                    themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId)
+                    themeId = getString(R.styleable.DotLottieAnimation_dotLottie_themeId),
+                    stateMachineId = getString(R.styleable.DotLottieAnimation_dotLottie_stateMachineId),
+                    animationId = getString(R.styleable.DotLottieAnimation_dotLottie_animationId),
+                    threads = if (hasValue(R.styleable.DotLottieAnimation_dotLottie_threads)) {
+                        getInt(R.styleable.DotLottieAnimation_dotLottie_threads, 0).toUInt()
+                    } else null
                 )
             } finally {
                 recycle()
@@ -255,17 +271,26 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun waitForLayout() {
-        viewTreeObserver.addOnGlobalLayoutListener(object :
-            ViewTreeObserver.OnGlobalLayoutListener {
+        layoutListener = object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
                     // Start animation setup only when dimensions are available
                     setupDotLottieDrawable()
                     // Remove the listener to avoid redundant calls
-                    viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    removeLayoutListener()
                 }
             }
-        })
+        }
+        viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+    }
+
+    private fun removeLayoutListener() {
+        layoutListener?.let { listener ->
+            if (viewTreeObserver.isAlive()) {
+                viewTreeObserver.removeOnGlobalLayoutListener(listener)
+            }
+            layoutListener = null
+        }
     }
 
     private fun String.isJsonAsset(): Boolean {
@@ -279,14 +304,15 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private fun setupConfig() {
         val config = mConfig ?: return
-        coroutineScope.launch {
-            try {
+        setupConfigJob?.cancel()
+        setupConfigJob = coroutineScope.launch {
+            runCatching {
                 val content = DotLottieUtils.getContent(context, config.source)
                 mLottieDrawable = DotLottieDrawable(
                     height = height,
                     width = width,
                     animationData = content,
-                    dotLottieEventListener = mDotLottieEventListener,
+                    dotLottieEventListener = mDotLottieEventListener.toMutableList(),
                     config = DLConfig(
                         autoplay = config.autoplay,
                         loopAnimation = config.loop,
@@ -298,8 +324,10 @@ class DotLottieAnimation @JvmOverloads constructor(
                         marker = config.marker,
                         layout = config.layout,
                         themeId = config.themeId,
-                        stateMachineId = "", // TODO: implement stateMachine
-                    )
+                        stateMachineId = config.stateMachineId,
+                        animationId = config.animationId
+                    ),
+                    threads = config.threads
                 )
 
                 mLottieDrawable?.callback = this@DotLottieAnimation
@@ -307,7 +335,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     requestLayout()
                     invalidate()
                 }
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 mDotLottieEventListener.forEach {
                     it.onLoadError(e)
                 }
@@ -323,37 +351,48 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun setupDotLottieDrawable() {
-        coroutineScope.launch {
-            if (attributes.src.isNotBlank()) {
-                val content: DotLottieContent = if (attributes.src.isUrl()) {
-                    DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
-                } else {
-                    DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
-                }
+        setupDrawableJob?.cancel()
+        setupDrawableJob = coroutineScope.launch {
+            runCatching {
+                if (attributes.src.isNotBlank()) {
+                    val content: DotLottieContent = if (attributes.src.isUrl()) {
+                        DotLottieUtils.getContent(context, DotLottieSource.Url(attributes.src))
+                    } else {
+                        DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
+                    }
 
-                mLottieDrawable = DotLottieDrawable(
-                    animationData = content,
-                    width = width,
-                    height = height,
-                    dotLottieEventListener = mDotLottieEventListener,
-                    config = DLConfig(
-                        autoplay = attributes.autoplay,
-                        loopAnimation = attributes.loop,
-                        mode = getMode(attributes.playMode),
-                        speed = attributes.speed,
-                        useFrameInterpolation = attributes.useFrameInterpolation,
-                        backgroundColor = attributes.backgroundColor.toUInt(),
-                        segment = listOf(),
-                        marker = attributes.marker ?: "",
-                        layout = createDefaultLayout(),
-                        themeId = attributes.themeId ?: "",
-                        stateMachineId = "", // TODO: implement statMachine
+                    mLottieDrawable = DotLottieDrawable(
+                        animationData = content,
+                        width = width,
+                        height = height,
+                        dotLottieEventListener = mDotLottieEventListener,
+                        config = DLConfig(
+                            autoplay = attributes.autoplay,
+                            loopAnimation = attributes.loop,
+                            mode = getMode(attributes.playMode),
+                            speed = attributes.speed,
+                            useFrameInterpolation = attributes.useFrameInterpolation,
+                            backgroundColor = attributes.backgroundColor.toUInt(),
+                            segment = listOf(),
+                            marker = attributes.marker ?: "",
+                            layout = createDefaultLayout(),
+                            themeId = attributes.themeId ?: "",
+                            stateMachineId = attributes.stateMachineId ?: "",
+                            animationId = attributes.animationId ?: ""
+                        ),
+                        threads = attributes.threads
                     )
-                )
-                mLottieDrawable?.callback = this@DotLottieAnimation
+                    mLottieDrawable?.callback = this@DotLottieAnimation
+                    withContext(Dispatchers.Main) {
+                        requestLayout()
+                        invalidate()
+                    }
+                }
+            }.onFailure { e ->
                 withContext(Dispatchers.Main) {
-                    requestLayout()
-                    invalidate()
+                    mDotLottieEventListener.forEach {
+                        it.onLoadError(e)
+                    }
                 }
             }
         }
@@ -378,6 +417,9 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        removeLayoutListener()
+        setupConfigJob?.cancel()
+        setupDrawableJob?.cancel()
         coroutineScope.cancel()
         mLottieDrawable?.let { drawable ->
             drawable.release()
@@ -398,50 +440,82 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun addEventListener(listener: DotLottieEventListener) {
-        mDotLottieEventListener.add(listener)
+        if (!mDotLottieEventListener.contains(listener)) {
+            mDotLottieEventListener.add(listener)
+            mLottieDrawable?.addEventListenter(listener)
+        }
     }
 
     fun removeEventListener(listener: DotLottieEventListener) {
         mDotLottieEventListener.remove(listener)
+        mLottieDrawable?.removeEventListener(listener)
     }
 
 
-    // TODO: Add stateMachine features
-//    fun startStateMachine(): Boolean {
-//        return mLottieDrawable?.startStateMachine() ?: false
-//    }
-//
-//    fun stopStateMachine(): Boolean {
-//        return mLottieDrawable?.stopStateMachine() ?: false
-//    }
-//
-//    fun loadStateMachine(stateMachineId: String): Boolean {
-//        return mLottieDrawable?.loadStateMachine(stateMachineId) ?: false
-//    }
-//
-//    fun postEvent(event: Event): Int {
-//        return mLottieDrawable?.postEvent(event) ?: 0
-//    }
-//
-//    fun addStateMachineEventListener(listener: StateMachineEventListener) {
-//        mLottieDrawable?.addStateMachineEventListener(listener)
-//    }
-//
-//    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
-//        mLottieDrawable?.removeStateMachineEventListener(listener)
-//    }
-//
-//    fun setStateMachineNumericContext(key: String, value: Float): Boolean {
-//        return mLottieDrawable?.setStateMachineNumericContext(key, value) ?: false
-//    }
-//
-//    fun setStateMachineStringContext(key: String, value: String): Boolean {
-//        return mLottieDrawable?.setStateMachineStringContext(key, value) ?: false
-//    }
-//
-//    fun setStateMachineBooleanContext(key: String, value: Boolean): Boolean {
-//        return mLottieDrawable?.setStateMachineBooleanContext(key, value) ?: false
-//    }
+    fun stateMachineStart(urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),  onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+        return mLottieDrawable?.stateMachineStart(urlConfig, onOpenUrl) ?: false
+    }
+
+    fun stateMachineStop(): Boolean {
+        return mLottieDrawable?.stateMachineStop() ?: false
+    }
+
+    fun stateMachineLoad(stateMachineId: String): Boolean {
+        return mLottieDrawable?.stateMachineLoad(stateMachineId) ?: false
+    }
+
+    fun stateMachineLoadData(data: String): Boolean {
+        return mLottieDrawable?.stateMachineLoadData(data) ?: false
+    }
+
+    fun clearEventListeners() {
+        mDotLottieEventListener.clear()
+        mLottieDrawable?.clearEventListeners()
+        }
+
+    fun stateMachinePostEvent(event: Event) {
+        mLottieDrawable?.stateMachinePostEvent(event)
+    }
+
+    fun addStateMachineEventListener(listener: StateMachineEventListener) {
+        mLottieDrawable?.stateMachineAddEventListener(listener)
+    }
+
+    fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+        mLottieDrawable?.stateMachineRemoveEventListener(listener)
+    }
+
+    fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
+        return mLottieDrawable?.stateMachineSetNumericInput(key, value) ?: false
+    }
+
+    fun stateMachineSetStringInput(key: String, value: String): Boolean {
+        return mLottieDrawable?.stateMachineSetStringInput(key, value) ?: false
+    }
+
+    fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
+        return mLottieDrawable?.stateMachineSetBooleanInput(key, value) ?: false
+    }
+
+    fun stateMachineGetNumericInput(key: String): Float? {
+        return mLottieDrawable?.stateMachineGetNumericInput(key)
+    }
+
+    fun stateMachineGetStringInput(key: String): String? {
+        return mLottieDrawable?.stateMachineGetStringInput(key)
+    }
+
+    fun stateMachineGetBooleanInput(key: String): Boolean? {
+        return mLottieDrawable?.stateMachineGetBooleanInput(key)
+    }
+
+    fun stateMachineFireEvent(event: String) {
+        mLottieDrawable?.stateMachineFireEvent(event)
+    }
+
+    fun stateMachineCurrentState(): String? {
+        return mLottieDrawable?.stateMachineCurrentState()
+    }
 
     companion object {
         private const val TAG = "DotLottieAnimation"

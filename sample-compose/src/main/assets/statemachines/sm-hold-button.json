@@ -1,0 +1,78 @@
+{  
+    "initial": "Start",
+    "states": [
+        {
+            "animation": "",
+            "type": "GlobalState",
+            "name": "Start",
+            "transitions": [
+                {
+                    "type": "Transition",
+                    "toState": "Forward",
+                    "guards": [
+                        {
+                            "type": "Event",
+                            "inputName": "Forward"
+                        }
+                    ]
+                },
+                {
+                    "type": "Transition",
+                    "toState": "Reverse",
+                    "guards": [
+                        {
+                            "type": "Event",
+                            "inputName": "Reverse"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "animation": "",
+            "type": "PlaybackState",
+            "name": "Forward",
+            "mode": "Forward",
+            "autoplay": true,
+            "transitions": []
+        },
+        {
+            "animation": "",
+            "type": "PlaybackState",
+            "name": "Reverse",
+            "mode": "Reverse",
+            "autoplay": true,   
+            "transitions": []
+        }
+    ],
+    "interactions": [
+        {
+            "type": "PointerDown",
+            "actions": [
+                {
+                    "type": "Fire",
+                    "inputName": "Forward"
+                }
+            ]
+        },
+        {
+            "type": "PointerUp",
+            "actions": [
+                {
+                    "type": "Fire",
+                    "inputName": "Reverse"
+                }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "type": "Event",
+            "name": "Forward"
+        },
+        {
+            "type": "Event",
+            "name": "Reverse"
+        }
+    ]
+}

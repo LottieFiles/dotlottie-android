@@ -17,7 +17,10 @@ class Config private constructor(
     val marker: String,
     val layout: Layout,
     val source: DotLottieSource,
-    val themeId: String = ""
+    val themeId: String = "",
+    val stateMachineId: String = "",
+    val animationId: String = "",
+    val threads: UInt? = null
 ) {
 
     class Builder {
@@ -32,6 +35,7 @@ class Config private constructor(
         private var marker: String = ""
         private var layout: Layout = createDefaultLayout()
         private var themeId: String = ""
+        private var threads: UInt? = null
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -78,6 +82,10 @@ class Config private constructor(
             this.themeId = themeId
         }
 
+        fun threads(threads: UInt) = apply {
+            this.threads = threads
+        }
+
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
 
@@ -90,7 +98,8 @@ class Config private constructor(
                 source = source!!,
                 marker = this.marker,
                 layout = this.layout,
-                themeId = this.themeId
+                themeId = this.themeId,
+                threads = this.threads
 //                backgroundColor = this.backgroundColor
             )
         }

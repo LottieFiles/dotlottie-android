@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.lottiefiles.example"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.lottiefiles.example"
@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
+    implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.lottie)
     implementation(libs.lottie.compose)
     testImplementation(libs.junit)

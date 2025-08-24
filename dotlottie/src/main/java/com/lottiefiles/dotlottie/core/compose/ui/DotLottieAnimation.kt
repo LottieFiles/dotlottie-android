@@ -3,6 +3,8 @@ package com.lottiefiles.dotlottie.core.compose.ui
 import android.graphics.Bitmap
 import android.view.Choreographer
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
@@ -21,11 +23,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.input.pointer.pointerInput
 import com.dotlottie.dlplayer.DotLottiePlayer
+import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.dotlottie.dlplayer.Config as DLConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -34,6 +37,9 @@ import com.sun.jna.Pointer
 import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
+import kotlin.math.pow
+
+private const val BYTES_PER_PIXEL = 4
 
 @OptIn(InternalDotLottieApi::class)
 @Composable
@@ -44,6 +50,7 @@ fun DotLottieAnimation(
     loop: Boolean = false,
     useFrameInterpolation: Boolean = true,
     themeId: String? = null,
+    stateMachineId: String? = null,
     marker: String? = null,
     speed: Float = 1f,
     segment: Pair<Float, Float>? = null,
@@ -51,6 +58,7 @@ fun DotLottieAnimation(
     controller: DotLottieController? = null,
     layout: Layout = createDefaultLayout(),
     eventListeners: List<DotLottieEventListener> = emptyList(),
+    threads: UInt? = null,
 ) {
     val context = LocalContext.current
 
@@ -71,17 +79,25 @@ fun DotLottieAnimation(
             marker = marker ?: "",
             layout = layout,
             themeId = themeId ?: "",
-            stateMachineId = ""
+            stateMachineId = "",
+            animationId = ""
         )
     }
 
-    val dlPlayer = remember { DotLottiePlayer(dlConfig) }
+    val initialStateMachineId = remember { stateMachineId }
+    val dlPlayer = remember(threads) { 
+        if (threads != null) {
+            DotLottiePlayer.withThreads(dlConfig, threads)
+        } else {
+            DotLottiePlayer(dlConfig)
+        }
+    }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var nativeBuffer by remember { mutableStateOf<Pointer?>(null) }
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
-    val currentSate by rController.currentState.collectAsState()
+    val currentState by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
@@ -90,22 +106,23 @@ fun DotLottieAnimation(
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
             var isActive = true
+
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
-                val nextFrame = dlPlayer.requestFrame()
-                dlPlayer.setFrame(nextFrame)
-                dlPlayer.render()
+                val ticked = dlPlayer.tick()
 
-                bufferBytes?.let { bytes ->
-                    bitmap?.let { bmp ->
-                        bytes.rewind()
-                        bmp.copyPixelsFromBuffer(bytes)
-                        imageBitmap = bmp.asImageBitmap()
-                    }
+                if (ticked || dlPlayer.render()) {
+                        bufferBytes?.let { bytes ->
+                            bitmap?.let { bmp ->
+                                bytes.rewind()
+                                bmp.copyPixelsFromBuffer(bytes)
+                                imageBitmap = bmp.asImageBitmap()
+                            }
+                        }
                 }
 
-                if (dlPlayer.isPlaying()) {
+                if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
                     choreographer.postFrameCallback(this)
                 }
             }
@@ -117,10 +134,12 @@ fun DotLottieAnimation(
     }
 
     fun init(animationData: DotLottieContent, layoutSize: Size) {
-        try {
+        runCatching {
             val height = layoutSize.height.toUInt()
             val width = layoutSize.width.toUInt()
             val isLoaded = dlPlayer.isLoaded()
+            // Pass the size to the controller
+            rController.resize(height, width)
 
             when (animationData) {
                 is DotLottieContent.Json -> {
@@ -134,7 +153,7 @@ fun DotLottieAnimation(
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
 
@@ -142,7 +161,7 @@ fun DotLottieAnimation(
                 rController.init()
             }
             choreographer.postFrameCallback(frameCallback)
-        } catch (e: Exception) {
+        }.onFailure { e ->
             rController.eventListeners.forEach {
                 it.onLoadError(e)
             }
@@ -153,14 +172,16 @@ fun DotLottieAnimation(
         if (animationData != null && layoutSize != null) {
             init(animationData!!, layoutSize!!)
         }
+        if (initialStateMachineId != null) {
+            if (initialStateMachineId.isNotEmpty()) {
+                rController.stateMachineLoad(initialStateMachineId)
+                rController.stateMachineStart()
+            }
+        }
     }
 
-    LaunchedEffect(dlPlayer.isPlaying(), currentSate) {
-        if (dlPlayer.isPlaying() || currentSate == DotLottiePlayerState.DRAW) {
-            choreographer.postFrameCallback(frameCallback)
-        } else {
-            choreographer.removeFrameCallback(frameCallback)
-        }
+    LaunchedEffect(dlPlayer.isPlaying(), currentState) {
+        choreographer.postFrameCallback(frameCallback)
     }
 
     LaunchedEffect(
@@ -206,7 +227,7 @@ fun DotLottieAnimation(
             bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong())
+            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             imageBitmap = bitmap!!.asImageBitmap()
         }
     }
@@ -231,6 +252,68 @@ fun DotLottieAnimation(
                 val newSize = layoutCoordinates.size.toSize()
                 if (layoutSize?.width != newSize.width || layoutSize?.height != newSize.height) {
                     layoutSize = newSize
+                }
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    // First touch (Down)
+                    val down = awaitFirstDown()
+                    //      down.consume() // Consume the down event
+
+                    val downPosition = down.position
+                    val scaledX = downPosition.x
+                    val scaledY = downPosition.y
+
+                    rController.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
+
+                    // Variables to track movement distance
+                    var movedTooMuch = false
+                    val touchSlop = 20f // Define a reasonable threshold for tap movement
+
+                    // Handle move and up events
+                    do {
+                        val event = awaitPointerEvent()
+                        val position = event.changes.first()
+
+                        // Handle move
+                        if (!position.pressed) {
+                            // Touch up detected
+                            val upPosition = position.position
+                            val upScaledX = upPosition.x
+                            val upScaledY = upPosition.y
+
+                            rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
+
+                            // Check for pointer movement distance
+                            val distance = kotlin.math.sqrt(
+                                (upPosition.x - downPosition.x).pow(2) +
+                                        (upPosition.y - downPosition.y).pow(2)
+                            )
+
+                            // If the pointer down has moved too much
+                            if (distance < touchSlop && !movedTooMuch) {
+                                rController.stateMachinePostEvent(Event.Click(upScaledX, upScaledY))
+                            }
+
+                            break
+                        } else {
+                            // Move detected
+                            val movePosition = position.position
+                            val moveX = movePosition.x
+                            val moveY = movePosition.y
+
+                            // Check if we've moved beyond the threshold to be considered a tap
+                            val moveDistance = kotlin.math.sqrt(
+                                (movePosition.x - downPosition.x).pow(2) +
+                                        (movePosition.y - downPosition.y).pow(2)
+                            )
+                            if (moveDistance > touchSlop) {
+                                movedTooMuch = true
+                            }
+
+                            rController.stateMachinePostEvent(Event.PointerMove(moveX, moveY))
+                        }
+                    } while (position.pressed)
                 }
             }
     ) {

@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
             .source(DotLottieSource.Asset("swinging.json")) // file name of json/.lottie
             .playMode(Mode.FORWARD)
             .useFrameInterpolation(true)
+            .threads(6u)
             .build()
 
         binding.dotLottieView.load(config)

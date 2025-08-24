@@ -1,25 +1,47 @@
-<h1 align="center">Dot Lottie Android</h1><br>
-<p align="center">  
-Dot Lottie Android is a new lottie player that relies on ThorVG for rendering
-</p>
-<br>
+# dotLottie Android
 
 <p align="center">
-  <a href="https://android-arsenal.com/api?level=24"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
+  <a href="https://android-arsenal.com/api?level=21"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
   <a href="https://jitpack.io/#LottieFiles/dotlottie-android"><img alt="API" src="https://jitpack.io/v/LottieFiles/dotlottie-android.svg"/></a>
-  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.40"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.40-blue"/></a>
+  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.47"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.47-blue"/></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
 </p>
+<br />
+
+<p align="center">  
+A powerful Android library for rendering Lottie and dotLottie animations with advanced features like interactivity and theming
+</p>
+
+<br>
+
+## Introduction
+
+**dotLottie Android** is a comprehensive Android library for rendering Lottie and dotLottie animations. It provides a simple and intuitive API for loading, playing, and controlling animations, as well as advanced features like interactivity, theming, and state machines. Built with [dotLottie-rs](https://github.com/LottieFiles/dotlottie-rs) for high-performance rendering, it supports both traditional Android Views and Jetpack Compose.
+
+### What is dotLottie?
+
+dotLottie is an open-source file format that bundles one or more Lottie animations along with their assets into a single, compressed `.lottie` file. It uses ZIP compression for efficient storage and distribution. The format also supports advanced features like:
+
+- **Interactive animations** with state machines
+- **Dynamic theming** for customizable appearances
+- **Multi-animation support** in a single file
+- **Efficient compression** for smaller file sizes
+
+This makes dotLottie a powerful tool for creating dynamic and interactive animations that go beyond traditional Lottie capabilities.
+
+[Learn more about dotLottie](https://dotlottie.io)
 
 ## Demo
 
-You can run the found the sample in the `sample` directory
+You can find and run the sample application in the `sample` directory.
+
 <p align="center">
   <img src="/assets/preview-1.gif" width="32%"/>
 </p>
 
 ## Installation
 
-To add the DotLottieAndroid you need to add this dependency to module gradle file
+To add DotLottie Android, you need to add this dependency to your module's gradle file:
 
 ```kotlin
 repositories {
@@ -31,17 +53,15 @@ repositories {
 dependencies {
     implementation("com.github.LottieFiles:dotlottie-android:0.5.0")
 }
-
 ```
 
 ## Getting started
 
-If you android application is build in XML you just need to put `DotLottieAnimation` in your layout file
-and define some set of parameter such as the speed the json animation etc...
+If your Android application is built using XML layouts, you simply need to add `DotLottieAnimation` to your layout file and define parameters such as speed, animation source, etc.
 
 ### Using XML
 
-First put your animation in the assets folder in your android and add `DotLottieAnimation` in your XML file
+First, place your animation in the assets folder of your Android project and add `DotLottieAnimation` to your XML file:
 
 ```xml
     <com.lottiefiles.dotlottie.core.widget.DotLottieAnimation
@@ -54,16 +74,16 @@ First put your animation in the assets folder in your android and add `DotLottie
 
 ### Using Kotlin code
 
-In your kotlin code, get access to the component just added in your layout
-and you can have access to set of method that allow you interact with the animation
+In your Kotlin code, get a reference to the component you added to your layout. This gives you access to methods that allow you to interact with the animation:
 
 ```kotlin
 val dotLottieAnimationView = findViewById<DotLottieAnimation>(R.id.lottie_view)
 ```
 
-Set up the initial animation configuration
+Set up the initial animation configuration:
 
-#### Traditional UI 
+#### Traditional UI
+
 ```kotlin
 import com.lottiefiles.dotlottie.core.model.Config
 
@@ -73,6 +93,7 @@ val config = Config.Builder()
     .loop(true)
     .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
 //    .source(DotLottieSource.Asset("file.json")) // asset from the asset folder .json or .lottie
+//    .source(DotLottieSource.Res(R.raw.animation)) // resource from raw resources .json or .lottie
     .useInterpolation(true)
     .playMode(Mode.Forward)
     .build()
@@ -92,6 +113,7 @@ fun ExampleComposeComponent() {
     DotLottieAnimation(
         source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"), // from url .lottie / .json
 //        source = DotLottieSource.Asset("file.json"), // from asset .lottie / .json
+//        source = DotLottieSource.Res(R.raw.animation), // from raw resources .json or .lottie
 //        source = DotLottieSource.Json("{"v":"4.8.0","meta":{"g":"LottieFiles .........."), // lottie json string
 //        source = DotLottieSource.Data(ByteArray), // dotLottie data as ByteArray
         autoplay = true,
@@ -105,6 +127,7 @@ fun ExampleComposeComponent() {
 ```
 
 #### Controlling player using JetPack Compose
+
 ```kotlin
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
@@ -113,18 +136,21 @@ import com.dotlottie.dlplayer.Mode
 
 fun ExampleComposeComponent() {
     val dotLottieController = remember { DotLottieController() }
-    
+
+    // This effect runs once when the composable enters the composition
     LaunchedEffect(UInt) {
         dotLottieController.setLoop(true)
         dotLottieController.setSpeed(3f)
-        // Play
+        // You can control the animation directly using the controller
         dotLottieController.play()
-        // Pause
-        dotLottieController.pause()
-        // Stop
-        dotLottieController.play()
+
+        // In a real app, you would call these methods from button clicks
+        // or other user events.
+        // For example:
+        // Button(onClick = { dotLottieController.pause() }) { Text("Pause") }
+        // Button(onClick = { dotLottieController.stop() }) { Text("Stop") }
     }
-    
+
     DotLottieAnimation(
         source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"), // url of .json or .lottie
         autoplay = false,
@@ -138,45 +164,198 @@ fun ExampleComposeComponent() {
 
 ```
 
-### API
+## State Machine Support
 
-#### Properties
-- `DotLottieAnimation.totalFrames` : Return the number of frame of the animations
-- `DotLottieAnimation.currentFrame` : Get the current frame
-- `DotLottieAnimation.playMode` : Return the  playMode of the animation, 
-- `DotLottieAnimation.loop` : Return the repeat mode of the animation, 
-- `DotLottieAnimation.loopCount` : Return the number of times animation has looped, 
-- `DotLottieAnimation.duration` : Get the animation duration in millis
-- `DotLottieAnimation.speed` : Get the animation speed
-- `DotLottieAnimation.autoplay` : Get the animation speed
-- `DotLottieAnimation.segment` : Get the first and last frame
+DotLottie Android supports interactive animations with state machines for advanced user interactions:
 
-- `DotLottieAnimation.isPlaying` : Check if the animation is playing
-- `DotLottieAnimation.isStopped` : Check if the animation is stopped
-- `DotLottieAnimation.isPaused` : Check if the animation is paused
-- `DotLottieAnimation.isLoaded` : Check if the animation is Loaded
+### Loading State Machines
 
-#### Methods
-- `DotLottieAnimation.setSpeed(Float)` : Modifier the animation speed
-- `DotLottieAnimation.setLoop(Boolean)` : Make the animation to loop or not
-- `DotLottieAnimation.play()` : Play the animation
-- `DotLottieAnimation.pause()` : Pause the animation
-- `DotLottieAnimation.stop()` : Stop the animation
-- `DotLottieAnimation.load(Config)` : Setup the initial configuration
-- `DotLottieAnimation.setSegment(Float, Float)` : Defining the first and last frame
-- `DotLottieAnimation.setPlayMode(Mode)` : Defining the first and last frame
-- `DotLottieAnimation.setBackgroundColor(Int)` : Set the animation background
-- `DotLottieAnimation.setUseFrameInterpolation(Boolean)` : When enabled it renders frames in between.
-- `DotLottieAnimation.setMarker(String)` : Sets the lottie named marker to play.
-- `DotLottieAnimation.setLayout(Fit, LayoutUtil.Alignment)` : Sets the animation layout configuration.
-- `DotLottieAnimation.loadTheme(String)` : Loads a new theme from the .lottie file, using its ID as specified in the manifest.json file of the .lottie file.
-- `DotLottieAnimation.loadThemeData(String)` : Loads a new theme using theme data.
+```kotlin
+// Load state machine by ID from .lottie file
+dotLottieAnimationView.stateMachineLoad("state_machine_id")
+
+// Or load state machine from JSON data
+dotLottieAnimationView.stateMachineLoadData(stateMachineJsonData)
+
+// Start the state machine
+dotLottieAnimationView.stateMachineStart()
+```
+
+### State Machine Events
+
+Monitor state machine events by implementing `StateMachineEventListener`:
+
+```kotlin
+private val stateMachineListener = object : StateMachineEventListener {
+    override fun onStateEntered(enteringState: String) {
+        Log.d(TAG, "Entered state: $enteringState")
+    }
+
+    override fun onStateExit(leavingState: String) {
+        Log.d(TAG, "Exited state: $leavingState")
+    }
+
+    override fun onTransition(previousState: String, newState: String) {
+        Log.d(TAG, "Transitioned from $previousState to $newState")
+    }
+
+    override fun onNumericInputValueChange(inputName: String, oldValue: Float, newValue: Float) {
+        Log.d(TAG, "Input $inputName changed from $oldValue to $newValue")
+    }
+
+    override fun onStringInputValueChange(inputName: String, oldValue: String, newValue: String) {
+        Log.d(TAG, "Input $inputName changed from $oldValue to $newValue")
+    }
+
+    override fun onBooleanInputValueChange(inputName: String, oldValue: Boolean, newValue: Boolean) {
+        Log.d(TAG, "Input $inputName changed from $oldValue to $newValue")
+    }
+
+    override fun onInputFired(inputName: String) {
+        Log.d(TAG, "Input fired: $inputName")
+    }
+
+    override fun onCustomEvent(message: String) {
+        Log.d(TAG, "Custom event: $message")
+    }
+
+    override fun onError(message: String) {
+        Log.e(TAG, "State machine error: $message")
+    }
+}
+
+// Add the listener
+dotLottieAnimationView.addStateMachineEventListener(stateMachineListener)
+```
+
+### State Machine Input Controls
+
+```kotlin
+// Set input values
+dotLottieAnimationView.stateMachineSetNumericInput("inputName", 42.0f)
+dotLottieAnimationView.stateMachineSetStringInput("inputName", "value")
+dotLottieAnimationView.stateMachineSetBooleanInput("inputName", true)
+
+// Get input values
+val numericValue = dotLottieAnimationView.stateMachineGetNumericInput("inputName")
+val stringValue = dotLottieAnimationView.stateMachineGetStringInput("inputName")
+val booleanValue = dotLottieAnimationView.stateMachineGetBooleanInput("inputName")
+
+// Fire events
+dotLottieAnimationView.stateMachineFireEvent("eventName")
+
+// Get current state
+val currentState = dotLottieAnimationView.stateMachineCurrentState()
+
+// Stop state machine
+dotLottieAnimationView.stateMachineStop()
+```
+
+## Performance Optimization
+
+### Multi-threading Support
+
+DotLottie Android supports multi-threaded rendering for improved performance. You can specify the number of threads to use for rendering:
+
+#### Traditional UI
+
+```kotlin
+val config = Config.Builder()
+    .source(DotLottieSource.Asset("animation.lottie"))
+    .threads(6u) // Use 6 threads for rendering
+    .autoplay(true)
+    .loop(true)
+    .build()
+
+dotLottieAnimationView.load(config)
+```
+
+#### Jetpack Compose
+
+```kotlin
+DotLottieAnimation(
+    source = DotLottieSource.Asset("animation.lottie"),
+    threads = 6u, // Use 6 threads for rendering
+    autoplay = true,
+    loop = true,
+    modifier = Modifier.size(300.dp)
+)
+```
+
+## Theme Support
+
+DotLottie Android supports dynamic theming for .lottie files:
+
+```kotlin
+// Load theme by ID from .lottie file manifest
+dotLottieAnimationView.loadTheme("theme_id")
+
+// Load theme from JSON data
+dotLottieAnimationView.loadThemeData(themeJsonData)
+```
+
+## API Reference
+
+#### Playback Control
+
+- `play()`: Plays animation from the current frame.
+- `pause()`: Pauses animation at the current frame.
+- `stop()`: Stops and resets the animation to its initial frame.
+- `setSpeed(Float)`: Sets animation speed (`1f` is normal).
+- `setLoop(Boolean)`: Toggles animation looping.
+- `setPlayMode(Mode)`: Sets playback direction (e.g., `Forward`, `Reverse`).
+- `setSegment(Float, Float)`: Sets a specific frame segment to play.
+- `setMarker(String)`: Plays the animation between a named marker.
+
+#### Animation State & Properties
+
+- `isPlaying`: `true` if the animation is currently playing.
+- `isPaused`: `true` if the animation is paused.
+- `isStopped`: `true` if the animation is stopped.
+- `isLoaded`: `true` if an animation has been successfully loaded.
+- `totalFrames`: The total number of frames in the animation.
+- `currentFrame`: The current frame number.
+- `duration`: The total animation duration in seconds.
+- `speed`: The current animation speed.
+- `loop`: `true` if looping is enabled.
+- `loopCount`: The number of times the animation has looped.
+
+#### Configuration & Loading
+
+- `load(Config)`: Loads an animation with a specified configuration.
+- `setBackgroundColor(Int)`: Sets the animation's background color.
+- `setUseFrameInterpolation(Boolean)`: Toggles frame interpolation for smoother playback.
+- `setLayout(Fit, LayoutUtil.Alignment)`: Sets the animation layout configuration.
+
+#### Performance
+
+- `threads(UInt)` (Config.Builder): Sets the number of rendering threads for improved performance.
+
+#### Theming
+
+- `loadTheme(String)`: Loads a theme from the .lottie file by its ID.
+- `loadThemeData(String)`: Loads a theme from theme JSON data.
+
+#### State Machine
+
+- `stateMachineLoad(String)`: Loads a state machine by its ID.
+- `stateMachineStart()`: Starts the loaded state machine.
+- `stateMachineStop()`: Stops the state machine.
+- `stateMachineFireEvent(String)`: Fires a named event.
+- `stateMachineSetNumericInput(String, Float)`: Sets a numeric input value.
+- `stateMachineSetStringInput(String, String)`: Sets a string input value.
+- `stateMachineSetBooleanInput(String, Boolean)`: Sets a boolean input value.
+- `stateMachineGetNumericInput(String)`: Gets a numeric input value.
+- `stateMachineGetStringInput(String)`: Gets a string input value.
+- `stateMachineGetBooleanInput(String)`: Gets a boolean input value.
+- `stateMachineCurrentState()`: Returns the current state machine state.
+- `addStateMachineEventListener(StateMachineEventListener)`: Adds a listener for state machine events.
 
 #### Events
 
-It's possible to monitor the event of your animation
-first create an instance of the `DotLottieEventListener` and attache it to the 
-`DotLottieAnimation` component
+It's possible to monitor events from your animation.
+First, create an instance of `DotLottieEventListener` and attach it to the
+`DotLottieAnimation` component:
 
 ```kotlin
 private val eventListener = object : DotLottieEventListener {
@@ -222,20 +401,30 @@ private val eventListener = object : DotLottieEventListener {
 }
 ```
 
-Attache the listener to the component, you can add one or 
+Attach the listener to the component:
 
 ```kotlin
 dotLottieAnimationView.addEventListener(eventListener)
+
+// For state machine events
+dotLottieAnimationView.addStateMachineEventListener(stateMachineListener)
 ```
 
+## Contributing
+
+We welcome contributions! Please see our [`CONTRIBUTING.md`](CONTRIBUTING.md) file for guidelines on how to report issues, request features, and submit pull requests.
+
 ## Supported ABIs
+
 The jniLibs in this library support the following ABIs:
+
 - armeabi-v7a
 - arm64-v8a
 - x86_64
 - x86
 
 Our Jitpack release is a universal AAR that includes all supported ABIs. To reduce the size of your APK, you can exclude the ABIs that you do not require by configuring the abiFilters in your build.gradle.kts as shown below:
+
 ```kotlin
 android {
   defaultConfig {
@@ -246,95 +435,7 @@ android {
   }
 }
 ```
-Refer to the [Android documentation](https://developer.android.com/ndk/guides/abis) for more information on ABI management.
-
-## Introduction
-
-DotLottie is a file format that enables efficient delivery of Lottie animations. This library provides a native Android player for DotLottie animations with advanced features like frame interpolation.
-
-## Usage
-
-```kotlin
-// Load a DotLottie animation from a URL
-val config = Config.Builder()
-    .autoplay(true)
-    .loop(true)
-    .source(DotLottieSource.Url("https://example.com/animation.lottie"))
-    .build()
-    
-dotLottieAnimation.load(config)
-
-// Or load from a JSON URL
-val config = Config.Builder()
-    .autoplay(true)
-    .loop(true)
-    .source(DotLottieSource.Url("https://example.com/animation.json"))
-    .build()
-    
-dotLottieAnimation.load(config)
-```
-
-## Performance Testing Framework
-
-The project includes a comprehensive performance testing framework that allows comparing DotLottie with Airbnb's Lottie animation library. This helps in benchmarking and optimizing animation performance.
-
-### Benchmark Features
-
-- **Comparative Testing**: Test both DotLottie and Airbnb Lottie with the same animations
-- **File Format Support**: Test DotLottie with both .json and .lottie formats to compare format efficiency
-- **Metrics Tracked**:
-  - Frames per second (FPS)
-  - Memory usage (MB)
-  - CPU usage (%)
-  - Frame jank percentage (%)
-  - Animation startup time (ms)
-- **Configurable Tests**:
-  - Number of animations (1, 5, 10, 20, 30 animations)
-  - Animation size (100dp, 200dp)
-  - Frame interpolation (DotLottie only)
-- **CSV Report Generation**: Export detailed benchmark results for analysis
-
-### Running the Benchmark
-
-1. Open the sample app
-2. Navigate to the "Performance" section
-3. Select "Comparative Benchmark"
-4. Press "Start Benchmark" to begin the tests
-5. Wait for all tests to complete (usually takes several minutes)
-6. View results on screen or share the CSV report
-
-### Understanding Benchmark Results
-
-The benchmark produces extensive data comparing the performance of both libraries. Here's how to interpret the results:
-
-1. **FPS (Frames Per Second)**: Higher is better. Shows how smoothly animations render.
-2. **Memory Usage**: Lower is better. Indicates memory efficiency.
-3. **CPU Usage**: Lower is better. Shows how CPU-intensive the animations are.
-4. **Jank Percentage**: Lower is better. Indicates frame rendering consistency.
-5. **Startup Time**: Lower is better. Shows how quickly animations initialize.
-
-Different patterns in the results can indicate various optimizations that might be possible:
-
-- **High CPU usage with low FPS**: The render thread might be the bottleneck.
-- **High memory usage with good FPS**: Memory optimization opportunities exist.
-- **Lower performance with many animations**: Test parallelization limits.
-- **Significant differences between formats**: Format-specific optimizations may be possible.
-
-### File Format Comparison
-
-The benchmark allows comparing DotLottie performance with both JSON and LOTTIE formats:
-
-- **JSON format**: The original Lottie format, widely compatible.
-- **LOTTIE format**: DotLottie's optimized container format, which can include multiple animations, fonts, and images.
-
-This comparison helps understand the performance trade-offs between formats and allows making informed decisions about which format to use for different use cases.
-
-### Frame Interpolation
-
-DotLottie supports frame interpolation, which Airbnb Lottie does not. The benchmark tests both with and without frame interpolation to measure its performance impact.
-
-Frame interpolation allows smoother animations by generating additional frames between existing ones, but has some CPU cost. The benchmark helps quantify this tradeoff.
 
 ## License
 
-See the LICENSE file for details.
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.

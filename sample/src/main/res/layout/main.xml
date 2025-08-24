@@ -60,6 +60,7 @@
                 app:dotLottie_playMode="normal"
                 app:dotLottie_speed="1"
                 app:dotLottie_useFrameInterpolation="true"
+                app:dotLottie_threads="4"
                 tools:autoplay="true"
                 tools:speed="2" />
 
