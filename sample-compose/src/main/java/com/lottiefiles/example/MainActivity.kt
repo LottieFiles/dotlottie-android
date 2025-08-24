@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lottiefiles.example.core.theme.ExampleTheme
 import com.lottiefiles.example.core.util.enableHardwareAcceleration
+import com.lottiefiles.example.core.util.VersionUtils
 import com.lottiefiles.example.features.benchmark.presentation.BenchmarkScreen
 import com.lottiefiles.example.features.home.presentation.HomeScreen
 import com.lottiefiles.example.features.home.presentation.HomeUIState
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
 
         // Enable hardware acceleration for better performance
         enableHardwareAcceleration()
+        
+        // Log version information and performance setup
+        VersionUtils.logVersionInfo(this)
 
         // Set up back button handling
         setupBackButtonHandling()
@@ -51,214 +55,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-//                    DefaultAnimationDemo()
-//                    AnimationWithReactiveProps()
-//                    MarkerExample()
-//                    ThemeExample()
-//                    ThemeDataExample()
-//                    LayoutExample()
-                    ThreadCountExample()
-//                    StateMachineExample()
-                }
-            }
-        }
-    }
-}
-
-@Composable
-@Preview
-fun DefaultAnimationDemo() {
-    val dotLottieController = remember { DotLottieController() }
-    val useFrameInterpolation = remember { mutableStateOf(true) }
-    val loop = remember { mutableStateOf(true) }
-    val speed = remember { mutableFloatStateOf(1f) }
-    val segment = remember { mutableStateOf(1f..100f) }
-    val currentFrame = remember { mutableFloatStateOf(0f) }
-    val totalFrame = remember { mutableFloatStateOf(0f) }
-    val dropdownExpand = remember { mutableStateOf(false) }
-    val dropdownActive = remember { mutableStateOf("") }
-    val hide = remember { mutableStateOf(false) }
-    val events = object : DotLottieEventListener {
-        override fun onLoad() {
-            Log.i("DotLottie", "Loaded")
-        }
-
-        override fun onPause() {
-            Log.i("DotLottie", "paused")
-        }
-
-        override fun onPlay() {
-            Log.i("DotLottie", "Play")
-        }
-
-        override fun onStop() {
-            Log.i("DotLottie", "Stop")
-        }
-
-        override fun onComplete() {
-            Log.i("DotLottie", "Completed")
-        }
-
-        override fun onUnFreeze() {
-            Log.i("DotLottie", "UnFreeze")
-        }
-
-        override fun onFrame(frame: Float) {
-            currentFrame.value = frame
-//            totalFrame.value = dotLottieController.totalFrames
-        }
-
-        override fun onFreeze() {
-            Log.i("DotLottie", "Freeze")
-        }
-    }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
-        if (hide.value) {
-            Spacer(modifier = Modifier.padding(8.dp))
-            Text(text = "Removed", fontSize = 24.sp)
-        } else {
-            repeat(1) {
-                Row {
-                    repeat(1) { // Example: Repeat 3 times
-                        DotLottieAnimation(
-                            autoplay = true,
-                            loop = true,
-                            eventListeners = listOf(events),
-//                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
-//                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
-                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
-//                                        source = DotLottieSource.Asset("swinging.json"),
-                            modifier = Modifier
-                                .background(Color.LightGray)
-                                .size(200.dp),
-                            controller = dotLottieController
-                        )
-                    }
-                }
-            }
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Row(modifier = Modifier.padding(2.dp)) {
-                Button(onClick = {
-                    hide.value = true
-                }) {
-                    Text(text = "Remove")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    hide.value = false
-                }) {
-                    Text(text = "Render")
-                }
-            }
-            Row(modifier = Modifier.padding(2.dp)) {
-                Text(text = "%.2f / %.2f ".format(currentFrame.value, totalFrame.value))
-            }
-            Row(modifier = Modifier.padding(2.dp)) {
-                Button(onClick = {
-                    dotLottieController.play()
-                }) {
-                    Text(text = "Play")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    Log.i("DotLottie", "Pause $dotLottieController")
-                    dotLottieController.pause()
-                }) {
-                    Text(text = "Pause")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    dotLottieController.stop()
-                }) {
-                    Text(text = "Stop")
-                }
-            }
-            Text(text = "Modes:", fontSize = 12.sp)
-            Row(modifier = Modifier.padding(2.dp)) {
-                Button(onClick = {
-                    dotLottieController.setPlayMode(Mode.FORWARD)
-                }) {
-                    Text(text = ">")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    dotLottieController.setPlayMode(Mode.REVERSE)
-                }) {
-                    Text(text = "<")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    dotLottieController.setPlayMode(Mode.BOUNCE)
-                }) {
-                    Text(text = "<+>")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    dotLottieController.setPlayMode(Mode.REVERSE_BOUNCE)
-                }) {
-                    Text(text = "<->")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "useFrameInterpolation: ")
-                Checkbox(checked = useFrameInterpolation.value, onCheckedChange = {
-                    dotLottieController.setUseFrameInterpolation(it)
-                    useFrameInterpolation.value = it
-                })
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "loop: ")
-                Checkbox(checked = loop.value, onCheckedChange = {
-                    dotLottieController.setLoop(it)
-                    loop.value = it
-                })
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            Row(modifier = Modifier.padding(2.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Speed: ")
-                Button(onClick = {
-                    speed.value++
-                    dotLottieController.setSpeed(speed.value)
-                }) {
-                    Text(text = "+")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "${speed.value}")
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    if (speed.value > 1) {
-                        speed.value--
-                        dotLottieController.setSpeed(speed.value)
-                    }
-                }) {
-                    Text(text = "-")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = {
-                    dotLottieController.setFrame(50f)
-                }) {
-                    Text(text = "Frame 50")
-                }
-            }
-            Column(
-                modifier = Modifier
-                    .border(border = BorderStroke(1.dp, Color.LightGray))
-                    .padding(10.dp, 4.dp)
-            ) {
-                Row {
-                    RangeSlider(
-                        value = segment.value,
-                        onValueChange = { segment.value = it },
-                        valueRange = 1f..100f
+                    MainScreen(
+                        selectedScreen = currentScreen.value,
+                        onScreenSelected = { screen ->
+                            currentScreen.value = screen
+                        }
                     )
                 }
             }
@@ -328,7 +129,7 @@ fun MenuScreen(onScreenSelected: (Screen) -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "DotLottie Performance Testing",
+                text = "${VersionUtils.getDotLottieVersionForDisplay()} Performance Testing",
                 style = MaterialTheme.typography.headlineMedium
             )
 
@@ -395,27 +196,4 @@ sealed class Screen {
     data class Home(val libraryType: LottieLibraryType) : Screen()
     object PerformanceTest : Screen()
     object Benchmark : Screen()
-}
-
-@Composable
-fun ThreadCountExample() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text("6 Threads", fontSize = 16.sp)
-        DotLottieAnimation(
-            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
-            autoplay = true,
-            loop = true,
-            threads = 6u,
-            modifier = Modifier
-                .background(Color.LightGray)
-                .size(300.dp)
-                .border(BorderStroke(1.dp, Color.Gray)),
-        )
-    }
 }

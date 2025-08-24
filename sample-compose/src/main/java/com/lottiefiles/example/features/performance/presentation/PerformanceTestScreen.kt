@@ -41,8 +41,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.dotlottie.dlplayer.Mode
+import com.lottiefiles.example.core.util.PerformanceDotLottieEventListener
 import com.lottiefiles.example.features.home.presentation.DotLottieView
 import kotlin.math.roundToInt
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,6 +62,7 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
     var showControls by remember { mutableStateOf(true) }
     var useInterpolation by remember { mutableStateOf(true) }
     var animationSize by remember { mutableIntStateOf(120) }
+    var threadCount by remember { mutableIntStateOf(6) }
 
     // Use the swag_sticker_piggy.lottie URL for better performance testing
     val lottieUrl =
@@ -109,7 +112,9 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                         useInterpolation = useInterpolation,
                         onUseInterpolationChanged = { useInterpolation = it },
                         animationSize = animationSize,
-                        onAnimationSizeChanged = { animationSize = it }
+                        onAnimationSizeChanged = { animationSize = it },
+                        threadCount = threadCount,
+                        onThreadCountChanged = { threadCount = it }
                     )
                 }
 
@@ -124,6 +129,19 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                         items = animationItems,
                         key = { item -> "${item.id}-${item.useInterpolation}" }
                     ) { item ->
+                        // Create performance event listener for this animation
+                        val eventListener = remember(item.id, item.useInterpolation) {
+                            PerformanceDotLottieEventListener(
+                                tag = "PerformanceTest-${item.id}",
+                                onFrameCallback = { frame ->
+                                    // Frame tracking for performance analysis
+                                },
+                                onLoadCallback = {
+                                    Log.d("PerformanceTest", "Animation ${item.id} loaded successfully")
+                                }
+                            )
+                        }
+                        
                         DotLottieView(
                             url = lottieUrl,
                             autoPlay = true,
@@ -131,6 +149,8 @@ private fun PerformanceTestScreenContent(onBackClick: (() -> Unit)? = null) {
                             useFrameInterpolation = item.useInterpolation,
                             playMode = Mode.FORWARD,
                             backgroundColor = Color.LightGray.copy(alpha = 0.3f),
+                            threads = threadCount.toUInt(),
+                            eventListeners = listOf(eventListener),
                             modifier = Modifier
                                 .padding(4.dp)
                                 .size(animationSize.dp)
@@ -173,7 +193,9 @@ private fun ControlPanel(
     useInterpolation: Boolean,
     onUseInterpolationChanged: (Boolean) -> Unit,
     animationSize: Int,
-    onAnimationSizeChanged: (Int) -> Unit
+    onAnimationSizeChanged: (Int) -> Unit,
+    threadCount: Int,
+    onThreadCountChanged: (Int) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -229,6 +251,17 @@ private fun ControlPanel(
                 Text(text = if (useInterpolation) "ON" else "OFF")
             }
         }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Thread count control
+        Text(text = "Thread count: $threadCount")
+        Slider(
+            value = threadCount.toFloat(),
+            onValueChange = { onThreadCountChanged(it.roundToInt()) },
+            valueRange = 1f..16f,
+            steps = 14
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 

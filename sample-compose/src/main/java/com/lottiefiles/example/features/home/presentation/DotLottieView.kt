@@ -13,6 +13,7 @@ import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Mode
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.compose.ui.DotLottieAnimation
+import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 
@@ -46,10 +47,12 @@ fun DotLottieView(
     useFrameInterpolation: Boolean = false,
     playMode: Mode = Mode.FORWARD,
     fit: Fit = Fit.FIT_WIDTH,
-    alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center
+    alignment: LayoutUtil.Alignment = LayoutUtil.Alignment.Center,
+    threads: UInt? = null,
+    eventListeners: List<DotLottieEventListener> = emptyList()
 ) {
     // Create a new controller each time key parameters change to force recomposition
-    val controller = remember(url, useFrameInterpolation, playMode) {
+    val controller = remember(url, useFrameInterpolation, playMode, threads) {
         DotLottieController()
     }
 
@@ -67,8 +70,8 @@ fun DotLottieView(
         }
     }
 
-    // Use key to force recomposition when interpolation changes
-    key(url, useFrameInterpolation) {
+    // Use key to force recomposition when interpolation or thread count changes
+    key(url, useFrameInterpolation, threads) {
         Box(modifier = modifier.background(backgroundColor)) {
             DotLottieAnimation(
                 modifier = Modifier.aspectRatio(1f),
@@ -79,7 +82,9 @@ fun DotLottieView(
                 useFrameInterpolation = useFrameInterpolation,
                 playMode = playMode,
                 controller = controller,
-                layout = LayoutUtil.createLayout(fit = fit, alignment)
+                layout = LayoutUtil.createLayout(fit = fit, alignment),
+                threads = threads,
+                eventListeners = eventListeners
             )
         }
     }

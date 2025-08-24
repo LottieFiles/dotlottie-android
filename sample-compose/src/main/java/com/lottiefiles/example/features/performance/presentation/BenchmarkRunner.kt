@@ -43,150 +43,171 @@ class BenchmarkRunner(private val context: Context) {
 
     // Test configurations with library type
     private val testConfigurations = listOf(
-        // DotLottie tests with .json format
+        // DotLottie tests with .json format - test different thread counts
         TestConfiguration(
             animationCount = 4,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 4u
         ),
         TestConfiguration(
             animationCount = 4,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 4u
         ),
         TestConfiguration(
             animationCount = 9,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 6u
         ),
         TestConfiguration(
             animationCount = 9,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 6u
         ),
         TestConfiguration(
             animationCount = 16,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 8u
         ),
         TestConfiguration(
             animationCount = 16,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 8u
         ),
         TestConfiguration(
             animationCount = 25,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 10u
         ),
         TestConfiguration(
             animationCount = 25,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = 10u
         ),
 
-        // DotLottie tests with .lottie format
+        // DotLottie tests with .lottie format - test different thread counts
         TestConfiguration(
             animationCount = 4,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 4u
         ),
         TestConfiguration(
             animationCount = 4,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 4u
         ),
         TestConfiguration(
             animationCount = 9,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 6u
         ),
         TestConfiguration(
             animationCount = 9,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 6u
         ),
         TestConfiguration(
             animationCount = 16,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 8u
         ),
         TestConfiguration(
             animationCount = 16,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 8u
         ),
         TestConfiguration(
             animationCount = 25,
             useInterpolation = true,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 10u
         ),
         TestConfiguration(
             animationCount = 25,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.DOT_LOTTIE,
-            fileFormat = FileFormat.LOTTIE
+            fileFormat = FileFormat.LOTTIE,
+            threadCount = 10u
         ),
 
         // Airbnb Lottie tests - interpolation parameter is irrelevant as this library doesn't support it
+        // threadCount is also not applicable for Airbnb Lottie
         TestConfiguration(
             animationCount = 4,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.AIRBNB_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = null
         ),
         TestConfiguration(
             animationCount = 9,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.AIRBNB_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = null
         ),
         TestConfiguration(
             animationCount = 16,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.AIRBNB_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = null
         ),
         TestConfiguration(
             animationCount = 25,
             useInterpolation = false,
             durationSeconds = 10,
             library = LibraryType.AIRBNB_LOTTIE,
-            fileFormat = FileFormat.JSON
+            fileFormat = FileFormat.JSON,
+            threadCount = null
         )
     )
 
@@ -632,7 +653,8 @@ class BenchmarkRunner(private val context: Context) {
         val useInterpolation: Boolean,
         val durationSeconds: Int,
         val library: LibraryType,
-        val fileFormat: FileFormat
+        val fileFormat: FileFormat,
+        val threadCount: UInt? = null
     )
 
     /**

@@ -39,12 +39,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import android.util.Log
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.lottiefiles.example.core.util.PerformanceDotLottieEventListener
 import com.lottiefiles.example.features.home.presentation.AirbnbLottieView
 import com.lottiefiles.example.features.home.presentation.DotLottieView
 import com.lottiefiles.example.features.performance.presentation.BenchmarkRunner
@@ -325,6 +327,11 @@ private fun RunningStateContent(
                     Text(
                         text = "File Format: ${config.fileFormat}",
                     )
+                    config.threadCount?.let { threadCount ->
+                        Text(
+                            text = "Thread Count: $threadCount",
+                        )
+                    }
                 }
 
                 LinearProgressIndicator(
@@ -347,6 +354,7 @@ private fun RunningStateContent(
                         count = config.animationCount,
                         useInterpolation = config.useInterpolation,
                         size = BenchmarkConstants.DEFAULT_ANIMATION_SIZE,
+                        threadCount = config.threadCount,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -356,6 +364,7 @@ private fun RunningStateContent(
                         count = config.animationCount,
                         useInterpolation = config.useInterpolation,
                         size = BenchmarkConstants.DEFAULT_ANIMATION_SIZE,
+                        threadCount = config.threadCount,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -642,6 +651,7 @@ private fun DotLottieJsonContainer(
     count: Int,
     useInterpolation: Boolean,
     size: Int,
+    threadCount: UInt?,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -652,9 +662,24 @@ private fun DotLottieJsonContainer(
             count = count,
             key = { index -> "$index-json-$useInterpolation" }
         ) { index ->
+            // Create performance event listener for this animation instance
+            val eventListener = remember(index, useInterpolation) {
+                PerformanceDotLottieEventListener(
+                    tag = "Benchmark-JSON-$index",
+                    onFrameCallback = { frame ->
+                        // Performance monitoring handled by BenchmarkRunner
+                    },
+                    onLoadCallback = {
+                        Log.d("BenchmarkJSON", "Animation $index loaded")
+                    }
+                )
+            }
+
             DotLottieView(
                 url = BenchmarkConstants.JSON_ANIMATION_URL,
                 useFrameInterpolation = useInterpolation,
+                threads = threadCount,
+                eventListeners = listOf(eventListener),
                 modifier = Modifier
                     .padding(4.dp)
                     .size(size.dp)
@@ -670,6 +695,7 @@ private fun DotLottieContainer(
     count: Int,
     useInterpolation: Boolean,
     size: Int,
+    threadCount: UInt?,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -680,9 +706,24 @@ private fun DotLottieContainer(
             count = count,
             key = { index -> "$index-lottie-$useInterpolation" }
         ) { index ->
+            // Create performance event listener for this animation instance
+            val eventListener = remember(index, useInterpolation) {
+                PerformanceDotLottieEventListener(
+                    tag = "Benchmark-LOTTIE-$index",
+                    onFrameCallback = { frame ->
+                        // Performance monitoring handled by BenchmarkRunner
+                    },
+                    onLoadCallback = {
+                        Log.d("BenchmarkLOTTIE", "Animation $index loaded")
+                    }
+                )
+            }
+
             DotLottieView(
                 url = BenchmarkConstants.LOTTIE_ANIMATION_URL,
                 useFrameInterpolation = useInterpolation,
+                threads = threadCount,
+                eventListeners = listOf(eventListener),
                 modifier = Modifier
                     .padding(4.dp)
                     .size(size.dp)

@@ -18,6 +18,11 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // Add DotLottie version to BuildConfig for dynamic access
+        // Get version from dotlottie module
+        val dotLottieVersion = project(":dotlottie").version.toString()
+        buildConfigField("String", "DOTLOTTIE_VERSION", "\"$dotLottieVersion\"")
     }
 
     buildTypes {
@@ -38,6 +43,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
 //        kotlinCompilerExtensionVersion = "1.1.0"
@@ -62,7 +68,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation(libs.coil.compose)
     implementation(libs.lottie)
     implementation(libs.lottie.compose)
     testImplementation(libs.junit)
