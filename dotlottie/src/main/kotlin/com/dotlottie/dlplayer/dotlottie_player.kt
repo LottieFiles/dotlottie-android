@@ -4890,6 +4890,7 @@ public object FfiConverterTypeStateMachineObserver: FfiConverter<StateMachineObs
 data class Config (
     var `autoplay`: kotlin.Boolean, 
     var `loopAnimation`: kotlin.Boolean, 
+    var `loopCount`: kotlin.UInt, 
     var `mode`: Mode, 
     var `speed`: kotlin.Float, 
     var `useFrameInterpolation`: kotlin.Boolean, 
@@ -4913,6 +4914,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
         return Config(
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterUInt.read(buf),
             FfiConverterTypeMode.read(buf),
             FfiConverterFloat.read(buf),
             FfiConverterBoolean.read(buf),
@@ -4929,6 +4931,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
     override fun allocationSize(value: Config) = (
             FfiConverterBoolean.allocationSize(value.`autoplay`) +
             FfiConverterBoolean.allocationSize(value.`loopAnimation`) +
+            FfiConverterUInt.allocationSize(value.`loopCount`) +
             FfiConverterTypeMode.allocationSize(value.`mode`) +
             FfiConverterFloat.allocationSize(value.`speed`) +
             FfiConverterBoolean.allocationSize(value.`useFrameInterpolation`) +
@@ -4944,6 +4947,7 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
     override fun write(value: Config, buf: ByteBuffer) {
             FfiConverterBoolean.write(value.`autoplay`, buf)
             FfiConverterBoolean.write(value.`loopAnimation`, buf)
+            FfiConverterUInt.write(value.`loopCount`, buf)
             FfiConverterTypeMode.write(value.`mode`, buf)
             FfiConverterFloat.write(value.`speed`, buf)
             FfiConverterBoolean.write(value.`useFrameInterpolation`, buf)

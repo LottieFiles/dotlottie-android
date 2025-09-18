@@ -117,7 +117,8 @@ fun StateMachineExample() {
                         listOf("animations/star-marked.lottie"),
                         listOf("animations/sync-to-cursor.lottie"),
                         listOf("animations/theming.lottie"),
-                        listOf("animations/toggle.json")
+                        listOf("animations/toggle.json"),
+                        listOf("animations/clipped-traffic-lights.lottie")
                     )
 
                     imageRows.forEach { row ->

@@ -14,6 +14,7 @@ class Config private constructor(
     val playMode: Mode,
 //    val backgroundColor: Int,
     val loop: Boolean,
+    val loopCount: UInt,
     val marker: String,
     val layout: Layout,
     val source: DotLottieSource,
@@ -36,6 +37,7 @@ class Config private constructor(
         private var layout: Layout = createDefaultLayout()
         private var themeId: String = ""
         private var threads: UInt? = null
+        private var loopCount: UInt = 0u
 
         fun autoplay(autoplay: Boolean) = apply {
             this.autoplay = autoplay
@@ -99,7 +101,8 @@ class Config private constructor(
                 marker = this.marker,
                 layout = this.layout,
                 themeId = this.themeId,
-                threads = this.threads
+                threads = this.threads,
+                loopCount = this.loopCount
 //                backgroundColor = this.backgroundColor
             )
         }
