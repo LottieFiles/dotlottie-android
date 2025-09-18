@@ -59,6 +59,7 @@ fun DotLottieAnimation(
     layout: Layout = createDefaultLayout(),
     eventListeners: List<DotLottieEventListener> = emptyList(),
     threads: UInt? = null,
+    loopCount: UInt = 0u,
 ) {
     val context = LocalContext.current
 
@@ -80,7 +81,8 @@ fun DotLottieAnimation(
             layout = layout,
             themeId = themeId ?: "",
             stateMachineId = "",
-            animationId = ""
+            animationId = "",
+            loopCount = loopCount
         )
     }
 
@@ -112,7 +114,7 @@ fun DotLottieAnimation(
 
                 val ticked = dlPlayer.tick()
 
-                if (ticked || dlPlayer.render()) {
+                if (ticked) {
                         bufferBytes?.let { bytes ->
                             bitmap?.let { bmp ->
                                 bytes.rewind()

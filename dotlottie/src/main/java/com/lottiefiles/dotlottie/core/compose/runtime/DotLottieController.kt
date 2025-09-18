@@ -394,6 +394,11 @@ class DotLottieController {
         dlplayer?.setConfig(config)
     }
 
+    fun setLoopCount(loopCount: UInt) {
+        config.loopCount = loopCount
+        dlplayer?.setConfig(config)
+    }
+
     fun setMarker(marker: String) {
         dlplayer?.let {
             val config = it.config()
