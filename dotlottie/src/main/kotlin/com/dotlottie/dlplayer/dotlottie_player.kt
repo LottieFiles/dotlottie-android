@@ -1094,6 +1094,10 @@ internal open class UniffiVTableCallbackInterfaceStateMachineObserver(
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -1147,6 +1151,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_layer_bounds(`ptr`: Pointer,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_state_machine(`ptr`: Pointer,`stateMachineId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_transform(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_intersect(`ptr`: Pointer,`x`: Float,`y`: Float,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
@@ -1203,6 +1209,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme(`ptr`: Pointer,`themeId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme_data(`ptr`: Pointer,`themeData`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_transform(`ptr`: Pointer,`transform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
     fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(`ptr`: Pointer,`x`: Int,`y`: Int,`w`: Int,`h`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
@@ -1488,6 +1496,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_state_machine(
     ): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_transform(
+    ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_intersect(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_is_complete(
@@ -1543,6 +1553,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_theme(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_theme_data(
+    ): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_transform(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport(
     ): Short
@@ -1727,6 +1739,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_state_machine() != 4598.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_get_transform() != 49287.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_intersect() != 12346.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1809,6 +1824,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_theme_data() != 31802.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_transform() != 1923.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_viewport() != 29505.toShort()) {
@@ -2414,6 +2432,8 @@ public interface DotLottiePlayerInterface {
     
     fun `getStateMachine`(`stateMachineId`: kotlin.String): kotlin.String
     
+    fun `getTransform`(): List<kotlin.Float>
+    
     fun `intersect`(`x`: kotlin.Float, `y`: kotlin.Float, `layerName`: kotlin.String): kotlin.Boolean
     
     fun `isComplete`(): kotlin.Boolean
@@ -2469,6 +2489,8 @@ public interface DotLottiePlayerInterface {
     fun `setTheme`(`themeId`: kotlin.String): kotlin.Boolean
     
     fun `setThemeData`(`themeData`: kotlin.String): kotlin.Boolean
+    
+    fun `setTransform`(`transform`: List<kotlin.Float>): kotlin.Boolean
     
     fun `setViewport`(`x`: kotlin.Int, `y`: kotlin.Int, `w`: kotlin.Int, `h`: kotlin.Int): kotlin.Boolean
     
@@ -2770,6 +2792,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_get_state_machine(
         it, FfiConverterString.lower(`stateMachineId`),_status)
+}
+    }
+    )
+    }
+    
+
+    override fun `getTransform`(): List<kotlin.Float> {
+            return FfiConverterSequenceFloat.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_get_transform(
+        it, _status)
 }
     }
     )
@@ -3105,6 +3139,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme_data(
         it, FfiConverterString.lower(`themeData`),_status)
+}
+    }
+    )
+    }
+    
+
+    override fun `setTransform`(`transform`: List<kotlin.Float>): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_transform(
+        it, FfiConverterSequenceFloat.lower(`transform`),_status)
 }
     }
     )
