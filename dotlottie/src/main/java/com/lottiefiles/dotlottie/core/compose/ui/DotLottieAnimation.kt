@@ -112,16 +112,23 @@ fun DotLottieAnimation(
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
 
+                // Check if buffer needs updating
+                if (rController.bufferNeedsUpdate.value) {
+                    nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
+                    bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+                    rController.markBufferUpdated()
+                }
+
                 val ticked = dlPlayer.tick()
 
                 if (ticked) {
-                        bufferBytes?.let { bytes ->
-                            bitmap?.let { bmp ->
-                                bytes.rewind()
-                                bmp.copyPixelsFromBuffer(bytes)
-                                imageBitmap = bmp.asImageBitmap()
-                            }
+                    bufferBytes?.let { bytes ->
+                        bitmap?.let { bmp ->
+                            bytes.rewind()
+                            bmp.copyPixelsFromBuffer(bytes)
+                            imageBitmap = bmp.asImageBitmap()
                         }
+                    }
                 }
 
                 if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {

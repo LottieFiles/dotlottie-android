@@ -187,6 +187,8 @@ class DotLottieDrawable(
             }
 
             override fun onLoad() {
+                // Update buffer pointer when animation loads
+                nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
                 dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
             }
 
@@ -492,7 +494,7 @@ class DotLottieDrawable(
 
         val ticked = dlPlayer!!.tick()
 
-        if (ticked || dlPlayer!!.render()) {
+        if (ticked) {
             val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
             bufferBytes.rewind()
             bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)

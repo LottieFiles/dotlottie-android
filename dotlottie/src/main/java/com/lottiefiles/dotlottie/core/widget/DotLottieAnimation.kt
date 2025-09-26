@@ -112,7 +112,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     val duration: Float
         get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
 
-    // TODO: Implement repeat count
     val loopCount: UInt
         get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
 
