@@ -115,6 +115,13 @@ class DotLottieController {
     var stateMachineIsActive: Boolean = false
         get() = field
 
+    private val _bufferNeedsUpdate = MutableStateFlow(false)
+    val bufferNeedsUpdate: StateFlow<Boolean> = _bufferNeedsUpdate.asStateFlow()
+
+    fun markBufferUpdated() {
+        _bufferNeedsUpdate.value = false
+    }
+
     fun play() {
         dlplayer?.play()
         shouldPlayOnInit = true
@@ -394,6 +401,11 @@ class DotLottieController {
         dlplayer?.setConfig(config)
     }
 
+    fun setLoopCount(loopCount: UInt) {
+        config.loopCount = loopCount
+        dlplayer?.setConfig(config)
+    }
+
     fun setMarker(marker: String) {
         dlplayer?.let {
             val config = it.config()
@@ -446,7 +458,11 @@ class DotLottieController {
     fun loadAnimation(
         animationId: String,
     ) {
-        dlplayer?.loadAnimation(animationId, this._width.value, this._height.value)
+        val result = dlplayer?.loadAnimation(animationId, this._width.value, this._height.value) ?: false
+
+        if (result) {
+            _bufferNeedsUpdate.value = true
+        }
     }
 
     fun manifest(): Manifest? {

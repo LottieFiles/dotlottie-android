@@ -49,7 +49,8 @@ data class DotLottieAttributes(
     val themeId: String?,
     val stateMachineId: String?,
     val animationId: String?,
-    val threads: UInt?
+    val threads: UInt?,
+    val loopCount: UInt
 )
 
 class DotLottieAnimation @JvmOverloads constructor(
@@ -111,7 +112,6 @@ class DotLottieAnimation @JvmOverloads constructor(
     val duration: Float
         get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
 
-    // TODO: Implement repeat count
     val loopCount: UInt
         get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
 
@@ -170,6 +170,10 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setSpeed(speed: Float) {
         mLottieDrawable?.speed = speed
+    }
+
+    fun setLoopCount(loopCount: UInt) {
+        mLottieDrawable?.loopCount = loopCount
     }
 
     fun setMarker(marker: String) {
@@ -262,7 +266,10 @@ class DotLottieAnimation @JvmOverloads constructor(
                     animationId = getString(R.styleable.DotLottieAnimation_dotLottie_animationId),
                     threads = if (hasValue(R.styleable.DotLottieAnimation_dotLottie_threads)) {
                         getInt(R.styleable.DotLottieAnimation_dotLottie_threads, 0).toUInt()
-                    } else null
+                    } else null,
+                    loopCount = if (hasValue(R.styleable.DotLottieAnimation_dotLottie_loop_count)) {
+                        getInt(R.styleable.DotLottieAnimation_dotLottie_loop_count, 0).toUInt()
+                    } else 0u,
                 )
             } finally {
                 recycle()
@@ -325,7 +332,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         layout = config.layout,
                         themeId = config.themeId,
                         stateMachineId = config.stateMachineId,
-                        animationId = config.animationId
+                        animationId = config.animationId,
+                        loopCount = config.loopCount
                     ),
                     threads = config.threads
                 )
@@ -378,7 +386,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                             layout = createDefaultLayout(),
                             themeId = attributes.themeId ?: "",
                             stateMachineId = attributes.stateMachineId ?: "",
-                            animationId = attributes.animationId ?: ""
+                            animationId = attributes.animationId ?: "",
+                            loopCount = attributes.loopCount
                         ),
                         threads = attributes.threads
                     )

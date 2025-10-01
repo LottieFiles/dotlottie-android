@@ -187,7 +187,10 @@ class DotLottieDrawable(
             }
 
             override fun onLoad() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+                // Update buffer pointer when animation loads
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+                }, 0)
             }
 
             override fun onLoop(loopCount: UInt) {
@@ -230,6 +233,12 @@ class DotLottieDrawable(
         bitmapBuffer = createBitmap(width, height)
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
         this.subscribe()
+        // Initial Load event
+        if (dlPlayer!!.isLoaded()) {
+            mHandler.postDelayed({
+                dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+            }, 0)
+        }
     }
 
     fun release() {
@@ -298,7 +307,10 @@ class DotLottieDrawable(
     fun loadAnimation(
         animationId: String,
     ) {
-        dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
+        val result = dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
+        if (result == true) {
+            nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
+        }
     }
 
     fun setTheme(themeId: String) {
@@ -340,14 +352,18 @@ class DotLottieDrawable(
         mHandler.removeCallbacks(mNextFrameRunnable)
     }
 
-    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+    fun stateMachineStart(
+        openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(),
+        onOpenUrl: ((url: String) -> Unit)? = null
+    ): Boolean {
         val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
         // Start render loop
         if (result) {
             if (dlPlayer != null) {
                 stateMachineGestureListeners =
-                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+                    dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
+                        .toMutableList()
             }
 
             dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
@@ -356,7 +372,13 @@ class DotLottieDrawable(
                     oldValue: Boolean,
                     newValue: Boolean
                 ) {
-                    stateMachineListeners.forEach { it.onBooleanInputValueChange(inputName, oldValue, newValue) }
+                    stateMachineListeners.forEach {
+                        it.onBooleanInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onCustomEvent(message: String) {
@@ -372,7 +394,13 @@ class DotLottieDrawable(
                     oldValue: Float,
                     newValue: Float
                 ) {
-                    stateMachineListeners.forEach { it.onNumericInputValueChange(inputName, oldValue, newValue) }
+                    stateMachineListeners.forEach {
+                        it.onNumericInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onStart() {
@@ -396,7 +424,13 @@ class DotLottieDrawable(
                     oldValue: String,
                     newValue: String
                 ) {
-                    stateMachineListeners.forEach { it.onStringInputValueChange(inputName,oldValue,newValue) }
+                    stateMachineListeners.forEach {
+                        it.onStringInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onTransition(previousState: String, newState: String) {
@@ -492,8 +526,9 @@ class DotLottieDrawable(
 
         val ticked = dlPlayer!!.tick()
 
-        if (ticked || dlPlayer!!.render()) {
-            val bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
+        if (ticked) {
+            val bufferBytes =
+                nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
             bufferBytes.rewind()
             bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
             bufferBytes.rewind()
