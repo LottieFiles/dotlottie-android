@@ -167,23 +167,33 @@ class DotLottieDrawable(
     private fun subscribe() {
         val observer = object : Observer {
             override fun onComplete() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+                }, 0)
             }
 
             override fun onFrame(frameNo: Float) {
-                dotLottieEventListener.forEach { it.onFrame(frameNo) }
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach { it.onFrame(frameNo) }
+                }, 0)
             }
 
             override fun onPause() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onPause)
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach(DotLottieEventListener::onPause)
+                }, 0)
             }
 
             override fun onStop() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onStop)
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach(DotLottieEventListener::onStop)
+                }, 0)
             }
 
             override fun onPlay() {
-                dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
+                }, 0)
             }
 
             override fun onLoad() {
@@ -194,18 +204,24 @@ class DotLottieDrawable(
             }
 
             override fun onLoop(loopCount: UInt) {
-                dotLottieEventListener.forEach { it.onLoop(loopCount.toInt()) }
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach { it.onLoop(loopCount.toInt()) }
+                }, 0)
             }
 
             override fun onRender(frameNo: Float) {
-                dotLottieEventListener.forEach { it.onRender(frameNo) }
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach { it.onRender(frameNo) }
+                }, 0)
             }
 
             override fun onLoadError() {
-                dotLottieEventListener.forEach { listener ->
-                    listener.onLoadError()
-                    listener.onLoadError(Throwable("Load error occurred"))
-                }
+                mHandler.postDelayed({
+                    dotLottieEventListener.forEach { listener ->
+                        listener.onLoadError()
+                        listener.onLoadError(Throwable("Load error occurred"))
+                    }
+                }, 0)
             }
         }
         dlPlayer?.subscribe(observer)

@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
+import android.os.Handler
+import android.os.Looper
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
@@ -37,6 +39,7 @@ class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
     private var observer: Observer? = null
     private var config: Config = createDefaultConfig()
+    private val handler = Handler(Looper.getMainLooper())
 
     private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
     val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
@@ -141,60 +144,82 @@ class DotLottieController {
         observer = object : Observer {
             override fun onComplete() {
                 _currentState.update { DotLottiePlayerState.COMPLETED }
-                eventListeners.forEach(DotLottieEventListener::onComplete)
+                handler.postDelayed({
+                    eventListeners.forEach(DotLottieEventListener::onComplete)
+                }, 0)
             }
 
             override fun onFrame(frameNo: Float) {
-                eventListeners.forEach { it.onFrame(frameNo) }
+                handler.postDelayed({
+                    eventListeners.forEach { it.onFrame(frameNo) }
+                }, 0)
             }
 
             override fun onPause() {
                 _currentState.update { DotLottiePlayerState.PAUSED }
-                eventListeners.forEach(DotLottieEventListener::onPause)
+                handler.postDelayed({
+                    eventListeners.forEach(DotLottieEventListener::onPause)
+                }, 0)
             }
 
             override fun onStop() {
                 _currentState.update { DotLottiePlayerState.STOPPED }
-                eventListeners.forEach(DotLottieEventListener::onStop)
+                handler.postDelayed({
+                    eventListeners.forEach(DotLottieEventListener::onStop)
+                }, 0)
             }
 
             override fun onPlay() {
                 _currentState.update { DotLottiePlayerState.PLAYING }
-                eventListeners.forEach(DotLottieEventListener::onPlay)
+                handler.postDelayed({
+                    eventListeners.forEach(DotLottieEventListener::onPlay)
+                }, 0)
             }
 
             override fun onLoad() {
                 _currentState.update { DotLottiePlayerState.LOADED }
-                eventListeners.forEach(DotLottieEventListener::onLoad)
+                handler.postDelayed({
+                    eventListeners.forEach(DotLottieEventListener::onLoad)
+                }, 0)
             }
 
             override fun onLoop(loopCount: UInt) {
-                eventListeners.forEach { it.onLoop(loopCount.toInt()) }
+                handler.postDelayed({
+                    eventListeners.forEach { it.onLoop(loopCount.toInt()) }
+                }, 0)
             }
 
             override fun onRender(frameNo: Float) {
-                eventListeners.forEach { it.onRender(frameNo) }
+                handler.postDelayed({
+                    eventListeners.forEach { it.onRender(frameNo) }
+                }, 0)
             }
 
             override fun onLoadError() {
                 _currentState.update { DotLottiePlayerState.ERROR }
-                eventListeners.forEach { listener ->
-                    listener.onLoadError()
-                    listener.onLoadError(Throwable("Load error occurred"))
-                }
+                handler.postDelayed({
+                    eventListeners.forEach { listener ->
+                        listener.onLoadError()
+                        listener.onLoadError(Throwable("Load error occurred"))
+                    }
+                }, 0)
             }
         }
         dlplayer?.subscribe(observer!!)
     }
 
-    fun stateMachineStart(openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(), onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+    fun stateMachineStart(
+        openUrl: OpenUrlPolicy = createDefaultOpenUrlPolicy(),
+        onOpenUrl: ((url: String) -> Unit)? = null
+    ): Boolean {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
 
             if (dlplayer != null) {
                 stateMachineGestureListeners =
-                    dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet().toMutableList()
+                    dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
+                        .toMutableList()
             }
 
             // For the users' observers
@@ -204,7 +229,13 @@ class DotLottieController {
                     oldValue: Boolean,
                     newValue: Boolean
                 ) {
-                    stateMachineListeners.forEach { it.onBooleanInputValueChange(inputName, oldValue, newValue) }
+                    stateMachineListeners.forEach {
+                        it.onBooleanInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onCustomEvent(message: String) {
@@ -220,7 +251,13 @@ class DotLottieController {
                     oldValue: Float,
                     newValue: Float
                 ) {
-                    stateMachineListeners.forEach { it.onNumericInputValueChange(inputName, oldValue, newValue) }
+                    stateMachineListeners.forEach {
+                        it.onNumericInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onStart() {
@@ -244,7 +281,13 @@ class DotLottieController {
                     oldValue: String,
                     newValue: String
                 ) {
-                    stateMachineListeners.forEach { it.onStringInputValueChange(inputName, oldValue, newValue) }
+                    stateMachineListeners.forEach {
+                        it.onStringInputValueChange(
+                            inputName,
+                            oldValue,
+                            newValue
+                        )
+                    }
                 }
 
                 override fun onTransition(previousState: String, newState: String) {
@@ -458,7 +501,8 @@ class DotLottieController {
     fun loadAnimation(
         animationId: String,
     ) {
-        val result = dlplayer?.loadAnimation(animationId, this._width.value, this._height.value) ?: false
+        val result =
+            dlplayer?.loadAnimation(animationId, this._width.value, this._height.value) ?: false
 
         if (result) {
             _bufferNeedsUpdate.value = true
