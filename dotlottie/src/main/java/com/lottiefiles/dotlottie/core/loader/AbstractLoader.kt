@@ -20,14 +20,14 @@ abstract class AbstractLoader(protected val context: Context) {
      */
     fun load(listener: DotLottieResult) {
         (context.lifecycleOwner()?.lifecycleScope ?: GlobalScope)
-            .launch(Dispatchers.IO) {
+            .launch {
                 try {
-                    val result = loadInternal()
-                    withContext(Dispatchers.Main) {
-                        listener.onSuccess(result)
+                    val result = withContext(Dispatchers.IO) {
+                        loadInternal()
                     }
+                    listener.onSuccess(result)
                 } catch (e: Exception) {
-                    withContext(Dispatchers.Main) { listener.onError(e) }
+                    listener.onError(e)
                 }
             }
     }
