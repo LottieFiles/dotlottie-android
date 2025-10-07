@@ -87,7 +87,7 @@ fun DotLottieAnimation(
     }
 
     val initialStateMachineId = remember { stateMachineId }
-    val dlPlayer = remember(threads) { 
+    val dlPlayer = remember(threads) {
         if (threads != null) {
             DotLottiePlayer.withThreads(dlConfig, threads)
         } else {
@@ -104,6 +104,7 @@ fun DotLottieAnimation(
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
     var animationData by remember { mutableStateOf<DotLottieContent?>(null) }
+    var forceUpdateBitmap by remember { mutableStateOf(false) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -115,13 +116,16 @@ fun DotLottieAnimation(
                 // Check if buffer needs updating
                 if (rController.bufferNeedsUpdate.value) {
                     nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-                    bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+                    bufferBytes = nativeBuffer!!.getByteBuffer(
+                        0,
+                        dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL
+                    )
                     rController.markBufferUpdated()
                 }
 
                 val ticked = dlPlayer.tick()
 
-                if (ticked) {
+                if (ticked || forceUpdateBitmap) {
                     bufferBytes?.let { bytes ->
                         bitmap?.let { bmp ->
                             bytes.rewind()
@@ -131,7 +135,12 @@ fun DotLottieAnimation(
                     }
                 }
 
-                if (dlPlayer.isPlaying() || rController.stateMachineIsActive ) {
+                // Bitmap update is done! Let's reset the flag
+                if (!ticked && forceUpdateBitmap) {
+                    forceUpdateBitmap = false
+                }
+
+                if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
                     choreographer.postFrameCallback(this)
                 }
             }
@@ -162,7 +171,8 @@ fun DotLottieAnimation(
 
             // Set local and native buffer
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+            bufferBytes =
+                nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             bitmap = createBitmap(width.toInt(), height.toInt())
             imageBitmap = bitmap!!.asImageBitmap()
 
@@ -236,8 +246,13 @@ fun DotLottieAnimation(
             bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-            bufferBytes = nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+            bufferBytes =
+                nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             imageBitmap = bitmap!!.asImageBitmap()
+            if (!dlPlayer.isPlaying()) {
+                forceUpdateBitmap = true
+                choreographer.postFrameCallback(frameCallback)
+            }
         }
     }
 
