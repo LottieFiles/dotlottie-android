@@ -103,7 +103,7 @@ fun DotLottieAnimation(
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
-    var animationData by remember { mutableStateOf<DotLottieContent?>(null) }
+    var animationData by remember { mutableStateOf<Result<DotLottieContent>?>(null) }
     var forceUpdateBitmap by remember { mutableStateOf(false) }
 
     val frameCallback = remember {
@@ -148,7 +148,9 @@ fun DotLottieAnimation(
     }
 
     LaunchedEffect(source) {
-        animationData = DotLottieUtils.getContent(context, source)
+        animationData = kotlin.runCatching {
+            DotLottieUtils.getContent(context, source)
+        }
     }
 
     fun init(animationData: DotLottieContent, layoutSize: Size) {
@@ -188,13 +190,21 @@ fun DotLottieAnimation(
     }
 
     LaunchedEffect(animationData, layoutSize) {
-        if (animationData != null && layoutSize != null) {
-            init(animationData!!, layoutSize!!)
-        }
-        if (initialStateMachineId != null) {
-            if (initialStateMachineId.isNotEmpty()) {
-                rController.stateMachineLoad(initialStateMachineId)
-                rController.stateMachineStart()
+        animationData?.let { result ->
+            result.onSuccess { data ->
+                if (layoutSize != null) {
+                    init(data, layoutSize!!)
+                }
+                if (initialStateMachineId != null) {
+                    if (initialStateMachineId.isNotEmpty()) {
+                        rController.stateMachineLoad(initialStateMachineId)
+                        rController.stateMachineStart()
+                    }
+                }
+            }.onFailure { t ->
+                rController.eventListeners.forEach {
+                    it.onLoadError(t)
+                }
             }
         }
     }
