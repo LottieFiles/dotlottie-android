@@ -529,6 +529,10 @@ class DotLottieDrawable(
         return dlPlayer?.stateMachineGetBooleanInput(key)
     }
 
+    fun stateMachineGetInputs(): List<String>? {
+        return dlPlayer?.stateMachineGetInputs()
+    }
+
     fun stateMachineCurrentState(): String? {
         return dlPlayer?.stateMachineCurrentState()
     }

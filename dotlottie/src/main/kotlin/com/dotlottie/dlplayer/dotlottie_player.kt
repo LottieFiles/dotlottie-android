@@ -1098,6 +1098,10 @@ internal open class UniffiVTableCallbackInterfaceStateMachineObserver(
 
 
 
+
+
+
+
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
 
@@ -1113,252 +1117,256 @@ internal interface UniffiLib : Library {
                 uniffiCallbackInterfaceStateMachineObserver.register(lib)
                 }
         }
-        
+
         // The Cleaner for the whole library
         internal val CLEANER: UniffiCleaner by lazy {
             UniffiCleaner.create()
         }
     }
 
-    fun uniffi_dotlottie_player_fn_clone_dotlottieplayer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_clone_dotlottieplayer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_free_dotlottieplayer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_free_dotlottieplayer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_new(`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_with_threads(`config`: RustBuffer.ByValue,`threads`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_constructor_dotlottieplayer_with_threads(`config`: RustBuffer.ByValue,`threads`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_animation_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_state_machine_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_state_machine_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_active_theme_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_animation_size(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_len(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Long
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_buffer_ptr(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Long
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_config(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_config(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_current_frame(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_duration(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_layer_bounds(`ptr`: Pointer,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_layer_bounds(`ptr`: Pointer,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_state_machine(`ptr`: Pointer,`stateMachineId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_state_machine(`ptr`: Pointer,`stateMachineId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_transform(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_get_transform(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_intersect(`ptr`: Pointer,`x`: Float,`y`: Float,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_intersect(`ptr`: Pointer,`x`: Float,`y`: Float,`layerName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_complete(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_loaded(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_paused(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_playing(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_stopped(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_is_tweening(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(`ptr`: Pointer,`animationId`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation(`ptr`: Pointer,`animationId`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(`ptr`: Pointer,`animationData`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_data(`ptr`: Pointer,`animationData`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(`ptr`: Pointer,`animationPath`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_animation_path(`ptr`: Pointer,`animationPath`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(`ptr`: Pointer,`fileData`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_load_dotlottie_data(`ptr`: Pointer,`fileData`: RustBuffer.ByValue,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_loop_count(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Int
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_manifest_string(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_markers(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_pause(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_play(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_play(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_render(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_request_frame(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_reset_theme(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_reset_theme(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(`ptr`: Pointer,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_resize(`ptr`: Pointer,`width`: Int,`height`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(`ptr`: Pointer,`no`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_seek(`ptr`: Pointer,`no`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_segment_duration(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(`ptr`: Pointer,`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(`ptr`: Pointer,`config`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(`ptr`: Pointer,`no`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_frame(`ptr`: Pointer,`no`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_slots(`ptr`: Pointer,`slots`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_quality(`ptr`: Pointer,`quality`: Byte,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme(`ptr`: Pointer,`themeId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_slots(`ptr`: Pointer,`slots`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme_data(`ptr`: Pointer,`themeData`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme(`ptr`: Pointer,`themeId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_transform(`ptr`: Pointer,`transform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_theme_data(`ptr`: Pointer,`themeData`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(`ptr`: Pointer,`x`: Int,`y`: Int,`w`: Int,`h`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_transform(`ptr`: Pointer,`transform`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_current_state(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_set_viewport(`ptr`: Pointer,`x`: Int,`y`: Int,`w`: Int,`h`: Int,uniffi_out_err: UniffiRustCallStatus,
+    ): Byte
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_current_state(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_fire_event(`ptr`: Pointer,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_fire_event(`ptr`: Pointer,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_framework_setup(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_framework_setup(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_inputs(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
+    ): RustBuffer.ByValue
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_numeric_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_string_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_internal_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_internal_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_internal_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_internal_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_load(`ptr`: Pointer,`stateMachineId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_load(`ptr`: Pointer,`stateMachineId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_load_data(`ptr`: Pointer,`stateMachine`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_load_data(`ptr`: Pointer,`stateMachine`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_override_current_state(`ptr`: Pointer,`stateName`: RustBuffer.ByValue,`doTick`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_override_current_state(`ptr`: Pointer,`stateName`: RustBuffer.ByValue,`doTick`: Byte,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_click_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_click_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_event(`ptr`: Pointer,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_event(`ptr`: Pointer,`event`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_down_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_down_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_enter_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_enter_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_exit_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_exit_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_move_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_move_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_up_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_post_pointer_up_event(`ptr`: Pointer,`x`: Float,`y`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_boolean_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: Byte,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_numeric_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_set_string_input(`ptr`: Pointer,`key`: RustBuffer.ByValue,`value`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_start(`ptr`: Pointer,`openUrlPolicy`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_start(`ptr`: Pointer,`openUrlPolicy`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_status(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_status(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_subscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tick(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_total_frames(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Float
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween(`ptr`: Pointer,`to`: Float,`duration`: RustBuffer.ByValue,`easing`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween(`ptr`: Pointer,`to`: Float,`duration`: RustBuffer.ByValue,`easing`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_to_marker(`ptr`: Pointer,`marker`: RustBuffer.ByValue,`duration`: RustBuffer.ByValue,`easing`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_to_marker(`ptr`: Pointer,`marker`: RustBuffer.ByValue,`duration`: RustBuffer.ByValue,`easing`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_update(`ptr`: Pointer,`progress`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_tween_update(`ptr`: Pointer,`progress`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
-    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_dotlottieplayer_unsubscribe(`ptr`: Pointer,`observer`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_clone_observer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_clone_observer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_free_observer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_free_observer(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
     fun uniffi_dotlottie_player_fn_init_callback_vtable_observer(`vtable`: UniffiVTableCallbackInterfaceObserver,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_complete(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_complete(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_frame(`ptr`: Pointer,`frameNo`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_frame(`ptr`: Pointer,`frameNo`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_load(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_load(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_load_error(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_load_error(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_loop(`ptr`: Pointer,`loopCount`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_loop(`ptr`: Pointer,`loopCount`: Int,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_pause(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_pause(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_play(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_play(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_render(`ptr`: Pointer,`frameNo`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_render(`ptr`: Pointer,`frameNo`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_observer_on_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_observer_on_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_clone_statemachineinternalobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_clone_statemachineinternalobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_free_statemachineinternalobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_free_statemachineinternalobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
     fun uniffi_dotlottie_player_fn_init_callback_vtable_statemachineinternalobserver(`vtable`: UniffiVTableCallbackInterfaceStateMachineInternalObserver,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineinternalobserver_on_message(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineinternalobserver_on_message(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_clone_statemachineobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_clone_statemachineobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
-    fun uniffi_dotlottie_player_fn_free_statemachineobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_free_statemachineobserver(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
     fun uniffi_dotlottie_player_fn_init_callback_vtable_statemachineobserver(`vtable`: UniffiVTableCallbackInterfaceStateMachineObserver,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: Byte,`newValue`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_boolean_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: Byte,`newValue`: Byte,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_custom_event(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_custom_event(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_error(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_error(`ptr`: Pointer,`message`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_input_fired(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_input_fired(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: Float,`newValue`: Float,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_numeric_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: Float,`newValue`: Float,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_start(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_start(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_state_entered(`ptr`: Pointer,`enteringState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_state_entered(`ptr`: Pointer,`enteringState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_state_exit(`ptr`: Pointer,`leavingState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_state_exit(`ptr`: Pointer,`leavingState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_stop(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: RustBuffer.ByValue,`newValue`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_string_input_value_change(`ptr`: Pointer,`inputName`: RustBuffer.ByValue,`oldValue`: RustBuffer.ByValue,`newValue`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_transition(`ptr`: Pointer,`previousState`: RustBuffer.ByValue,`newState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_method_statemachineobserver_on_transition(`ptr`: Pointer,`previousState`: RustBuffer.ByValue,`newState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun uniffi_dotlottie_player_fn_func_create_default_config(uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_func_create_default_config(uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_func_create_default_layout(uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_func_create_default_layout(uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_func_create_default_open_url_policy(uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_func_create_default_open_url_policy(uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun uniffi_dotlottie_player_fn_func_transform_theme_to_lottie_slots(`themeData`: RustBuffer.ByValue,`animationId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_dotlottie_player_fn_func_transform_theme_to_lottie_slots(`themeData`: RustBuffer.ByValue,`animationId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun ffi_dotlottie_player_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun ffi_dotlottie_player_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
-    fun ffi_dotlottie_player_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
-    fun ffi_dotlottie_player_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
     fun ffi_dotlottie_player_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1366,7 +1374,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_u8(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
     fun ffi_dotlottie_player_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1374,7 +1382,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_i8(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Byte
     fun ffi_dotlottie_player_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1382,7 +1390,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_u16(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Short
     fun ffi_dotlottie_player_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1390,7 +1398,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_i16(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Short
     fun ffi_dotlottie_player_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1398,7 +1406,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_u32(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Int
     fun ffi_dotlottie_player_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1406,7 +1414,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_i32(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Int
     fun ffi_dotlottie_player_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1414,7 +1422,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_u64(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Long
     fun ffi_dotlottie_player_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1422,7 +1430,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_i64(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Long
     fun ffi_dotlottie_player_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1430,7 +1438,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_f32(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Float
     fun ffi_dotlottie_player_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1438,7 +1446,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_f64(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Double
     fun ffi_dotlottie_player_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1446,7 +1454,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_pointer(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Pointer
     fun ffi_dotlottie_player_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1454,7 +1462,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_rust_buffer(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): RustBuffer.ByValue
     fun ffi_dotlottie_player_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
@@ -1462,7 +1470,7 @@ internal interface UniffiLib : Library {
     ): Unit
     fun ffi_dotlottie_player_rust_future_free_void(`handle`: Long,
     ): Unit
-    fun ffi_dotlottie_player_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_dotlottie_player_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
     ): Unit
     fun uniffi_dotlottie_player_checksum_func_create_default_config(
     ): Short
@@ -1548,6 +1556,8 @@ internal interface UniffiLib : Library {
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame(
     ): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_quality(
+    ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_slots(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_theme(
@@ -1565,6 +1575,8 @@ internal interface UniffiLib : Library {
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_framework_setup(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_input(
+    ): Short
+    fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_inputs(
     ): Short
     fun uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_input(
     ): Short
@@ -1676,7 +1688,7 @@ internal interface UniffiLib : Library {
     ): Short
     fun ffi_dotlottie_player_uniffi_contract_version(
     ): Int
-    
+
 }
 
 private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
@@ -1817,6 +1829,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_frame() != 44086.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_quality() != 55740.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_set_slots() != 64804.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1842,6 +1857,9 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_boolean_input() != 55120.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_inputs() != 47898.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_dotlottie_player_checksum_method_dotlottieplayer_state_machine_get_numeric_input() != 10400.toShort()) {
@@ -2046,12 +2064,35 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
         }
     }
 
-/** 
+/**
  * Used to instantiate an interface without an actual pointer, for fakes in tests, mostly.
  *
  * @suppress
  * */
 object NoPointer
+
+/**
+ * @suppress
+ */
+public object FfiConverterUByte: FfiConverter<UByte, Byte> {
+    override fun lift(value: Byte): UByte {
+        return value.toUByte()
+    }
+
+    override fun read(buf: ByteBuffer): UByte {
+        return lift(buf.get())
+    }
+
+    override fun lower(value: UByte): Byte {
+        return value.toByte()
+    }
+
+    override fun allocationSize(value: UByte) = 1UL
+
+    override fun write(value: UByte, buf: ByteBuffer) {
+        buf.put(value.toByte())
+    }
+}
 
 /**
  * @suppress
@@ -2407,163 +2448,167 @@ private class JavaLangRefCleanable(
     override fun clean() = cleanable.clean()
 }
 public interface DotLottiePlayerInterface {
-    
+
     fun `activeAnimationId`(): kotlin.String
-    
+
     fun `activeStateMachineId`(): kotlin.String
-    
+
     fun `activeThemeId`(): kotlin.String
-    
+
     fun `animationSize`(): List<kotlin.Float>
-    
+
     fun `bufferLen`(): kotlin.ULong
-    
+
     fun `bufferPtr`(): kotlin.ULong
-    
+
     fun `clear`()
-    
+
     fun `config`(): Config
-    
+
     fun `currentFrame`(): kotlin.Float
-    
+
     fun `duration`(): kotlin.Float
-    
+
     fun `getLayerBounds`(`layerName`: kotlin.String): List<kotlin.Float>
-    
+
     fun `getStateMachine`(`stateMachineId`: kotlin.String): kotlin.String
-    
+
     fun `getTransform`(): List<kotlin.Float>
-    
+
     fun `intersect`(`x`: kotlin.Float, `y`: kotlin.Float, `layerName`: kotlin.String): kotlin.Boolean
-    
+
     fun `isComplete`(): kotlin.Boolean
-    
+
     fun `isLoaded`(): kotlin.Boolean
-    
+
     fun `isPaused`(): kotlin.Boolean
-    
+
     fun `isPlaying`(): kotlin.Boolean
-    
+
     fun `isStopped`(): kotlin.Boolean
-    
+
     fun `isTweening`(): kotlin.Boolean
-    
+
     fun `loadAnimation`(`animationId`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean
-    
+
     fun `loadAnimationData`(`animationData`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean
-    
+
     fun `loadAnimationPath`(`animationPath`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean
-    
+
     fun `loadDotlottieData`(`fileData`: kotlin.ByteArray, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean
-    
+
     fun `loopCount`(): kotlin.UInt
-    
+
     fun `manifest`(): Manifest?
-    
+
     fun `manifestString`(): kotlin.String
-    
+
     fun `markers`(): List<Marker>
-    
+
     fun `pause`(): kotlin.Boolean
-    
+
     fun `play`(): kotlin.Boolean
-    
+
     fun `render`(): kotlin.Boolean
-    
+
     fun `requestFrame`(): kotlin.Float
-    
+
     fun `resetTheme`(): kotlin.Boolean
-    
+
     fun `resize`(`width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean
-    
+
     fun `seek`(`no`: kotlin.Float): kotlin.Boolean
-    
+
     fun `segmentDuration`(): kotlin.Float
-    
+
     fun `setConfig`(`config`: Config)
-    
+
     fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean
-    
+
+    fun `setQuality`(`quality`: kotlin.UByte): kotlin.Boolean
+
     fun `setSlots`(`slots`: kotlin.String): kotlin.Boolean
-    
+
     fun `setTheme`(`themeId`: kotlin.String): kotlin.Boolean
-    
+
     fun `setThemeData`(`themeData`: kotlin.String): kotlin.Boolean
-    
+
     fun `setTransform`(`transform`: List<kotlin.Float>): kotlin.Boolean
-    
+
     fun `setViewport`(`x`: kotlin.Int, `y`: kotlin.Int, `w`: kotlin.Int, `h`: kotlin.Int): kotlin.Boolean
-    
+
     fun `stateMachineCurrentState`(): kotlin.String
-    
+
     fun `stateMachineFireEvent`(`event`: kotlin.String)
-    
+
     fun `stateMachineFrameworkSetup`(): List<kotlin.String>
-    
+
     fun `stateMachineGetBooleanInput`(`key`: kotlin.String): kotlin.Boolean
-    
+
+    fun `stateMachineGetInputs`(): List<kotlin.String>
+
     fun `stateMachineGetNumericInput`(`key`: kotlin.String): kotlin.Float
-    
+
     fun `stateMachineGetStringInput`(`key`: kotlin.String): kotlin.String
-    
+
     fun `stateMachineInternalSubscribe`(`observer`: StateMachineInternalObserver): kotlin.Boolean
-    
+
     fun `stateMachineInternalUnsubscribe`(`observer`: StateMachineInternalObserver): kotlin.Boolean
-    
+
     fun `stateMachineLoad`(`stateMachineId`: kotlin.String): kotlin.Boolean
-    
+
     fun `stateMachineLoadData`(`stateMachine`: kotlin.String): kotlin.Boolean
-    
+
     fun `stateMachineOverrideCurrentState`(`stateName`: kotlin.String, `doTick`: kotlin.Boolean): kotlin.Boolean
-    
+
     fun `stateMachinePostClickEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachinePostEvent`(`event`: Event)
-    
+
     fun `stateMachinePostPointerDownEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachinePostPointerEnterEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachinePostPointerExitEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachinePostPointerMoveEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachinePostPointerUpEvent`(`x`: kotlin.Float, `y`: kotlin.Float)
-    
+
     fun `stateMachineSetBooleanInput`(`key`: kotlin.String, `value`: kotlin.Boolean): kotlin.Boolean
-    
+
     fun `stateMachineSetNumericInput`(`key`: kotlin.String, `value`: kotlin.Float): kotlin.Boolean
-    
+
     fun `stateMachineSetStringInput`(`key`: kotlin.String, `value`: kotlin.String): kotlin.Boolean
-    
+
     fun `stateMachineStart`(`openUrlPolicy`: OpenUrlPolicy): kotlin.Boolean
-    
+
     fun `stateMachineStatus`(): kotlin.String
-    
+
     fun `stateMachineStop`(): kotlin.Boolean
-    
+
     fun `stateMachineSubscribe`(`observer`: StateMachineObserver): kotlin.Boolean
-    
+
     fun `stateMachineUnsubscribe`(`observer`: StateMachineObserver): kotlin.Boolean
-    
+
     fun `stop`(): kotlin.Boolean
-    
+
     fun `subscribe`(`observer`: Observer)
-    
+
     fun `tick`(): kotlin.Boolean
-    
+
     fun `totalFrames`(): kotlin.Float
-    
+
     fun `tween`(`to`: kotlin.Float, `duration`: kotlin.Float?, `easing`: List<kotlin.Float>?): kotlin.Boolean
-    
+
     fun `tweenStop`(): kotlin.Boolean
-    
+
     fun `tweenToMarker`(`marker`: kotlin.String, `duration`: kotlin.Float?, `easing`: List<kotlin.Float>?): kotlin.Boolean
-    
+
     fun `tweenUpdate`(`progress`: kotlin.Float?): kotlin.Boolean
-    
+
     fun `unsubscribe`(`observer`: Observer)
-    
+
     companion object
 }
 
@@ -2665,7 +2710,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `activeStateMachineId`(): kotlin.String {
             return FfiConverterString.lift(
@@ -2677,7 +2722,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `activeThemeId`(): kotlin.String {
             return FfiConverterString.lift(
@@ -2689,7 +2734,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `animationSize`(): List<kotlin.Float> {
             return FfiConverterSequenceFloat.lift(
@@ -2701,7 +2746,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `bufferLen`(): kotlin.ULong {
             return FfiConverterULong.lift(
@@ -2713,7 +2758,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `bufferPtr`(): kotlin.ULong {
             return FfiConverterULong.lift(
@@ -2725,18 +2770,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `clear`()
-        = 
+        =
     callWithPointer {
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_clear(
         it, _status)
 }
     }
-    
-    
+
+
 
     override fun `config`(): Config {
             return FfiConverterTypeConfig.lift(
@@ -2748,7 +2793,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `currentFrame`(): kotlin.Float {
             return FfiConverterFloat.lift(
@@ -2760,7 +2805,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `duration`(): kotlin.Float {
             return FfiConverterFloat.lift(
@@ -2772,7 +2817,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `getLayerBounds`(`layerName`: kotlin.String): List<kotlin.Float> {
             return FfiConverterSequenceFloat.lift(
@@ -2784,7 +2829,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `getStateMachine`(`stateMachineId`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
@@ -2796,7 +2841,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `getTransform`(): List<kotlin.Float> {
             return FfiConverterSequenceFloat.lift(
@@ -2808,7 +2853,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `intersect`(`x`: kotlin.Float, `y`: kotlin.Float, `layerName`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2820,7 +2865,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isComplete`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2832,7 +2877,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isLoaded`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2844,7 +2889,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isPaused`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2856,7 +2901,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isPlaying`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2868,7 +2913,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isStopped`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2880,7 +2925,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `isTweening`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2892,7 +2937,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `loadAnimation`(`animationId`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2904,7 +2949,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `loadAnimationData`(`animationData`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2916,7 +2961,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `loadAnimationPath`(`animationPath`: kotlin.String, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2928,7 +2973,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `loadDotlottieData`(`fileData`: kotlin.ByteArray, `width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -2940,7 +2985,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `loopCount`(): kotlin.UInt {
             return FfiConverterUInt.lift(
@@ -2952,7 +2997,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `manifest`(): Manifest? {
             return FfiConverterOptionalTypeManifest.lift(
@@ -2964,7 +3009,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `manifestString`(): kotlin.String {
             return FfiConverterString.lift(
@@ -2976,7 +3021,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `markers`(): List<Marker> {
             return FfiConverterSequenceTypeMarker.lift(
@@ -2988,7 +3033,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `pause`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3000,7 +3045,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `play`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3012,7 +3057,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `render`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3024,7 +3069,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `requestFrame`(): kotlin.Float {
             return FfiConverterFloat.lift(
@@ -3036,7 +3081,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `resetTheme`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3048,7 +3093,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `resize`(`width`: kotlin.UInt, `height`: kotlin.UInt): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3060,7 +3105,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `seek`(`no`: kotlin.Float): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3072,7 +3117,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `segmentDuration`(): kotlin.Float {
             return FfiConverterFloat.lift(
@@ -3084,18 +3129,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `setConfig`(`config`: Config)
-        = 
+        =
     callWithPointer {
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_config(
         it, FfiConverterTypeConfig.lower(`config`),_status)
 }
     }
-    
-    
+
+
 
     override fun `setFrame`(`no`: kotlin.Float): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3107,7 +3152,19 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
+
+    override fun `setQuality`(`quality`: kotlin.UByte): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_set_quality(
+        it, FfiConverterUByte.lower(`quality`),_status)
+}
+    }
+    )
+    }
+
 
     override fun `setSlots`(`slots`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3119,7 +3176,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `setTheme`(`themeId`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3131,7 +3188,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `setThemeData`(`themeData`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3143,7 +3200,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `setTransform`(`transform`: List<kotlin.Float>): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3155,7 +3212,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `setViewport`(`x`: kotlin.Int, `y`: kotlin.Int, `w`: kotlin.Int, `h`: kotlin.Int): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3167,7 +3224,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `stateMachineCurrentState`(): kotlin.String {
             return FfiConverterString.lift(
@@ -3179,18 +3236,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `stateMachineFireEvent`(`event`: kotlin.String)
-        = 
+        =
     callWithPointer {
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_fire_event(
         it, FfiConverterString.lower(`event`),_status)
 }
     }
-    
-    
+
+
 
     override fun `stateMachineFrameworkSetup`(): List<kotlin.String> {
             return FfiConverterSequenceString.lift(
@@ -3202,7 +3259,7 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     }
     )
     }
-    
+
 
     override fun `stateMachineGetBooleanInput`(`key`: kotlin.String): kotlin.Boolean {
             return FfiConverterBoolean.lift(
@@ -3210,6 +3267,18 @@ open class DotLottiePlayer: Disposable, AutoCloseable, DotLottiePlayerInterface 
     uniffiRustCall() { _status ->
     UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_boolean_input(
         it, FfiConverterString.lower(`key`),_status)
+}
+    }
+    )
+    }
+
+
+    override fun `stateMachineGetInputs`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithPointer {
+    uniffiRustCall() { _status ->
+    UniffiLib.INSTANCE.uniffi_dotlottie_player_fn_method_dotlottieplayer_state_machine_get_inputs(
+        it, _status)
 }
     }
     )
