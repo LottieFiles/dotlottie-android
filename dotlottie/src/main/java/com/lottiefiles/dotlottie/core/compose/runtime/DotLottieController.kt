@@ -367,6 +367,10 @@ class DotLottieController {
         return dlplayer?.stateMachineGetBooleanInput(key)
     }
 
+    fun stateMachineGetInputs(): List<String>? {
+        return dlplayer?.stateMachineGetInputs()
+    }
+
     fun stateMachineCurrentState(): String? {
         return dlplayer?.stateMachineCurrentState()
     }

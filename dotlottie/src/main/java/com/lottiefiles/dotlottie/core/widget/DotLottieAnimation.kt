@@ -518,6 +518,10 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.stateMachineGetBooleanInput(key)
     }
 
+    fun stateMachineGetInputs(): List<String>? {
+        return mLottieDrawable?.stateMachineGetInputs()
+    }
+
     fun stateMachineFireEvent(event: String) {
         mLottieDrawable?.stateMachineFireEvent(event)
     }
