@@ -7,12 +7,13 @@ import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 
-class Config private constructor(
+class Config
+private constructor(
     val autoplay: Boolean,
     val useFrameInterpolator: Boolean,
     val speed: Float,
     val playMode: Mode,
-//    val backgroundColor: Int,
+    //    val backgroundColor: Int,
     val loop: Boolean,
     val loopCount: UInt,
     val marker: String,
@@ -37,40 +38,28 @@ class Config private constructor(
         private var layout: Layout = createDefaultLayout()
         private var themeId: String = ""
         private var threads: UInt? = null
+        private var stateMachineId: String = ""
         private var loopCount: UInt = 0u
 
-        fun autoplay(autoplay: Boolean) = apply {
-            this.autoplay = autoplay
-        }
+        fun autoplay(autoplay: Boolean) = apply { this.autoplay = autoplay }
 
-        fun loop(loop: Boolean) = apply {
-            this.loop = loop
-        }
+        fun loop(loop: Boolean) = apply { this.loop = loop }
 
-        fun speed(speed: Float) = apply {
-            this.speed = speed
-        }
+        fun speed(speed: Float) = apply { this.speed = speed }
 
-        fun source(source: DotLottieSource) = apply {
-            this.source = source
-        }
+        fun source(source: DotLottieSource) = apply { this.source = source }
 
-//        fun backgroundColor(color: Int) = apply {
-//            this.backgroundColor = color
-//        }
+        //        fun backgroundColor(color: Int) = apply {
+        //            this.backgroundColor = color
+        //        }
 
         fun useFrameInterpolation(useFrameInterpolator: Boolean) = apply {
             this.useFrameInterpolator = useFrameInterpolator
         }
 
+        fun playMode(mode: Mode) = apply { this.playMode = mode }
 
-        fun playMode(mode: Mode) = apply {
-            this.playMode = mode
-        }
-
-        fun marker(marker: String) = apply {
-            this.marker = marker
-        }
+        fun marker(marker: String) = apply { this.marker = marker }
 
         fun layout(fit: Fit, alignment: LayoutUtil.Alignment) = apply {
             this.layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
@@ -80,13 +69,13 @@ class Config private constructor(
             this.layout = Layout(fit, listOf(alignment.first, alignment.second))
         }
 
-        fun themeId(themeId: String) = apply {
-            this.themeId = themeId
-        }
+        fun themeId(themeId: String) = apply { this.themeId = themeId }
 
-        fun threads(threads: UInt) = apply {
-            this.threads = threads
-        }
+        fun threads(threads: UInt) = apply { this.threads = threads }
+
+        fun stateMachineId(stateMachineId: String) = apply { this.stateMachineId = stateMachineId }
+
+        fun loopCount(loopCount: UInt) = apply { this.loopCount = loopCount }
 
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
@@ -101,9 +90,10 @@ class Config private constructor(
                 marker = this.marker,
                 layout = this.layout,
                 themeId = this.themeId,
+                stateMachineId = this.stateMachineId,
                 threads = this.threads,
                 loopCount = this.loopCount
-//                backgroundColor = this.backgroundColor
+                //                backgroundColor = this.backgroundColor
             )
         }
     }

@@ -16,10 +16,23 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Sample"
         tools:targetApi="31">
+        <!-- Programmatic example  -->
+        <activity
+            android:name=".ProgrammaticExampleActivity"
+            android:exported="true"
+            android:label="Programmatic Example"
+            android:theme="@style/Theme.Sample">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- XML layout example -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
+            android:label="XML Layout Example"
             android:theme="@style/Theme.Sample">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
