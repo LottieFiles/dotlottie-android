@@ -298,6 +298,7 @@ class DotLottieDrawable(
     override fun stop() {
         dlPlayer!!.stop()
         mHandler.removeCallbacks(mNextFrameRunnable)
+        invalidateSelf()
     }
 
     fun isPaused(): Boolean {
@@ -309,15 +310,14 @@ class DotLottieDrawable(
     }
 
     fun setCurrentFrame(frame: Float) {
-        mHandler.removeCallbacks(mNextFrameRunnable)
         dlPlayer!!.setFrame(frame)
-        dlPlayer!!.render()
         invalidateSelf()
     }
 
     fun setSegment(first: Float, second: Float) {
         config.segment = listOf(first, second)
         dlPlayer!!.setConfig(config)
+        invalidateSelf()
     }
 
     fun loadAnimation(
@@ -325,12 +325,13 @@ class DotLottieDrawable(
     ) {
         val result = dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
         if (result == true) {
-            nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
+            invalidateSelf()
         }
     }
 
     fun setTheme(themeId: String) {
         dlPlayer?.setTheme(themeId)
+        invalidateSelf()
     }
 
     fun setThemeData(themeData: String) {
@@ -339,10 +340,12 @@ class DotLottieDrawable(
 
     fun resetTheme() {
         dlPlayer?.resetTheme()
+        invalidateSelf()
     }
 
     fun setSlots(slots: String) {
         dlPlayer?.setSlots(slots)
+        invalidateSelf()
     }
 
     fun manifest(): Manifest? {
@@ -467,20 +470,31 @@ class DotLottieDrawable(
                     }
                 }
             })
+            invalidateSelf()
         }
         return result
     }
 
     fun stateMachineStop(): Boolean {
-        return dlPlayer?.stateMachineStop() ?: false
+        val result = dlPlayer?.stateMachineStop() ?: false
+        invalidateSelf()
+        return result;
     }
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
-        return dlPlayer?.stateMachineLoad(stateMachineId) ?: false
+        val result = dlPlayer?.stateMachineLoad(stateMachineId) ?: false
+        if (result) {
+            invalidateSelf()
+        }
+        return result
     }
 
     fun stateMachineLoadData(data: String): Boolean {
-        return dlPlayer?.stateMachineLoadData(data) ?: false
+        val result = dlPlayer?.stateMachineLoadData(data) ?: false
+        if (result) {
+            invalidateSelf()
+        }
+        return result
     }
 
     /**
@@ -552,13 +566,16 @@ class DotLottieDrawable(
             bufferBytes.rewind()
             bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
             bufferBytes.rewind()
-            canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
         }
 
-        mHandler.postDelayed(
-            mNextFrameRunnable,
-            0
-        )
+        canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+
+        if (dlPlayer!!.isPlaying()) {
+            mHandler.postDelayed(
+                mNextFrameRunnable,
+                0
+            )
+        }
     }
 
     companion object {

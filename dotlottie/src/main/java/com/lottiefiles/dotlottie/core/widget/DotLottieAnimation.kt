@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.annotation.FloatRange
@@ -15,7 +16,6 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.R
@@ -73,56 +73,61 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private lateinit var attributes: DotLottieAttributes
 
+    // Touch tracking for state machine interactions
+    private var lastTouchX: Float = 0f
+    private var lastTouchY: Float = 0f
+    private var movedTooMuch: Boolean = false
+    private val touchSlop: Float = 20f // Movement threshold to distinguish tap from drag
 
     @get:FloatRange(from = 0.0)
     val speed: Float
-        get() = mLottieDrawable?.speed ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.speed ?: 1f
 
     val loop: Boolean
-        get() = mLottieDrawable?.loop ?: false
+        get() = mLottieDrawable?.loop == true
 
     val autoplay: Boolean
-        get() = mLottieDrawable?.autoplay ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.autoplay == true
 
     val isPlaying: Boolean
-        get() = mLottieDrawable?.isRunning ?: false
+        get() = mLottieDrawable?.isRunning == true
 
     val isPaused: Boolean
-        get() = mLottieDrawable?.isPaused() ?: false
+        get() = mLottieDrawable?.isPaused() == true
 
 
     val isStopped: Boolean
-        get() = mLottieDrawable?.isStopped() ?: false
+        get() = mLottieDrawable?.isStopped() == true
 
     val isLoaded: Boolean
-        get() = mLottieDrawable?.isLoaded ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.isLoaded == true
 
     val totalFrames: Float
-        get() = mLottieDrawable?.totalFrame ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.totalFrame ?: 0f
 
     val currentFrame: Float
-        get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.currentFrame ?: 0f
 
     val playMode: Mode
-        get() = mLottieDrawable?.playMode ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.playMode ?: Mode.FORWARD
 
     val segment: Pair<Float, Float>
-        get() = mLottieDrawable?.segment ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.segment ?: Pair(0f, 0f)
 
     val duration: Float
-        get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.duration ?: 0f
 
     val loopCount: UInt
-        get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.loopCount ?: 0u
 
     val useFrameInterpolation: Boolean
-        get() = mLottieDrawable?.useFrameInterpolation ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.useFrameInterpolation == true
 
     val marker: String
-        get() = mLottieDrawable?.marker ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.marker ?: ""
 
     val markers: List<Marker>
-        get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.markers ?: emptyList()
 
     val activeThemeId: String
         get() = mLottieDrawable?.activeThemeId ?: ""
@@ -339,6 +344,12 @@ class DotLottieAnimation @JvmOverloads constructor(
                 )
 
                 mLottieDrawable?.callback = this@DotLottieAnimation
+
+                if (config.stateMachineId.isNotEmpty()) {
+                    mLottieDrawable?.stateMachineLoad(config.stateMachineId)
+                    mLottieDrawable?.stateMachineStart()
+                }
+
                 withContext(Dispatchers.Main) {
                     requestLayout()
                     invalidate()
@@ -392,6 +403,14 @@ class DotLottieAnimation @JvmOverloads constructor(
                         threads = attributes.threads
                     )
                     mLottieDrawable?.callback = this@DotLottieAnimation
+
+                    attributes.stateMachineId?.let {
+                        if (it.isNotEmpty()) {
+                            mLottieDrawable?.stateMachineLoad(attributes.stateMachineId!!)
+                            mLottieDrawable?.stateMachineStart()
+                        }
+                    }
+
                     withContext(Dispatchers.Main) {
                         requestLayout()
                         invalidate()
@@ -448,6 +467,69 @@ class DotLottieAnimation @JvmOverloads constructor(
         invalidate()
     }
 
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        val drawable = mLottieDrawable ?: return super.onTouchEvent(event)
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                lastTouchX = event.x
+                lastTouchY = event.y
+                movedTooMuch = false
+
+                drawable.stateMachinePostEvent(Event.PointerDown(event.x, event.y))
+                invalidate()
+                return true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                // Calculate movement distance from initial touch
+                val dx = event.x - lastTouchX
+                val dy = event.y - lastTouchY
+                val distance = kotlin.math.sqrt(dx * dx + dy * dy)
+
+                // Check if movement exceeds threshold
+                if (distance > touchSlop) {
+                    movedTooMuch = true
+                }
+
+                // Post pointer move event to state machine
+                drawable.stateMachinePostEvent(Event.PointerMove(event.x, event.y))
+                invalidate()
+                return true
+            }
+
+            MotionEvent.ACTION_UP -> {
+                // Post pointer up event to state machine
+                drawable.stateMachinePostEvent(Event.PointerUp(event.x, event.y))
+
+                // If movement was minimal, trigger click via performClick for accessibility
+                if (!movedTooMuch) {
+                    performClick()
+                }
+
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                // Treat cancel as pointer up
+                drawable.stateMachinePostEvent(Event.PointerUp(event.x, event.y))
+                invalidate()
+                return true
+            }
+        }
+
+        return super.onTouchEvent(event)
+    }
+
+    // For accessibility support
+    override fun performClick(): Boolean {
+        super.performClick()
+        // Post click event to state machine for accessibility support
+        mLottieDrawable?.stateMachinePostEvent(Event.Click(lastTouchX, lastTouchY))
+        invalidate()
+        return true
+    }
+
     fun addEventListener(listener: DotLottieEventListener) {
         if (!mDotLottieEventListener.contains(listener)) {
             mDotLottieEventListener.add(listener)
@@ -461,12 +543,17 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
-    fun stateMachineStart(urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),  onOpenUrl: ((url: String) -> Unit)? = null): Boolean {
+    fun stateMachineStart(
+        urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),
+        onOpenUrl: ((url: String) -> Unit)? = null
+    ): Boolean {
         return mLottieDrawable?.stateMachineStart(urlConfig, onOpenUrl) ?: false
     }
 
     fun stateMachineStop(): Boolean {
-        return mLottieDrawable?.stateMachineStop() ?: false
+        val result = mLottieDrawable?.stateMachineStop() ?: false
+        invalidate()
+        return result
     }
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
@@ -480,7 +567,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun clearEventListeners() {
         mDotLottieEventListener.clear()
         mLottieDrawable?.clearEventListeners()
-        }
+    }
 
     fun stateMachinePostEvent(event: Event) {
         mLottieDrawable?.stateMachinePostEvent(event)
