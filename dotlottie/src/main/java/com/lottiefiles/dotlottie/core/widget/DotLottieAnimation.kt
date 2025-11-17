@@ -81,53 +81,53 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     @get:FloatRange(from = 0.0)
     val speed: Float
-        get() = mLottieDrawable?.speed ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.speed ?: 1f
 
     val loop: Boolean
-        get() = mLottieDrawable?.loop ?: false
+        get() = mLottieDrawable?.loop == true
 
     val autoplay: Boolean
-        get() = mLottieDrawable?.autoplay ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.autoplay == true
 
     val isPlaying: Boolean
-        get() = mLottieDrawable?.isRunning ?: false
+        get() = mLottieDrawable?.isRunning == true
 
     val isPaused: Boolean
-        get() = mLottieDrawable?.isPaused() ?: false
+        get() = mLottieDrawable?.isPaused() == true
 
 
     val isStopped: Boolean
-        get() = mLottieDrawable?.isStopped() ?: false
+        get() = mLottieDrawable?.isStopped() == true
 
     val isLoaded: Boolean
-        get() = mLottieDrawable?.isLoaded ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.isLoaded == true
 
     val totalFrames: Float
-        get() = mLottieDrawable?.totalFrame ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.totalFrame ?: 0f
 
     val currentFrame: Float
-        get() = mLottieDrawable?.currentFrame ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.currentFrame ?: 0f
 
     val playMode: Mode
-        get() = mLottieDrawable?.playMode ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.playMode ?: Mode.FORWARD
 
     val segment: Pair<Float, Float>
-        get() = mLottieDrawable?.segment ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.segment ?: Pair(0f, 0f)
 
     val duration: Float
-        get() = mLottieDrawable?.duration ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.duration ?: 0f
 
     val loopCount: UInt
-        get() = mLottieDrawable?.loopCount ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.loopCount ?: 0u
 
     val useFrameInterpolation: Boolean
-        get() = mLottieDrawable?.useFrameInterpolation ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.useFrameInterpolation == true
 
     val marker: String
-        get() = mLottieDrawable?.marker ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.marker ?: ""
 
     val markers: List<Marker>
-        get() = mLottieDrawable?.markers ?: error("DotLottieDrawable is null")
+        get() = mLottieDrawable?.markers ?: emptyList()
 
     val activeThemeId: String
         get() = mLottieDrawable?.activeThemeId ?: ""
@@ -403,6 +403,14 @@ class DotLottieAnimation @JvmOverloads constructor(
                         threads = attributes.threads
                     )
                     mLottieDrawable?.callback = this@DotLottieAnimation
+
+                    attributes.stateMachineId?.let {
+                        if (it.isNotEmpty()) {
+                            mLottieDrawable?.stateMachineLoad(attributes.stateMachineId!!)
+                            mLottieDrawable?.stateMachineStart()
+                        }
+                    }
+
                     withContext(Dispatchers.Main) {
                         requestLayout()
                         invalidate()
