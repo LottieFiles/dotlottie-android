@@ -26,6 +26,8 @@ import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
 import androidx.core.graphics.createBitmap
+import com.dotlottie.dlplayer.GlobalInputsObserver
+import com.dotlottie.dlplayer.GradientStop
 import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 private const val BYTES_PER_PIXEL = 4
@@ -344,7 +346,7 @@ class DotLottieDrawable(
     }
 
     fun setSlots(slots: String) {
-        dlPlayer?.setSlots(slots)
+        dlPlayer?.setSlotsStr(slots)
         invalidateSelf()
     }
 
@@ -352,7 +354,7 @@ class DotLottieDrawable(
         return dlPlayer?.manifest()
     }
 
-    fun addEventListenter(listener: DotLottieEventListener) {
+    fun addEventListener(listener: DotLottieEventListener) {
         if (!dotLottieEventListener.contains(listener)) {
             dotLottieEventListener.add(listener)
         }
@@ -369,6 +371,88 @@ class DotLottieDrawable(
     fun pause() {
         dlPlayer!!.pause()
         mHandler.removeCallbacks(mNextFrameRunnable)
+    }
+
+    // MARK: - Global Inputs
+
+    fun globalInputsLoad(id: String): Boolean {
+        return dlPlayer!!.globalInputsLoad(id)
+    }
+
+    fun globalInputsLoadData(data: String): Boolean {
+        return dlPlayer!!.globalInputsLoadData(data)
+    }
+
+    fun globalInputsStart(): Boolean {
+        return dlPlayer!!.globalInputsStart()
+    }
+
+    fun globalInputsStop(): Boolean {
+        return dlPlayer!!.globalInputsStop()
+    }
+
+    fun globalInputsRemove(): Boolean {
+        return dlPlayer!!.globalInputsRemove()
+    }
+
+    fun globalInputsSubscribe(observer: GlobalInputsObserver): Boolean {
+        return dlPlayer!!.globalInputsSubscribe(observer)
+    }
+
+    fun globalInputsUnsubscribe(observer: GlobalInputsObserver): Boolean {
+        return dlPlayer!!.globalInputsUnsubscribe(observer)
+    }
+
+// MARK: - Global Inputs Setters
+
+    fun globalInputsSetString(bindingName: String, newValue: String): Boolean {
+        return dlPlayer!!.globalInputsSetString(bindingName, newValue)
+    }
+
+    fun globalInputsSetColor(bindingName: String, newValue: List<Float>): Boolean {
+        return dlPlayer!!.globalInputsSetColor(bindingName, newValue)
+    }
+
+    fun globalInputsSetVector(bindingName: String, newValue: List<Float>): Boolean {
+        return dlPlayer!!.globalInputsSetVector(bindingName, newValue)
+    }
+
+    fun globalInputsSetNumeric(bindingName: String, newValue: Float): Boolean {
+        return dlPlayer!!.globalInputsSetNumeric(bindingName, newValue)
+    }
+
+    fun globalInputsSetBoolean(bindingName: String, newValue: Boolean): Boolean {
+        return dlPlayer!!.globalInputsSetBoolean(bindingName, newValue)
+    }
+
+    fun globalInputsSetGradient(bindingName: String, newValue: List<GradientStop>): Boolean {
+        return dlPlayer!!.globalInputsSetGradient(bindingName, newValue)
+    }
+
+// MARK: - Global Inputs Getters
+
+    fun globalInputsGetString(bindingName: String): String? {
+        return dlPlayer!!.globalInputsGetString(bindingName)
+    }
+
+    fun globalInputsGetColor(bindingName: String): List<Float> {
+        return dlPlayer!!.globalInputsGetColor(bindingName)
+    }
+
+    fun globalInputsGetVector(bindingName: String): List<Float> {
+        return dlPlayer!!.globalInputsGetVector(bindingName)
+    }
+
+    fun globalInputsGetBoolean(bindingName: String): Boolean? {
+        return dlPlayer!!.globalInputsGetBoolean(bindingName)
+    }
+
+    fun globalInputsGetNumeric(bindingName: String): Float? {
+        return dlPlayer!!.globalInputsGetNumeric(bindingName)
+    }
+
+    fun globalInputsGetGradient(bindingName: String): List<GradientStop> {
+        return dlPlayer!!.globalInputsGetGradient(bindingName)
     }
 
     fun stateMachineStart(
