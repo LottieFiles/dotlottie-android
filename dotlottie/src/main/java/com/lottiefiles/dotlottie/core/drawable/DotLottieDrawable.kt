@@ -27,6 +27,9 @@ import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
 import androidx.core.graphics.createBitmap
 import com.dotlottie.dlplayer.StateMachineInternalObserver
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -44,6 +47,10 @@ class DotLottieDrawable(
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+
+    // Background rendering
+    private val renderExecutor = Executors.newSingleThreadExecutor()
+    private val isRendering = AtomicBoolean(false)
 
     var freeze: Boolean = false
         set(value) {
@@ -258,6 +265,12 @@ class DotLottieDrawable(
     }
 
     fun release() {
+        // Shutdown executor and wait for pending tasks
+        renderExecutor.shutdown()
+        try {
+            renderExecutor.awaitTermination(100, TimeUnit.MILLISECONDS)
+        } catch (_: InterruptedException) {
+        }
         dlPlayer!!.destroy()
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
         if (bitmapBuffer != null) {
@@ -270,11 +283,17 @@ class DotLottieDrawable(
         width = w
         height = h
 
-        bitmapBuffer?.recycle()
+        // Wait for any pending render to complete before recycling
+        while (isRendering.get()) {
+            Thread.sleep(1)
+        }
+        val oldBitmap = bitmapBuffer
         bitmapBuffer = createBitmap(width, height)
 
         dlPlayer!!.resize(width.toUInt(), height.toUInt())
         nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
+        // Recycle old bitmap after new one is set
+        oldBitmap?.recycle()
     }
 
     override fun isRunning(): Boolean {
@@ -558,23 +577,53 @@ class DotLottieDrawable(
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
+        // Skip if previous render is still in progress
+        if (isRendering.get()) {
+            // Still draw the current bitmap
+            bitmapBuffer?.let { bmp ->
+                if (!bmp.isRecycled) {
+                    canvas.drawBitmap(bmp, 0f, 0f, Paint())
+                }
+            }
+            if (dlPlayer!!.isPlaying()) {
+                mHandler.postDelayed(mNextFrameRunnable, 0)
+            }
+            return
+        }
+
         val ticked = dlPlayer!!.tick()
 
         if (ticked) {
+            isRendering.set(true)
             val bufferBytes =
                 nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
-            bufferBytes.rewind()
-            bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
-            bufferBytes.rewind()
+            val targetBitmap = bitmapBuffer
+
+            renderExecutor.execute {
+                try {
+                    targetBitmap?.let { bmp ->
+                        if (!bmp.isRecycled) {
+                            bufferBytes.rewind()
+                            bmp.copyPixelsFromBuffer(bufferBytes)
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore errors from recycled bitmap
+                } finally {
+                    isRendering.set(false)
+                    mHandler.post { invalidateSelf() }
+                }
+            }
         }
 
-        canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        bitmapBuffer?.let { bmp ->
+            if (!bmp.isRecycled) {
+                canvas.drawBitmap(bmp, 0f, 0f, Paint())
+            }
+        }
 
         if (dlPlayer!!.isPlaying()) {
-            mHandler.postDelayed(
-                mNextFrameRunnable,
-                0
-            )
+            mHandler.postDelayed(mNextFrameRunnable, 0)
         }
     }
 

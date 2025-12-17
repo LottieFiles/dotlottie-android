@@ -1,6 +1,8 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -38,6 +40,8 @@ import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import kotlin.math.pow
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -106,12 +110,25 @@ fun DotLottieAnimation(
     var animationData by remember { mutableStateOf<Result<DotLottieContent>?>(null) }
     var forceUpdateBitmap by remember { mutableStateOf(false) }
 
+    // Background rendering executor and synchronization
+    val renderExecutor = remember { Executors.newSingleThreadExecutor() }
+    val isRendering = remember { AtomicBoolean(false) }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
             var isActive = true
 
             override fun doFrame(frameTimeNanos: Long) {
                 if (bufferBytes == null || bitmap == null || !isActive) return
+
+                // Skip if previous render is still in progress
+                if (isRendering.get()) {
+                    if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
+                        choreographer.postFrameCallback(this)
+                    }
+                    return
+                }
 
                 // Check if buffer needs updating
                 if (rController.bufferNeedsUpdate.value) {
@@ -126,18 +143,41 @@ fun DotLottieAnimation(
                 val ticked = dlPlayer.tick()
 
                 if (ticked || forceUpdateBitmap) {
-                    bufferBytes?.let { bytes ->
-                        bitmap?.let { bmp ->
-                            bytes.rewind()
-                            bmp.copyPixelsFromBuffer(bytes)
-                            imageBitmap = bmp.asImageBitmap()
+                    val shouldResetFlag = !ticked && forceUpdateBitmap
+                    isRendering.set(true)
+
+                    // Capture references for background thread
+                    val bytes = bufferBytes
+                    val bmp = bitmap
+
+                    renderExecutor.execute {
+                        try {
+                            bytes?.let { b ->
+                                bmp?.let { targetBitmap ->
+                                    // Check if bitmap is still valid before using
+                                    if (!targetBitmap.isRecycled) {
+                                        b.rewind()
+                                        targetBitmap.copyPixelsFromBuffer(b)
+
+                                        // Post UI update to main thread
+                                        mainHandler.post {
+                                            if (isActive && !targetBitmap.isRecycled) {
+                                                imageBitmap = targetBitmap.asImageBitmap()
+                                                if (shouldResetFlag) {
+                                                    forceUpdateBitmap = false
+                                                }
+                                            }
+                                            isRendering.set(false)
+                                        }
+                                    } else {
+                                        isRendering.set(false)
+                                    }
+                                } ?: run { isRendering.set(false) }
+                            } ?: run { isRendering.set(false) }
+                        } catch (e: Exception) {
+                            isRendering.set(false)
                         }
                     }
-                }
-
-                // Bitmap update is done! Let's reset the flag
-                if (!ticked && forceUpdateBitmap) {
-                    forceUpdateBitmap = false
                 }
 
                 if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
@@ -252,13 +292,19 @@ fun DotLottieAnimation(
 
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
-            bitmap?.recycle()
+            // Wait for any pending render to complete before recycling
+            while (isRendering.get()) {
+                kotlinx.coroutines.delay(1)
+            }
+            val oldBitmap = bitmap
             bitmap = createBitmap(_width.toInt(), _height.toInt())
             dlPlayer.resize(_width, _height)
             nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
             bufferBytes =
                 nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             imageBitmap = bitmap!!.asImageBitmap()
+            // Recycle old bitmap after new one is set
+            oldBitmap?.recycle()
             if (!dlPlayer.isPlaying()) {
                 forceUpdateBitmap = true
                 choreographer.postFrameCallback(frameCallback)
@@ -273,6 +319,12 @@ fun DotLottieAnimation(
         onDispose {
             frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
+            // Shutdown executor and wait for pending tasks
+            renderExecutor.shutdown()
+            try {
+                renderExecutor.awaitTermination(100, java.util.concurrent.TimeUnit.MILLISECONDS)
+            } catch (_: InterruptedException) {
+            }
             dlPlayer.destroy()
             bitmap?.recycle()
         }
