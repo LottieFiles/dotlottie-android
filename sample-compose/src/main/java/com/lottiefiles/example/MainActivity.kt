@@ -64,8 +64,9 @@ class MainActivity : ComponentActivity() {
 //                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-                    ThreadCountExample()
+//                    ThreadCountExample()
 //                    StateMachineExample()
+                    GlobalInputsExample()
                 }
             }
         }
