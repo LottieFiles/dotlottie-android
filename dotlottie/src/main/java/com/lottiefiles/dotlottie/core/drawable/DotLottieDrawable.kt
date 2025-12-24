@@ -9,6 +9,7 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
@@ -27,6 +28,16 @@ import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.sun.jna.Pointer
 import androidx.core.graphics.createBitmap
 import com.dotlottie.dlplayer.StateMachineInternalObserver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -44,6 +55,9 @@ class DotLottieDrawable(
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+
+    private val renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val renderMutex = Mutex()
 
     var freeze: Boolean = false
         set(value) {
@@ -258,6 +272,7 @@ class DotLottieDrawable(
     }
 
     fun release() {
+        renderScope.cancel()
         dlPlayer!!.destroy()
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
         if (bitmapBuffer != null) {
@@ -270,11 +285,18 @@ class DotLottieDrawable(
         width = w
         height = h
 
-        bitmapBuffer?.recycle()
-        bitmapBuffer = createBitmap(width, height)
-
-        dlPlayer!!.resize(width.toUInt(), height.toUInt())
-        nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
+        // Wait for any pending render to complete before recycling (proper suspend)
+        // Using runBlocking here because resize needs to be synchronous (like the original Thread.sleep)
+        // but we use Mutex.withLock which properly suspends instead of busy-waiting
+        runBlocking {
+            renderMutex.withLock {
+                val oldBitmap = bitmapBuffer
+                bitmapBuffer = createBitmap(width, height)
+                dlPlayer!!.resize(width.toUInt(), height.toUInt())
+                nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
+                oldBitmap?.recycle()
+            }
+        }
     }
 
     override fun isRunning(): Boolean {
@@ -558,23 +580,61 @@ class DotLottieDrawable(
     override fun draw(canvas: Canvas) {
         if (bitmapBuffer == null || dlPlayer == null) return
 
+        // Skip if previous render is still in progress (non-blocking check)
+        if (!renderMutex.tryLock()) {
+            // Still draw the current bitmap
+            bitmapBuffer?.let { bmp ->
+                if (!bmp.isRecycled) {
+                    canvas.drawBitmap(bmp, 0f, 0f, Paint())
+                }
+            }
+            if (dlPlayer!!.isPlaying()) {
+                mHandler.postDelayed(mNextFrameRunnable, 0)
+            }
+            return
+        }
+        renderMutex.unlock()
+
         val ticked = dlPlayer!!.tick()
 
         if (ticked) {
             val bufferBytes =
                 nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
-            bufferBytes.rewind()
-            bitmapBuffer!!.copyPixelsFromBuffer(bufferBytes)
-            bufferBytes.rewind()
+            val targetBitmap = bitmapBuffer
+
+            renderScope.launch {
+                renderMutex.withLock {
+                    try {
+                        ensureActive()
+
+                        targetBitmap?.let { bmp ->
+                            if (!bmp.isRecycled) {
+                                withContext(Dispatchers.Default) {
+                                    bufferBytes.rewind()
+                                    bmp.copyPixelsFromBuffer(bufferBytes)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during background render", e)
+                    } finally {
+                        // Invalidate on main thread
+                        withContext(Dispatchers.Main) {
+                            invalidateSelf()
+                        }
+                    }
+                }
+            }
         }
 
-        canvas.drawBitmap(bitmapBuffer!!, 0f, 0f, Paint())
+        bitmapBuffer?.let { bmp ->
+            if (!bmp.isRecycled) {
+                canvas.drawBitmap(bmp, 0f, 0f, Paint())
+            }
+        }
 
         if (dlPlayer!!.isPlaying()) {
-            mHandler.postDelayed(
-                mNextFrameRunnable,
-                0
-            )
+            mHandler.postDelayed(mNextFrameRunnable, 0)
         }
     }
 
