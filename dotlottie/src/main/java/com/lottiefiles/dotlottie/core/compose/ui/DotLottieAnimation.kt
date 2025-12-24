@@ -40,6 +40,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.sun.jna.Pointer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -52,7 +53,7 @@ import com.dotlottie.dlplayer.Config as DLConfig
 
 private const val BYTES_PER_PIXEL = 4
 
-@OptIn(InternalDotLottieApi::class)
+@OptIn(InternalDotLottieApi::class, ExperimentalCoroutinesApi::class)
 @Composable
 fun DotLottieAnimation(
     modifier: Modifier = Modifier,
@@ -119,6 +120,7 @@ fun DotLottieAnimation(
 
     val renderScope = rememberCoroutineScope()
     val renderMutex = remember { Mutex() }
+    val singleThreadDispatcher = remember { Dispatchers.Default.limitedParallelism(1) }
 
     val frameCallback = remember {
         object : Choreographer.FrameCallback {
@@ -134,7 +136,6 @@ fun DotLottieAnimation(
                     }
                     return
                 }
-                renderMutex.unlock()
 
                 // Check if buffer needs updating
                 if (rController.bufferNeedsUpdate.value) {
@@ -155,7 +156,7 @@ fun DotLottieAnimation(
                     val bytes = bufferBytes
                     val bmp = bitmap
 
-                    renderScope.launch {
+                    renderScope.launch(singleThreadDispatcher) {
                         renderMutex.withLock {
                             try {
                                 ensureActive()
@@ -190,6 +191,8 @@ fun DotLottieAnimation(
                 if (dlPlayer.isPlaying() || rController.stateMachineIsActive) {
                     choreographer.postFrameCallback(this)
                 }
+
+                renderMutex.unlock()
             }
         }
     }
