@@ -6,6 +6,8 @@ import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
+import com.dotlottie.dlplayer.GlobalInputsObserver
+import com.dotlottie.dlplayer.GradientStop
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
@@ -383,6 +385,88 @@ class DotLottieController {
         stateMachineListeners.remove(listener)
     }
 
+    // MARK: - Global Inputs
+
+    fun globalInputsLoad(id: String): Boolean {
+        return dlplayer?.globalInputsLoad(id) ?: false
+    }
+
+    fun globalInputsLoadData(data: String): Boolean {
+        return dlplayer?.globalInputsLoadData(data) ?: false
+    }
+
+    fun globalInputsStart(): Boolean {
+        return dlplayer?.globalInputsStart() ?: false
+    }
+
+    fun globalInputsStop(): Boolean {
+        return dlplayer?.globalInputsStop() ?: false
+    }
+
+    fun globalInputsRemove(): Boolean {
+        return dlplayer?.globalInputsRemove() ?: false
+    }
+
+    fun globalInputsSubscribe(observer: GlobalInputsObserver): Boolean {
+        return dlplayer?.globalInputsSubscribe(observer) ?: false
+    }
+
+    fun globalInputsUnsubscribe(observer: GlobalInputsObserver): Boolean {
+        return dlplayer?.globalInputsUnsubscribe(observer) ?: false
+    }
+
+// MARK: - Global Inputs Setters
+
+    fun globalInputsSetString(bindingName: String, newValue: String): Boolean {
+        return dlplayer?.globalInputsSetString(bindingName, newValue) ?: false
+    }
+
+    fun globalInputsSetColor(bindingName: String, newValue: List<Float>): Boolean {
+        return dlplayer?.globalInputsSetColor(bindingName, newValue) ?: false
+    }
+
+    fun globalInputsSetVector(bindingName: String, newValue: List<Float>): Boolean {
+        return dlplayer?.globalInputsSetVector(bindingName, newValue) ?: false
+    }
+
+    fun globalInputsSetNumeric(bindingName: String, newValue: Float): Boolean {
+        return dlplayer?.globalInputsSetNumeric(bindingName, newValue) ?: false
+    }
+
+    fun globalInputsSetBoolean(bindingName: String, newValue: Boolean): Boolean {
+        return dlplayer?.globalInputsSetBoolean(bindingName, newValue) ?: false
+    }
+
+    fun globalInputsSetGradient(bindingName: String, newValue: List<GradientStop>): Boolean {
+        return dlplayer?.globalInputsSetGradient(bindingName, newValue) ?: false
+    }
+
+// MARK: - Global Inputs Getters
+
+    fun globalInputsGetString(bindingName: String): String? {
+        return dlplayer?.globalInputsGetString(bindingName)
+    }
+
+    fun globalInputsGetColor(bindingName: String): List<Float> {
+        return dlplayer?.globalInputsGetColor(bindingName) ?: emptyList()
+    }
+
+    fun globalInputsGetVector(bindingName: String): List<Float> {
+        return dlplayer?.globalInputsGetVector(bindingName) ?: emptyList()
+    }
+
+    fun globalInputsGetBoolean(bindingName: String): Boolean? {
+        return dlplayer?.globalInputsGetBoolean(bindingName)
+    }
+
+    fun globalInputsGetNumeric(bindingName: String): Float? {
+        return dlplayer?.globalInputsGetNumeric(bindingName)
+    }
+
+    fun globalInputsGetGradient(bindingName: String): List<GradientStop> {
+        return dlplayer?.globalInputsGetGradient(bindingName) ?: emptyList()
+    }
+
     @InternalDotLottieApi
     fun setPlayerInstance(player: DotLottiePlayer, config: Config) {
         dlplayer?.destroy()
@@ -491,7 +575,7 @@ class DotLottieController {
     }
 
     fun setSlots(slots: String) {
-        dlplayer?.setSlots(slots)
+        dlplayer?.setSlotsStr(slots)
     }
 
     fun setPlayMode(mode: Mode) {
