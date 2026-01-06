@@ -114,6 +114,7 @@ fun DotLottieAnimation(
     val currentState by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
     val _height by rController.width.collectAsState()
+    val frameUpdateRequested by rController.frameUpdateRequested.collectAsState()
     var layoutSize by remember { mutableStateOf<Size?>(null) }
     var animationData by remember { mutableStateOf<Result<DotLottieContent>?>(null) }
     var forceUpdateBitmap by remember { mutableStateOf(false) }
@@ -261,6 +262,13 @@ fun DotLottieAnimation(
 
     LaunchedEffect(dlPlayer.isPlaying(), currentState) {
         choreographer.postFrameCallback(frameCallback)
+    }
+
+    LaunchedEffect(frameUpdateRequested) {
+        if (frameUpdateRequested > 0 && !dlPlayer.isPlaying()) {
+            forceUpdateBitmap = true
+            choreographer.postFrameCallback(frameCallback)
+        }
     }
 
     LaunchedEffect(
