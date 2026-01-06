@@ -1,6 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
@@ -302,7 +303,7 @@ fun DotLottieAnimation(
 
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
-            // Wait for any pending render to complete before recycling (proper suspend)
+            // Wait for any pending render to complete
             renderMutex.withLock {
                 val oldBitmap = bitmap
                 bitmap = createBitmap(_width.toInt(), _height.toInt())
@@ -311,8 +312,11 @@ fun DotLottieAnimation(
                 bufferBytes =
                     nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
                 imageBitmap = bitmap!!.asImageBitmap()
-                // Recycle old bitmap after new one is set
-                oldBitmap?.recycle()
+                // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
+                // On API 26+ bitmap memory is in native heap and GC handles it safely.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    oldBitmap?.recycle()
+                }
             }
             if (!dlPlayer.isPlaying()) {
                 forceUpdateBitmap = true
@@ -330,7 +334,11 @@ fun DotLottieAnimation(
             choreographer.removeFrameCallback(frameCallback)
             renderScope.cancel()
             dlPlayer.destroy()
-            bitmap?.recycle()
+            // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
+            // On API 26+ bitmap memory is in native heap and GC handles it safely.
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                bitmap?.recycle()
+            }
         }
     }
 
