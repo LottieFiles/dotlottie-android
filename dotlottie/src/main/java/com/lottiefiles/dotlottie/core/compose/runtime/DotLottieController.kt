@@ -125,6 +125,10 @@ class DotLottieController {
         _bufferNeedsUpdate.value = false
     }
 
+    // Signal to trigger bitmap update after setFrame() when not playing
+    private val _frameUpdateRequested = MutableStateFlow(0L)
+    val frameUpdateRequested: StateFlow<Long> = _frameUpdateRequested.asStateFlow()
+
     fun play() {
         dlplayer?.play()
         shouldPlayOnInit = true
@@ -410,6 +414,8 @@ class DotLottieController {
 
     fun setFrame(frame: Float) {
         dlplayer?.setFrame(frame)
+        // Signal animation to update bitmap
+        _frameUpdateRequested.value++
     }
 
     fun setUseFrameInterpolation(enable: Boolean) {
