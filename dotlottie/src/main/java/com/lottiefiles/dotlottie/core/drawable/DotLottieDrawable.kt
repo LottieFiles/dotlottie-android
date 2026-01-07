@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -275,26 +276,31 @@ class DotLottieDrawable(
         renderScope.cancel()
         dlPlayer!!.destroy()
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
-        if (bitmapBuffer != null) {
+        // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
+        // On API 26+ bitmap memory is in native heap and GC handles it safely.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             bitmapBuffer?.recycle()
-            bitmapBuffer = null
         }
+        bitmapBuffer = null
     }
 
     fun resize(w: Int, h: Int) {
         width = w
         height = h
 
-        // Wait for any pending render to complete before recycling (proper suspend)
-        // Using runBlocking here because resize needs to be synchronous (like the original Thread.sleep)
-        // but we use Mutex.withLock which properly suspends instead of busy-waiting
+        // Wait for any pending render to complete
+        // Using runBlocking here because resize needs to be synchronous
         runBlocking {
             renderMutex.withLock {
                 val oldBitmap = bitmapBuffer
                 bitmapBuffer = createBitmap(width, height)
                 dlPlayer!!.resize(width.toUInt(), height.toUInt())
                 nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
-                oldBitmap?.recycle()
+                // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
+                // On API 26+ bitmap memory is in native heap and GC handles it safely.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    oldBitmap?.recycle()
+                }
             }
         }
     }
