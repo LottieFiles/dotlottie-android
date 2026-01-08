@@ -533,7 +533,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     fun addEventListener(listener: DotLottieEventListener) {
         if (!mDotLottieEventListener.contains(listener)) {
             mDotLottieEventListener.add(listener)
-            mLottieDrawable?.addEventListenter(listener)
+            mLottieDrawable?.addEventListener(listener)
         }
     }
 
