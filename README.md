@@ -94,8 +94,11 @@ val config = Config.Builder()
     .source(DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"))
 //    .source(DotLottieSource.Asset("file.json")) // asset from the asset folder .json or .lottie
 //    .source(DotLottieSource.Res(R.raw.animation)) // resource from raw resources .json or .lottie
-    .useInterpolation(true)
-    .playMode(Mode.Forward)
+    .useFrameInterpolation(true)
+    .playMode(Mode.FORWARD)
+    .threads(6u) // Use 6 threads for rendering
+    .themeId("darkTheme") // Set initial theme
+//    .layout(Fit.FIT, LayoutUtil.Alignment.Center) // Set layout configuration
     .build()
 dotLottieAnimationView.load(config)
 ```
@@ -164,6 +167,49 @@ fun ExampleComposeComponent() {
 
 ```
 
+#### DotLottieController (Jetpack Compose)
+
+The `DotLottieController` provides additional methods for programmatic control in Compose:
+
+```kotlin
+// Playback control
+dotLottieController.play()
+dotLottieController.pause()
+dotLottieController.stop()
+dotLottieController.setSpeed(2.0f)
+dotLottieController.setLoop(true)
+
+// Frame manipulation
+dotLottieController.setFrame(50.0f)
+dotLottieController.freeze() // Freeze animation rendering
+dotLottieController.unFreeze() // Resume animation rendering
+
+// Animation loading
+dotLottieController.loadAnimation("animationId")
+dotLottieController.manifest() // Get manifest info
+
+// Theming
+dotLottieController.setTheme("themeId")
+dotLottieController.setThemeData(jsonData)
+dotLottieController.resetTheme()
+dotLottieController.setSlots(slotsData)
+
+// Layout control
+dotLottieController.setLayout(Fit.CONTAIN, LayoutUtil.Alignment.Center)
+dotLottieController.resize(width, height)
+
+// State machine control (same as traditional UI)
+dotLottieController.stateMachineLoad("stateMachineId")
+dotLottieController.stateMachineStart()
+dotLottieController.stateMachineFire("eventName") // Alternative to fireEvent
+dotLottieController.stateMachinePostEvent(Event.Click(x, y)) // Post gesture events
+
+// Event management
+dotLottieController.addEventListener(eventListener)
+dotLottieController.removeEventListener(eventListener)
+dotLottieController.clearEventListeners()
+```
+
 ## State Machine Support
 
 DotLottie Android supports interactive animations with state machines for advanced user interactions:
@@ -187,6 +233,14 @@ Monitor state machine events by implementing `StateMachineEventListener`:
 
 ```kotlin
 private val stateMachineListener = object : StateMachineEventListener {
+    override fun onStart() {
+        Log.d(TAG, "State machine started")
+    }
+
+    override fun onStop() {
+        Log.d(TAG, "State machine stopped")
+    }
+
     override fun onStateEntered(enteringState: String) {
         Log.d(TAG, "Entered state: $enteringState")
     }
@@ -287,11 +341,17 @@ DotLottieAnimation(
 DotLottie Android supports dynamic theming for .lottie files:
 
 ```kotlin
-// Load theme by ID from .lottie file manifest
-dotLottieAnimationView.loadTheme("theme_id")
+// Set theme by ID from .lottie file manifest
+dotLottieAnimationView.setTheme("theme_id")
 
-// Load theme from JSON data
-dotLottieAnimationView.loadThemeData(themeJsonData)
+// Set theme from JSON data
+dotLottieAnimationView.setThemeData(themeJsonData)
+
+// Reset theme to default
+dotLottieAnimationView.resetTheme()
+
+// Set slot data for dynamic content
+dotLottieAnimationView.setSlots(slotsJsonData)
 ```
 
 ## API Reference
@@ -306,6 +366,9 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `setPlayMode(Mode)`: Sets playback direction (e.g., `Forward`, `Reverse`).
 - `setSegment(Float, Float)`: Sets a specific frame segment to play.
 - `setMarker(String)`: Plays the animation between a named marker.
+- `setFrame(Float)`: Sets the animation to a specific frame.
+- `freeze()`: Freezes animation rendering (pauses all updates).
+- `unFreeze()`: Resumes animation rendering from frozen state.
 
 #### Animation State & Properties
 
@@ -319,6 +382,9 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `speed`: The current animation speed.
 - `loop`: `true` if looping is enabled.
 - `loopCount`: The number of times the animation has looped.
+- `markers`: List of available markers in the animation.
+- `activeThemeId`: The currently active theme ID.
+- `activeAnimationId`: The currently active animation ID.
 
 #### Configuration & Loading
 
@@ -326,6 +392,10 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `setBackgroundColor(Int)`: Sets the animation's background color.
 - `setUseFrameInterpolation(Boolean)`: Toggles frame interpolation for smoother playback.
 - `setLayout(Fit, LayoutUtil.Alignment)`: Sets the animation layout configuration.
+- `resize(width: Int, height: Int)`: Manually resizes the animation canvas.
+- `loadAnimation(animationId: String)`: Loads a specific animation from multi-animation .lottie files.
+- `manifest()`: Returns the manifest information from .lottie files.
+- `destroy()`: Manually releases resources and cleans up the animation.
 
 #### Performance
 
@@ -333,15 +403,20 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 
 #### Theming
 
-- `loadTheme(String)`: Loads a theme from the .lottie file by its ID.
-- `loadThemeData(String)`: Loads a theme from theme JSON data.
+- `setTheme(String)`: Sets a theme from the .lottie file by its ID.
+- `setThemeData(String)`: Sets a theme from theme JSON data.
+- `resetTheme()`: Resets the theme to the default state.
+- `setSlots(String)`: Sets slot data for dynamic content replacement.
 
 #### State Machine
 
 - `stateMachineLoad(String)`: Loads a state machine by its ID.
+- `stateMachineLoadData(String)`: Loads a state machine from JSON data.
 - `stateMachineStart()`: Starts the loaded state machine.
+- `stateMachineStart(OpenUrlPolicy, (String) -> Unit)`: Starts with URL policy and callback.
 - `stateMachineStop()`: Stops the state machine.
 - `stateMachineFireEvent(String)`: Fires a named event.
+- `stateMachinePostEvent(Event)`: Posts custom events (gestures, etc.).
 - `stateMachineSetNumericInput(String, Float)`: Sets a numeric input value.
 - `stateMachineSetStringInput(String, String)`: Sets a string input value.
 - `stateMachineSetBooleanInput(String, Boolean)`: Sets a boolean input value.
@@ -350,6 +425,13 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `stateMachineGetBooleanInput(String)`: Gets a boolean input value.
 - `stateMachineCurrentState()`: Returns the current state machine state.
 - `addStateMachineEventListener(StateMachineEventListener)`: Adds a listener for state machine events.
+- `removeStateMachineEventListener(StateMachineEventListener)`: Removes a state machine event listener.
+
+#### Event Management
+
+- `addEventListener(DotLottieEventListener)`: Adds an animation event listener.
+- `removeEventListener(DotLottieEventListener)`: Removes a specific event listener.
+- `clearEventListeners()`: Removes all event listeners.
 
 #### Events
 
@@ -376,27 +458,43 @@ private val eventListener = object : DotLottieEventListener {
     }
 
     override fun onComplete() {
-
+        Log.d(TAG, "onComplete")
     }
 
     override fun onDestroy() {
-
+        Log.d(TAG, "onDestroy")
     }
 
     override fun onFreeze() {
-
+        Log.d(TAG, "onFreeze")
     }
 
     override fun onLoad() {
-
+        Log.d(TAG, "onLoad")
     }
 
-    override fun onLoop() {
-
+    override fun onLoop(loopCount: Int) {
+        Log.d(TAG, "onLoop: $loopCount")
     }
 
     override fun onUnFreeze() {
+        Log.d(TAG, "onUnFreeze")
+    }
 
+    override fun onRender(frameNo: Float) {
+        Log.d(TAG, "onRender: $frameNo")
+    }
+
+    override fun onLoadError() {
+        Log.e(TAG, "onLoadError")
+    }
+
+    override fun onLoadError(error: Throwable) {
+        Log.e(TAG, "onLoadError: ${error.message}")
+    }
+
+    override fun onError(error: Throwable) {
+        Log.e(TAG, "onError: ${error.message}")
     }
 }
 ```
