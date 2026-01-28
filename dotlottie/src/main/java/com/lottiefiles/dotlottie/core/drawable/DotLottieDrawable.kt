@@ -26,7 +26,7 @@ import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
-import com.sun.jna.Pointer
+import com.dotlottie.dlplayer.Pointer
 import androidx.core.graphics.createBitmap
 import com.dotlottie.dlplayer.StateMachineInternalObserver
 import kotlinx.coroutines.CoroutineScope

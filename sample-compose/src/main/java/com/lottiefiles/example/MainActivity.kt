@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -64,8 +65,9 @@ class MainActivity : ComponentActivity() {
 //                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-                    ThreadCountExample()
+//                    ThreadCountExample()
 //                    StateMachineExample()
+                    StateMachine()
                 }
             }
         }
@@ -609,5 +611,46 @@ fun ThreadCountExample() {
                 .size(300.dp)
                 .border(BorderStroke(1.dp, Color.Gray)),
         )
+    }
+}
+
+@Composable
+fun StateMachine() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        repeat(1) { index ->
+            DotLottieAnimation(
+                source = DotLottieSource.Url("https://lottie.host/8d358ee2-a9b5-4d44-8a5a-330f9a0deec5/2Te0G4A0dH.lottie"),
+                stateMachineId = "StateMachine1",
+//                source = DotLottieSource.Asset("torus_animation_monster.json"),
+                autoplay = true,
+                loop = true,
+                eventListeners = listOf(object : DotLottieEventListener {
+                    override fun onLoadError(error: Throwable) {
+                        Log.i("DotLottie", "LoadError: $error")
+                    }
+                    override fun onFrame(frame: Float) {
+                        Log.i("DotLottie", "Frame: $frame")
+                    }
+                    override fun onLoadError() {
+                        Log.i("DotLottie", "Error")
+                    }
+                    override fun onLoad() {
+                        Log.i("DotLottie", "Loaded")
+                    }
+                }),
+                layout = LayoutUtil.createLayout(Fit.FIT_WIDTH, LayoutUtil.Alignment.Center),
+                modifier = Modifier
+                    .background(Color.LightGray)
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(bottom = 8.dp)
+            )
+        }
     }
 }

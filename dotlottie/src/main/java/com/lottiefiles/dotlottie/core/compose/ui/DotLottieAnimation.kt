@@ -39,7 +39,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
-import com.sun.jna.Pointer
+import com.dotlottie.dlplayer.Pointer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
