@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 /**
  * Pointer class that wraps a native memory address.
- * This replaces com.sun.jna.Pointer for direct buffer access.
+ * Provides direct buffer access for native memory via JNI.
  */
 class Pointer(private val address: Long) {
 

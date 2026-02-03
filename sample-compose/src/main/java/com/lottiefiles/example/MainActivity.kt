@@ -625,9 +625,9 @@ fun StateMachine() {
     ) {
         repeat(1) { index ->
             DotLottieAnimation(
-                source = DotLottieSource.Url("https://lottie.host/8d358ee2-a9b5-4d44-8a5a-330f9a0deec5/2Te0G4A0dH.lottie"),
+//                source = DotLottieSource.Url("https://lottie.host/8d358ee2-a9b5-4d44-8a5a-330f9a0deec5/2Te0G4A0dH.lottie"),
                 stateMachineId = "StateMachine1",
-//                source = DotLottieSource.Asset("torus_animation_monster.json"),
+                source = DotLottieSource.Asset("check.json"),
                 autoplay = true,
                 loop = true,
                 eventListeners = listOf(object : DotLottieEventListener {
