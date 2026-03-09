@@ -1,67 +1,19 @@
 #include "dotlottie_player.h"
 #include <android/log.h>
 #include <jni.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define LOG_TAG "DotLottieJNI"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
-// Cached field IDs for Config class
-static struct {
-  jclass configClass;
-  jfieldID mode;
-  jfieldID loopAnimation;
-  jfieldID loopCount;
-  jfieldID speed;
-  jfieldID useFrameInterpolation;
-  jfieldID autoplay;
-  jfieldID segment;
-  jfieldID backgroundColor;
-  jfieldID layout;
-  jfieldID marker;
-  jfieldID themeId;
-  jfieldID stateMachineId;
-  jfieldID animationId;
-} gConfigFields;
-
-// Cached field IDs for Layout class
-static struct {
-  jclass layoutClass;
-  jfieldID fit;
-  jfieldID align;
-} gLayoutFields;
-
-// Cached field IDs for Mode enum
-static struct {
-  jclass modeClass;
-  jfieldID value;
-} gModeFields;
-
-// Cached field IDs for Fit enum
-static struct {
-  jclass fitClass;
-  jfieldID value;
-} gFitFields;
-
-// Cached method IDs for List and Float
-static struct {
-  jclass listClass;
-  jmethodID get;
-  jmethodID size;
-  jclass floatClass;
-  jmethodID floatValue;
-} gListFields;
-
 // Forward declare all JNI functions
 extern "C" {
 
 // Player lifecycle
-static jlong nativeNewPlayer(JNIEnv *env, jclass, jobject config);
+static jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads);
 static jint nativeDestroy(JNIEnv *env, jclass, jlong ptr);
-
-// Config
-static jint nativeInitConfig(JNIEnv *env, jclass, jobject config);
 
 // Loading
 static jint nativeLoadAnimationData(JNIEnv *env, jclass, jlong ptr,
@@ -87,21 +39,60 @@ static jint nativeResize(JNIEnv *env, jclass, jlong ptr, jint width,
 static jint nativeClear(JNIEnv *env, jclass, jlong ptr);
 
 // State queries
-static jint nativeIsLoaded(JNIEnv *env, jclass, jlong ptr);
-static jint nativeIsPlaying(JNIEnv *env, jclass, jlong ptr);
-static jint nativeIsPaused(JNIEnv *env, jclass, jlong ptr);
-static jint nativeIsStopped(JNIEnv *env, jclass, jlong ptr);
-static jint nativeIsComplete(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeIsLoaded(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeIsPlaying(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeIsPaused(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeIsStopped(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeIsComplete(JNIEnv *env, jclass, jlong ptr);
 
 // Getters
 static jfloat nativeCurrentFrame(JNIEnv *env, jclass, jlong ptr);
 static jfloat nativeTotalFrames(JNIEnv *env, jclass, jlong ptr);
 static jfloat nativeDuration(JNIEnv *env, jclass, jlong ptr);
 static jint nativeLoopCount(JNIEnv *env, jclass, jlong ptr);
-static jlong nativeBufferPtr(JNIEnv *env, jclass, jlong ptr);
-static jlong nativeBufferLen(JNIEnv *env, jclass, jlong ptr);
 static jfloat nativeSegmentDuration(JNIEnv *env, jclass, jlong ptr);
 static jfloatArray nativeAnimationSize(JNIEnv *env, jclass, jlong ptr);
+
+// Buffer management (caller-managed)
+static jlong nativeAllocateBuffer(JNIEnv *env, jclass, jint width, jint height);
+static void nativeFreeBuffer(JNIEnv *env, jclass, jlong bufferPtr);
+static jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr,
+                              jlong bufferPtr, jint width, jint height);
+
+// Config setters
+static jint nativeSetMode(JNIEnv *env, jclass, jlong ptr, jint mode);
+static jint nativeSetSpeed(JNIEnv *env, jclass, jlong ptr, jfloat speed);
+static jint nativeSetLoop(JNIEnv *env, jclass, jlong ptr, jboolean loop);
+static jint nativeSetLoopCount(JNIEnv *env, jclass, jlong ptr, jint count);
+static jint nativeSetAutoplay(JNIEnv *env, jclass, jlong ptr,
+                              jboolean autoplay);
+static jint nativeSetUseFrameInterpolation(JNIEnv *env, jclass, jlong ptr,
+                                           jboolean enabled);
+static jint nativeSetBackgroundColor(JNIEnv *env, jclass, jlong ptr,
+                                     jint color);
+static jint nativeSetSegment(JNIEnv *env, jclass, jlong ptr, jfloat start,
+                             jfloat end);
+static jint nativeClearSegment(JNIEnv *env, jclass, jlong ptr);
+static jint nativeSetMarker(JNIEnv *env, jclass, jlong ptr, jstring marker);
+static jint nativeSetLayout(JNIEnv *env, jclass, jlong ptr, jint fit,
+                            jfloat alignX, jfloat alignY);
+
+// Config getters
+static jint nativeGetMode(JNIEnv *env, jclass, jlong ptr);
+static jfloat nativeGetSpeed(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeGetLoop(JNIEnv *env, jclass, jlong ptr);
+static jint nativeGetLoopCount(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeGetAutoplay(JNIEnv *env, jclass, jlong ptr);
+static jboolean nativeGetUseFrameInterpolation(JNIEnv *env, jclass, jlong ptr);
+static jint nativeGetBackgroundColor(JNIEnv *env, jclass, jlong ptr);
+static jfloatArray nativeGetSegment(JNIEnv *env, jclass, jlong ptr);
+static jstring nativeGetActiveMarker(JNIEnv *env, jclass, jlong ptr);
+static jfloatArray nativeGetLayout(JNIEnv *env, jclass, jlong ptr);
+
+// Manifest & markers
+static jstring nativeManifest(JNIEnv *env, jclass, jlong ptr);
+static jint nativeMarkersCount(JNIEnv *env, jclass, jlong ptr);
+static jobjectArray nativeMarker(JNIEnv *env, jclass, jlong ptr, jint idx);
 
 // Theme
 static jint nativeSetTheme(JNIEnv *env, jclass, jlong ptr, jstring themeId);
@@ -130,13 +121,15 @@ static jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y,
 // Poll events
 static jobject nativePollEvent(JNIEnv *env, jclass, jlong ptr);
 
-// State machine - returns state machine pointer
+// State machine
 static jlong nativeStateMachineLoad(JNIEnv *env, jclass, jlong playerPtr,
                                     jstring stateMachineId);
 static jlong nativeStateMachineLoadData(JNIEnv *env, jclass, jlong playerPtr,
                                         jstring data);
 static void nativeStateMachineRelease(JNIEnv *env, jclass, jlong smPtr);
-static jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr);
+static jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr,
+                                    jstring whitelist,
+                                    jboolean requireUserInteraction);
 static jint nativeStateMachineStop(JNIEnv *env, jclass, jlong smPtr);
 static jint nativeStateMachineTick(JNIEnv *env, jclass, jlong smPtr);
 static jint nativeStateMachineSetNumericInput(JNIEnv *env, jclass, jlong smPtr,
@@ -161,6 +154,8 @@ static jint nativeStateMachineFrameworkSetup(JNIEnv *env, jclass, jlong smPtr);
 static jobject nativeStateMachinePollEvent(JNIEnv *env, jclass, jlong smPtr);
 static jstring nativeStateMachinePollInternalEvent(JNIEnv *env, jclass,
                                                    jlong smPtr);
+static jstring nativeGetStateMachine(JNIEnv *env, jclass, jlong playerPtr,
+                                     jstring id);
 
 // Pointer helper
 static jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address,
@@ -168,190 +163,69 @@ static jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address,
 
 } // extern "C"
 
-// Helper to convert Kotlin Config to C config
-static void convertConfig(JNIEnv *env, jobject config,
-                          dotlottieDotLottieConfig *cConfig) {
-  dotlottie_init_config(cConfig);
+// ==================== Helper: size-query string pattern ====================
 
-  if (config == nullptr) {
-    return;
+// Helper to call a size-query-then-fill C API and return a jstring.
+// func_query: calls with buffer=NULL to get size
+// func_fill: calls with allocated buffer to fill
+// Both must have the same signature.
+template <typename Func>
+static jstring sizeQueryString(JNIEnv *env, Func func, void *obj) {
+  uintptr_t size = 0;
+  auto res = func(obj, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
   }
-
-  // Extract primitive fields
-  cConfig->autoplay =
-      env->GetBooleanField(config, gConfigFields.autoplay) == JNI_TRUE;
-  cConfig->loop_animation =
-      env->GetBooleanField(config, gConfigFields.loopAnimation) == JNI_TRUE;
-  cConfig->use_frame_interpolation =
-      env->GetBooleanField(config, gConfigFields.useFrameInterpolation) ==
-      JNI_TRUE;
-  cConfig->speed = env->GetFloatField(config, gConfigFields.speed);
-  cConfig->loop_count =
-      static_cast<uint32_t>(env->GetIntField(config, gConfigFields.loopCount));
-  cConfig->background_color = static_cast<uint32_t>(
-      env->GetIntField(config, gConfigFields.backgroundColor));
-
-  // Extract Mode enum
-  jobject modeObj = env->GetObjectField(config, gConfigFields.mode);
-  if (modeObj != nullptr) {
-    jint modeValue = env->GetIntField(modeObj, gModeFields.value);
-    cConfig->mode = static_cast<dotlottieMode>(modeValue);
-    env->DeleteLocalRef(modeObj);
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
   }
-
-  // Extract Layout
-  jobject layoutObj = env->GetObjectField(config, gConfigFields.layout);
-  if (layoutObj != nullptr) {
-    // Extract Fit enum
-    jobject fitObj = env->GetObjectField(layoutObj, gLayoutFields.fit);
-    if (fitObj != nullptr) {
-      jint fitValue = env->GetIntField(fitObj, gFitFields.value);
-      cConfig->layout.fit = static_cast<dotlottieDotLottieFit>(fitValue);
-      env->DeleteLocalRef(fitObj);
-    }
-
-    // Extract align List<Float>
-    jobject alignList = env->GetObjectField(layoutObj, gLayoutFields.align);
-    if (alignList != nullptr) {
-      jint size = env->CallIntMethod(alignList, gListFields.size);
-      if (size >= 2) {
-        jobject alignX = env->CallObjectMethod(alignList, gListFields.get, 0);
-        jobject alignY = env->CallObjectMethod(alignList, gListFields.get, 1);
-        if (alignX != nullptr && alignY != nullptr) {
-          cConfig->layout.align_x =
-              env->CallFloatMethod(alignX, gListFields.floatValue);
-          cConfig->layout.align_y =
-              env->CallFloatMethod(alignY, gListFields.floatValue);
-          env->DeleteLocalRef(alignX);
-          env->DeleteLocalRef(alignY);
-        }
-      }
-      env->DeleteLocalRef(alignList);
-    }
-    env->DeleteLocalRef(layoutObj);
-  }
-
-  // Extract segment List<Float>
-  jobject segmentList = env->GetObjectField(config, gConfigFields.segment);
-  if (segmentList != nullptr) {
-    jint size = env->CallIntMethod(segmentList, gListFields.size);
-    if (size >= 2) {
-      jobject startObj = env->CallObjectMethod(segmentList, gListFields.get, 0);
-      jobject endObj = env->CallObjectMethod(segmentList, gListFields.get, 1);
-      if (startObj != nullptr && endObj != nullptr) {
-        cConfig->segment_start =
-            env->CallFloatMethod(startObj, gListFields.floatValue);
-        cConfig->segment_end =
-            env->CallFloatMethod(endObj, gListFields.floatValue);
-        env->DeleteLocalRef(startObj);
-        env->DeleteLocalRef(endObj);
-      }
-    }
-    env->DeleteLocalRef(segmentList);
-  }
-
-  // Extract string fields
-  jstring markerStr =
-      (jstring)env->GetObjectField(config, gConfigFields.marker);
-  if (markerStr != nullptr) {
-    const char *markerChars = env->GetStringUTFChars(markerStr, nullptr);
-    if (markerChars != nullptr) {
-      strncpy(cConfig->marker.value, markerChars,
-              dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1);
-      cConfig->marker.value[dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1] = '\0';
-      env->ReleaseStringUTFChars(markerStr, markerChars);
-    }
-    env->DeleteLocalRef(markerStr);
-  }
-
-  jstring themeIdStr =
-      (jstring)env->GetObjectField(config, gConfigFields.themeId);
-  if (themeIdStr != nullptr) {
-    const char *themeIdChars = env->GetStringUTFChars(themeIdStr, nullptr);
-    if (themeIdChars != nullptr) {
-      strncpy(cConfig->theme_id.value, themeIdChars,
-              dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1);
-      cConfig->theme_id.value[dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1] = '\0';
-      env->ReleaseStringUTFChars(themeIdStr, themeIdChars);
-    }
-    env->DeleteLocalRef(themeIdStr);
-  }
-
-  jstring stateMachineIdStr =
-      (jstring)env->GetObjectField(config, gConfigFields.stateMachineId);
-  if (stateMachineIdStr != nullptr) {
-    const char *stateMachineIdChars =
-        env->GetStringUTFChars(stateMachineIdStr, nullptr);
-    if (stateMachineIdChars != nullptr) {
-      strncpy(cConfig->state_machine_id.value, stateMachineIdChars,
-              dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1);
-      cConfig->state_machine_id.value[dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1] =
-          '\0';
-      env->ReleaseStringUTFChars(stateMachineIdStr, stateMachineIdChars);
-    }
-    env->DeleteLocalRef(stateMachineIdStr);
-  }
-
-  jstring animationIdStr =
-      (jstring)env->GetObjectField(config, gConfigFields.animationId);
-  if (animationIdStr != nullptr) {
-    const char *animationIdChars =
-        env->GetStringUTFChars(animationIdStr, nullptr);
-    if (animationIdChars != nullptr) {
-      strncpy(cConfig->animation_id.value, animationIdChars,
-              dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1);
-      cConfig->animation_id.value[dotlottieDOTLOTTIE_MAX_STR_LENGTH - 1] = '\0';
-      env->ReleaseStringUTFChars(animationIdStr, animationIdChars);
-    }
-    env->DeleteLocalRef(animationIdStr);
-  }
+  func(obj, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
-// JNI method implementations
+// ==================== Player Lifecycle ====================
 
-jlong nativeNewPlayer(JNIEnv *env, jclass, jobject config) {
-  dotlottieDotLottieConfig cConfig;
-  convertConfig(env, config, &cConfig);
-
-  dotlottieDotLottiePlayer *player = dotlottie_new_player(&cConfig);
+jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads) {
+  dotlottieDotLottiePlayer *player =
+      dotlottie_new_player(static_cast<uint32_t>(threads));
   return reinterpret_cast<jlong>(player);
 }
 
 jint nativeDestroy(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_destroy(player);
+  return static_cast<jint>(dotlottie_destroy(player));
 }
 
-jint nativeInitConfig(JNIEnv *env, jclass, jobject config) {
-  // Config initialization handled in Kotlin
-  return 0;
-}
+// ==================== Loading ====================
 
 jint nativeLoadAnimationData(JNIEnv *env, jclass, jlong ptr, jstring data,
                              jint width, jint height) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cData = env->GetStringUTFChars(data, nullptr);
-  int32_t result = dotlottie_load_animation_data(player, cData, width, height);
+  auto result = dotlottie_load_animation_data(player, cData, width, height);
   env->ReleaseStringUTFChars(data, cData);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeLoadAnimationPath(JNIEnv *env, jclass, jlong ptr, jstring path,
                              jint width, jint height) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cPath = env->GetStringUTFChars(path, nullptr);
-  int32_t result = dotlottie_load_animation_path(player, cPath, width, height);
+  auto result = dotlottie_load_animation_path(player, cPath, width, height);
   env->ReleaseStringUTFChars(path, cPath);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeLoadAnimation(JNIEnv *env, jclass, jlong ptr, jstring id, jint width,
                          jint height) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cId = env->GetStringUTFChars(id, nullptr);
-  int32_t result = dotlottie_load_animation(player, cId, width, height);
+  auto result = dotlottie_load_animation(player, cId, width, height);
   env->ReleaseStringUTFChars(id, cId);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr, jbyteArray data,
@@ -359,35 +233,37 @@ jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr, jbyteArray data,
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   jbyte *bytes = env->GetByteArrayElements(data, nullptr);
   jsize len = env->GetArrayLength(data);
-  int32_t result = dotlottie_load_dotlottie_data(
+  auto result = dotlottie_load_dotlottie_data(
       player, reinterpret_cast<const char *>(bytes), len, width, height);
   env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
-  return result;
+  return static_cast<jint>(result);
 }
+
+// ==================== Playback Control ====================
 
 jint nativePlay(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_play(player);
+  return static_cast<jint>(dotlottie_play(player));
 }
 
 jint nativePause(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_pause(player);
+  return static_cast<jint>(dotlottie_pause(player));
 }
 
 jint nativeStop(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_stop(player);
+  return static_cast<jint>(dotlottie_stop(player));
 }
 
 jint nativeRender(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_render(player);
+  return static_cast<jint>(dotlottie_render(player));
 }
 
 jint nativeTick(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_tick(player);
+  return static_cast<jint>(dotlottie_tick(player));
 }
 
 jfloat nativeRequestFrame(JNIEnv *env, jclass, jlong ptr) {
@@ -399,48 +275,58 @@ jfloat nativeRequestFrame(JNIEnv *env, jclass, jlong ptr) {
 
 jint nativeSetFrame(JNIEnv *env, jclass, jlong ptr, jfloat frame) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_set_frame(player, frame);
+  return static_cast<jint>(dotlottie_set_frame(player, frame));
 }
 
 jint nativeSeek(JNIEnv *env, jclass, jlong ptr, jfloat time) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_seek(player, time);
+  return static_cast<jint>(dotlottie_seek(player, time));
 }
 
 jint nativeResize(JNIEnv *env, jclass, jlong ptr, jint width, jint height) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_resize(player, width, height);
+  return static_cast<jint>(dotlottie_resize(player, width, height));
 }
 
 jint nativeClear(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_clear(player);
+  return static_cast<jint>(dotlottie_clear(player));
 }
 
-jint nativeIsLoaded(JNIEnv *env, jclass, jlong ptr) {
+// ==================== State Queries ====================
+
+jboolean nativeIsLoaded(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_is_loaded(player);
+  return dotlottie_is_loaded(player) ? JNI_TRUE : JNI_FALSE;
 }
 
-jint nativeIsPlaying(JNIEnv *env, jclass, jlong ptr) {
+jboolean nativeIsPlaying(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_is_playing(player);
+  return dotlottie_playback_status(player) == dotlottiePlaybackStatus::Playing
+             ? JNI_TRUE
+             : JNI_FALSE;
 }
 
-jint nativeIsPaused(JNIEnv *env, jclass, jlong ptr) {
+jboolean nativeIsPaused(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_is_paused(player);
+  return dotlottie_playback_status(player) == dotlottiePlaybackStatus::Paused
+             ? JNI_TRUE
+             : JNI_FALSE;
 }
 
-jint nativeIsStopped(JNIEnv *env, jclass, jlong ptr) {
+jboolean nativeIsStopped(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_is_stopped(player);
+  return dotlottie_playback_status(player) == dotlottiePlaybackStatus::Stopped
+             ? JNI_TRUE
+             : JNI_FALSE;
 }
 
-jint nativeIsComplete(JNIEnv *env, jclass, jlong ptr) {
+jboolean nativeIsComplete(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_is_complete(player);
+  return dotlottie_is_complete(player) ? JNI_TRUE : JNI_FALSE;
 }
+
+// ==================== Getters ====================
 
 jfloat nativeCurrentFrame(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
@@ -466,22 +352,8 @@ jfloat nativeDuration(JNIEnv *env, jclass, jlong ptr) {
 jint nativeLoopCount(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   uint32_t count = 0;
-  dotlottie_loop_count(player, &count);
+  dotlottie_current_loop_count(player, &count);
   return static_cast<jint>(count);
-}
-
-jlong nativeBufferPtr(JNIEnv *env, jclass, jlong ptr) {
-  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  const uint32_t *bufferPtr = nullptr;
-  dotlottie_buffer_ptr(player, &bufferPtr);
-  return reinterpret_cast<jlong>(bufferPtr);
-}
-
-jlong nativeBufferLen(JNIEnv *env, jclass, jlong ptr) {
-  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  uint64_t len = 0;
-  dotlottie_buffer_len(player, &len);
-  return static_cast<jlong>(len);
 }
 
 jfloat nativeSegmentDuration(JNIEnv *env, jclass, jlong ptr) {
@@ -502,79 +374,335 @@ jfloatArray nativeAnimationSize(JNIEnv *env, jclass, jlong ptr) {
   return result;
 }
 
+// ==================== Buffer Management (caller-managed) ====================
+
+jlong nativeAllocateBuffer(JNIEnv *env, jclass, jint width, jint height) {
+  size_t size = (size_t)width * (size_t)height;
+  uint32_t *buffer = (uint32_t *)calloc(size, sizeof(uint32_t));
+  return reinterpret_cast<jlong>(buffer);
+}
+
+void nativeFreeBuffer(JNIEnv *env, jclass, jlong bufferPtr) {
+  if (bufferPtr != 0) {
+    free(reinterpret_cast<void *>(bufferPtr));
+  }
+}
+
+jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr, jlong bufferPtr,
+                       jint width, jint height) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
+  auto *buffer = reinterpret_cast<uint32_t *>(bufferPtr);
+  return static_cast<jint>(dotlottie_set_sw_target(
+      player, buffer, width, height, dotlottieColorSpace::ABGR8888));
+}
+
+// ==================== Config Setters ====================
+
+jint nativeSetMode(JNIEnv *env, jclass, jlong ptr, jint mode) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_mode(player, static_cast<dotlottieMode>(mode)));
+}
+
+jint nativeSetSpeed(JNIEnv *env, jclass, jlong ptr, jfloat speed) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_set_speed(player, speed));
+}
+
+jint nativeSetLoop(JNIEnv *env, jclass, jlong ptr, jboolean loop) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_loop(player, loop == JNI_TRUE));
+}
+
+jint nativeSetLoopCount(JNIEnv *env, jclass, jlong ptr, jint count) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_loop_count(player, static_cast<uint32_t>(count)));
+}
+
+jint nativeSetAutoplay(JNIEnv *env, jclass, jlong ptr, jboolean autoplay) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_autoplay(player, autoplay == JNI_TRUE));
+}
+
+jint nativeSetUseFrameInterpolation(JNIEnv *env, jclass, jlong ptr,
+                                    jboolean enabled) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_use_frame_interpolation(player, enabled == JNI_TRUE));
+}
+
+jint nativeSetBackgroundColor(JNIEnv *env, jclass, jlong ptr, jint color) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(
+      dotlottie_set_background_color(player, static_cast<uint32_t>(color)));
+}
+
+jint nativeSetSegment(JNIEnv *env, jclass, jlong ptr, jfloat start,
+                      jfloat end) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  float segment[2] = {start, end};
+  return static_cast<jint>(dotlottie_set_segment(player, &segment));
+}
+
+jint nativeClearSegment(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_set_segment(player, nullptr));
+}
+
+jint nativeSetMarker(JNIEnv *env, jclass, jlong ptr, jstring marker) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  if (marker == nullptr) {
+    return static_cast<jint>(dotlottie_set_marker(player, nullptr));
+  }
+  const char *cMarker = env->GetStringUTFChars(marker, nullptr);
+  auto result = dotlottie_set_marker(player, cMarker);
+  env->ReleaseStringUTFChars(marker, cMarker);
+  return static_cast<jint>(result);
+}
+
+jint nativeSetLayout(JNIEnv *env, jclass, jlong ptr, jint fit, jfloat alignX,
+                     jfloat alignY) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  dotlottieLayout layout;
+  layout.fit = static_cast<dotlottieFit>(fit);
+  layout.align[0] = alignX;
+  layout.align[1] = alignY;
+  return static_cast<jint>(dotlottie_set_layout(player, layout));
+}
+
+// ==================== Config Getters ====================
+
+jint nativeGetMode(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_get_mode(player));
+}
+
+jfloat nativeGetSpeed(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return dotlottie_get_speed(player);
+}
+
+jboolean nativeGetLoop(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return dotlottie_get_loop(player) ? JNI_TRUE : JNI_FALSE;
+}
+
+jint nativeGetLoopCount(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_get_loop_count(player));
+}
+
+jboolean nativeGetAutoplay(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return dotlottie_get_autoplay(player) ? JNI_TRUE : JNI_FALSE;
+}
+
+jboolean nativeGetUseFrameInterpolation(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return dotlottie_get_use_frame_interpolation(player) ? JNI_TRUE : JNI_FALSE;
+}
+
+jint nativeGetBackgroundColor(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_get_background_color(player));
+}
+
+jfloatArray nativeGetSegment(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  float segment[2] = {0.0f, 0.0f};
+  auto res = dotlottie_get_segment(player, &segment);
+
+  jfloatArray result = env->NewFloatArray(2);
+  if (res == dotlottieDotLottieResult::Success) {
+    env->SetFloatArrayRegion(result, 0, 2, segment);
+  }
+  return result;
+}
+
+jstring nativeGetActiveMarker(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  uintptr_t size = 0;
+  auto res = dotlottie_get_active_marker(player, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
+  }
+  dotlottie_get_active_marker(player, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
+}
+
+jfloatArray nativeGetLayout(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  dotlottieLayout layout;
+  layout.fit = dotlottieFit::Contain;
+  layout.align[0] = 0.5f;
+  layout.align[1] = 0.5f;
+  dotlottie_get_layout(player, &layout);
+
+  // Return [fit, alignX, alignY]
+  jfloatArray result = env->NewFloatArray(3);
+  jfloat values[3] = {static_cast<jfloat>(layout.fit), layout.align[0],
+                      layout.align[1]};
+  env->SetFloatArrayRegion(result, 0, 3, values);
+  return result;
+}
+
+// ==================== Manifest & Markers ====================
+
+jstring nativeManifest(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  uintptr_t size = 0;
+  auto res = dotlottie_manifest(player, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return nullptr;
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return nullptr;
+  }
+  dotlottie_manifest(player, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
+}
+
+jint nativeMarkersCount(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  uint32_t count = 0;
+  dotlottie_markers_count(player, &count);
+  return static_cast<jint>(count);
+}
+
+// Returns String[] { name, time, duration } for marker at index
+jobjectArray nativeMarker(JNIEnv *env, jclass, jlong ptr, jint idx) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *name = nullptr;
+  float time = 0.0f;
+  float duration = 0.0f;
+  auto res = dotlottie_marker(player, static_cast<uint32_t>(idx), &name, &time,
+                              &duration);
+  if (res != dotlottieDotLottieResult::Success || name == nullptr) {
+    return nullptr;
+  }
+
+  jclass stringClass = env->FindClass("java/lang/String");
+  jobjectArray arr = env->NewObjectArray(3, stringClass, nullptr);
+
+  env->SetObjectArrayElement(arr, 0, env->NewStringUTF(name));
+
+  char timeBuf[32], durBuf[32];
+  snprintf(timeBuf, sizeof(timeBuf), "%f", time);
+  snprintf(durBuf, sizeof(durBuf), "%f", duration);
+  env->SetObjectArrayElement(arr, 1, env->NewStringUTF(timeBuf));
+  env->SetObjectArrayElement(arr, 2, env->NewStringUTF(durBuf));
+
+  return arr;
+}
+
+// ==================== Theme ====================
+
 jint nativeSetTheme(JNIEnv *env, jclass, jlong ptr, jstring themeId) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cThemeId = env->GetStringUTFChars(themeId, nullptr);
-  int32_t result = dotlottie_set_theme(player, cThemeId);
+  auto result = dotlottie_set_theme(player, cThemeId);
   env->ReleaseStringUTFChars(themeId, cThemeId);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeResetTheme(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_reset_theme(player);
+  return static_cast<jint>(dotlottie_reset_theme(player));
 }
 
 jint nativeSetThemeData(JNIEnv *env, jclass, jlong ptr, jstring themeData) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cThemeData = env->GetStringUTFChars(themeData, nullptr);
-  int32_t result = dotlottie_set_theme_data(player, cThemeData);
+  auto result = dotlottie_set_theme_data(player, cThemeData);
   env->ReleaseStringUTFChars(themeData, cThemeData);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jstring nativeActiveThemeId(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  char result[dotlottieDOTLOTTIE_MAX_STR_LENGTH] = {0};
-  dotlottie_active_theme_id(player, result);
-  return env->NewStringUTF(result);
+  uintptr_t size = 0;
+  auto res = dotlottie_theme_id(player, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
+  }
+  dotlottie_theme_id(player, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
 jstring nativeActiveAnimationId(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  char result[dotlottieDOTLOTTIE_MAX_STR_LENGTH] = {0};
-  dotlottie_active_animation_id(player, result);
-  return env->NewStringUTF(result);
+  uintptr_t size = 0;
+  auto res = dotlottie_animation_id(player, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
+  }
+  dotlottie_animation_id(player, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
-// Slots
+// ==================== Slots ====================
+
 jint nativeSetSlotsStr(JNIEnv *env, jclass, jlong ptr, jstring slotsJson) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cJson = env->GetStringUTFChars(slotsJson, nullptr);
-  int32_t result = dotlottie_set_slots_str(player, cJson);
+  auto result = dotlottie_set_slots_str(player, cJson);
   env->ReleaseStringUTFChars(slotsJson, cJson);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeClearSlots(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_clear_slots(player);
+  return static_cast<jint>(dotlottie_clear_slots(player));
 }
 
 jint nativeClearSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
-  int32_t result = dotlottie_clear_slot(player, cSlotId);
+  auto result = dotlottie_clear_slot(player, cSlotId);
   env->ReleaseStringUTFChars(slotId, cSlotId);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeSetColorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                         jfloat r, jfloat g, jfloat b) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
-  int32_t result = dotlottie_set_color_slot(player, cSlotId, r, g, b);
+  auto result = dotlottie_set_color_slot(player, cSlotId, r, g, b);
   env->ReleaseStringUTFChars(slotId, cSlotId);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeSetScalarSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                          jfloat value) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
-  int32_t result = dotlottie_set_scalar_slot(player, cSlotId, value);
+  auto result = dotlottie_set_scalar_slot(player, cSlotId, value);
   env->ReleaseStringUTFChars(slotId, cSlotId);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
@@ -582,35 +710,35 @@ jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
   const char *cText = env->GetStringUTFChars(text, nullptr);
-  int32_t result = dotlottie_set_text_slot(player, cSlotId, cText);
+  auto result = dotlottie_set_text_slot(player, cSlotId, cText);
   env->ReleaseStringUTFChars(slotId, cSlotId);
   env->ReleaseStringUTFChars(text, cText);
-  return result;
+  return static_cast<jint>(result);
 }
 
-// Viewport
+// ==================== Viewport ====================
+
 jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y, jint w,
                        jint h) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
-  return dotlottie_set_viewport(player, x, y, w, h);
+  return static_cast<jint>(dotlottie_set_viewport(player, x, y, w, h));
 }
 
-// Poll events - returns array [eventType, data1, data2] or null
+// ==================== Poll Events ====================
+
 jobject nativePollEvent(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
   dotlottieDotLottiePlayerEvent event;
 
   int32_t result = dotlottie_poll_event(player, &event);
   if (result != 1) {
-    return nullptr; // No event available
+    return nullptr;
   }
 
-  // Create int array [eventType, data (as int bits)]
   jintArray arr = env->NewIntArray(3);
   jint values[3];
   values[0] = static_cast<jint>(event.event_type);
 
-  // Store float data as int bits for Frame/Render, or loop count for Loop
   if (event.event_type == dotlottieDotLottiePlayerEventType::Frame ||
       event.event_type == dotlottieDotLottiePlayerEventType::Render) {
     union {
@@ -632,7 +760,8 @@ jobject nativePollEvent(JNIEnv *env, jclass, jlong ptr) {
   return arr;
 }
 
-// State machine methods
+// ==================== State Machine ====================
+
 jlong nativeStateMachineLoad(JNIEnv *env, jclass, jlong playerPtr,
                              jstring stateMachineId) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
@@ -659,30 +788,39 @@ void nativeStateMachineRelease(JNIEnv *env, jclass, jlong smPtr) {
   }
 }
 
-jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr) {
+jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr,
+                             jstring whitelist,
+                             jboolean requireUserInteraction) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
-  dotlottieDotLottieOpenUrlPolicy policy = {};
-  policy.require_user_interaction = false;
-  return dotlottie_state_machine_start(sm, &policy);
+  const char *cWhitelist = nullptr;
+  if (whitelist != nullptr) {
+    cWhitelist = env->GetStringUTFChars(whitelist, nullptr);
+  }
+  auto result = dotlottie_state_machine_start(
+      sm, cWhitelist, requireUserInteraction == JNI_TRUE);
+  if (cWhitelist != nullptr) {
+    env->ReleaseStringUTFChars(whitelist, cWhitelist);
+  }
+  return static_cast<jint>(result);
 }
 
 jint nativeStateMachineStop(JNIEnv *env, jclass, jlong smPtr) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
-  return dotlottie_state_machine_stop(sm);
+  return static_cast<jint>(dotlottie_state_machine_stop(sm));
 }
 
 jint nativeStateMachineTick(JNIEnv *env, jclass, jlong smPtr) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
-  return dotlottie_state_machine_tick(sm);
+  return static_cast<jint>(dotlottie_state_machine_tick(sm));
 }
 
 jint nativeStateMachineSetNumericInput(JNIEnv *env, jclass, jlong smPtr,
                                        jstring key, jfloat value) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
-  int32_t result = dotlottie_state_machine_set_numeric_input(sm, cKey, value);
+  auto result = dotlottie_state_machine_set_numeric_input(sm, cKey, value);
   env->ReleaseStringUTFChars(key, cKey);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeStateMachineSetStringInput(JNIEnv *env, jclass, jlong smPtr,
@@ -690,20 +828,20 @@ jint nativeStateMachineSetStringInput(JNIEnv *env, jclass, jlong smPtr,
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   const char *cValue = env->GetStringUTFChars(value, nullptr);
-  int32_t result = dotlottie_state_machine_set_string_input(sm, cKey, cValue);
+  auto result = dotlottie_state_machine_set_string_input(sm, cKey, cValue);
   env->ReleaseStringUTFChars(key, cKey);
   env->ReleaseStringUTFChars(value, cValue);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeStateMachineSetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
                                        jstring key, jboolean value) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
-  int32_t result =
+  auto result =
       dotlottie_state_machine_set_boolean_input(sm, cKey, value == JNI_TRUE);
   env->ReleaseStringUTFChars(key, cKey);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jfloat nativeStateMachineGetNumericInput(JNIEnv *env, jclass, jlong smPtr,
@@ -720,10 +858,24 @@ jstring nativeStateMachineGetStringInput(JNIEnv *env, jclass, jlong smPtr,
                                          jstring key) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
-  char result[dotlottieDOTLOTTIE_MAX_STR_LENGTH] = {0};
-  dotlottie_state_machine_get_string_input(sm, cKey, result);
+
+  uintptr_t size = 0;
+  auto res =
+      dotlottie_state_machine_get_string_input(sm, cKey, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    env->ReleaseStringUTFChars(key, cKey);
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    env->ReleaseStringUTFChars(key, cKey);
+    return env->NewStringUTF("");
+  }
+  dotlottie_state_machine_get_string_input(sm, cKey, buf, nullptr);
   env->ReleaseStringUTFChars(key, cKey);
-  return env->NewStringUTF(result);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
 jboolean nativeStateMachineGetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
@@ -738,25 +890,45 @@ jboolean nativeStateMachineGetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
 
 jstring nativeStateMachineCurrentState(JNIEnv *env, jclass, jlong smPtr) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
-  char result[dotlottieDOTLOTTIE_MAX_STR_LENGTH] = {0};
-  dotlottie_state_machine_current_state(sm, result);
-  return env->NewStringUTF(result);
+  uintptr_t size = 0;
+  auto res = dotlottie_state_machine_current_state(sm, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
+  }
+  dotlottie_state_machine_current_state(sm, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
 jstring nativeStateMachineStatus(JNIEnv *env, jclass, jlong smPtr) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
-  char result[dotlottieDOTLOTTIE_MAX_STR_LENGTH] = {0};
-  dotlottie_state_machine_status(sm, result);
-  return env->NewStringUTF(result);
+  uintptr_t size = 0;
+  auto res = dotlottie_state_machine_status(sm, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("");
+  }
+  dotlottie_state_machine_status(sm, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
 }
 
 jint nativeStateMachineFireEvent(JNIEnv *env, jclass, jlong smPtr,
                                  jstring eventName) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   const char *cName = env->GetStringUTFChars(eventName, nullptr);
-  int32_t result = dotlottie_state_machine_fire_event(sm, cName);
+  auto result = dotlottie_state_machine_fire_event(sm, cName);
   env->ReleaseStringUTFChars(eventName, cName);
-  return result;
+  return static_cast<jint>(result);
 }
 
 jint nativeStateMachinePostEvent(JNIEnv *env, jclass, jlong smPtr,
@@ -794,7 +966,7 @@ jint nativeStateMachinePostEvent(JNIEnv *env, jclass, jlong smPtr,
     break;
   }
 
-  return dotlottie_state_machine_post_event(sm, &event);
+  return static_cast<jint>(dotlottie_state_machine_post_event(sm, &event));
 }
 
 jint nativeStateMachineFrameworkSetup(JNIEnv *env, jclass, jlong smPtr) {
@@ -804,19 +976,16 @@ jint nativeStateMachineFrameworkSetup(JNIEnv *env, jclass, jlong smPtr) {
   return static_cast<jint>(result);
 }
 
-// Poll state machine events - returns array [eventType, str1, str2, str3,
-// numOld, numNew, boolOld, boolNew] or null
+// Poll state machine events — pointer-based data union
 jobject nativeStateMachinePollEvent(JNIEnv *env, jclass, jlong smPtr) {
   auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
   dotlottieStateMachineEvent event;
 
   int32_t result = dotlottie_state_machine_poll_event(sm, &event);
   if (result != 1) {
-    return nullptr; // No event available
+    return nullptr;
   }
 
-  // Create array to hold event data
-  // We'll use a string array where index 0 is the event type
   jclass stringClass = env->FindClass("java/lang/String");
   jobjectArray arr = env->NewObjectArray(8, stringClass, nullptr);
 
@@ -828,42 +997,75 @@ jobject nativeStateMachinePollEvent(JNIEnv *env, jclass, jlong smPtr) {
 
   switch (event.event_type) {
   case dotlottieStateMachineEventType::StateMachineTransition:
+    if (event.data.transition.previous_state) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.transition.previous_state));
+    }
+    if (event.data.transition.new_state) {
+      env->SetObjectArrayElement(
+          arr, 2, env->NewStringUTF(event.data.transition.new_state));
+    }
+    break;
   case dotlottieStateMachineEventType::StateMachineStateEntered:
   case dotlottieStateMachineEventType::StateMachineStateExit:
+    if (event.data.state.state) {
+      env->SetObjectArrayElement(arr, 1,
+                                 env->NewStringUTF(event.data.state.state));
+    }
+    break;
   case dotlottieStateMachineEventType::StateMachineCustomEvent:
   case dotlottieStateMachineEventType::StateMachineError:
+    if (event.data.message.message) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.message.message));
+    }
+    break;
   case dotlottieStateMachineEventType::StateMachineStringInputChange:
-    env->SetObjectArrayElement(arr, 1,
-                               env->NewStringUTF(event.data.strings.str1));
-    env->SetObjectArrayElement(arr, 2,
-                               env->NewStringUTF(event.data.strings.str2));
-    env->SetObjectArrayElement(arr, 3,
-                               env->NewStringUTF(event.data.strings.str3));
+    if (event.data.string_input.name) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.string_input.name));
+    }
+    if (event.data.string_input.old_value) {
+      env->SetObjectArrayElement(
+          arr, 2, env->NewStringUTF(event.data.string_input.old_value));
+    }
+    if (event.data.string_input.new_value) {
+      env->SetObjectArrayElement(
+          arr, 3, env->NewStringUTF(event.data.string_input.new_value));
+    }
     break;
   case dotlottieStateMachineEventType::StateMachineNumericInputChange: {
-    env->SetObjectArrayElement(arr, 1,
-                               env->NewStringUTF(event.data.numeric.name));
+    if (event.data.numeric_input.name) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.numeric_input.name));
+    }
     char oldVal[32], newVal[32];
-    snprintf(oldVal, sizeof(oldVal), "%f", event.data.numeric.old_value);
-    snprintf(newVal, sizeof(newVal), "%f", event.data.numeric.new_value);
+    snprintf(oldVal, sizeof(oldVal), "%f", event.data.numeric_input.old_value);
+    snprintf(newVal, sizeof(newVal), "%f", event.data.numeric_input.new_value);
     env->SetObjectArrayElement(arr, 4, env->NewStringUTF(oldVal));
     env->SetObjectArrayElement(arr, 5, env->NewStringUTF(newVal));
     break;
   }
   case dotlottieStateMachineEventType::StateMachineBooleanInputChange: {
-    env->SetObjectArrayElement(arr, 1,
-                               env->NewStringUTF(event.data.boolean.name));
+    if (event.data.boolean_input.name) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.boolean_input.name));
+    }
     env->SetObjectArrayElement(
         arr, 6,
-        env->NewStringUTF(event.data.boolean.old_value ? "true" : "false"));
+        env->NewStringUTF(event.data.boolean_input.old_value ? "true"
+                                                             : "false"));
     env->SetObjectArrayElement(
         arr, 7,
-        env->NewStringUTF(event.data.boolean.new_value ? "true" : "false"));
+        env->NewStringUTF(event.data.boolean_input.new_value ? "true"
+                                                             : "false"));
     break;
   }
   case dotlottieStateMachineEventType::StateMachineInputFired:
-    env->SetObjectArrayElement(arr, 1,
-                               env->NewStringUTF(event.data.strings.str1));
+    if (event.data.input_fired.name) {
+      env->SetObjectArrayElement(
+          arr, 1, env->NewStringUTF(event.data.input_fired.name));
+    }
     break;
   default:
     break;
@@ -881,8 +1083,36 @@ jstring nativeStateMachinePollInternalEvent(JNIEnv *env, jclass, jlong smPtr) {
     return nullptr;
   }
 
-  return env->NewStringUTF(event.message);
+  if (event.message != nullptr) {
+    return env->NewStringUTF(event.message);
+  }
+  return nullptr;
 }
+
+jstring nativeGetStateMachine(JNIEnv *env, jclass, jlong playerPtr,
+                              jstring id) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
+  const char *cId = env->GetStringUTFChars(id, nullptr);
+
+  uintptr_t size = 0;
+  auto res = dotlottie_get_state_machine(player, cId, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    env->ReleaseStringUTFChars(id, cId);
+    return nullptr;
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    env->ReleaseStringUTFChars(id, cId);
+    return nullptr;
+  }
+  dotlottie_get_state_machine(player, cId, buf, nullptr);
+  env->ReleaseStringUTFChars(id, cId);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  return result;
+}
+
+// ==================== Pointer Helper ====================
 
 jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
   if (address == 0) {
@@ -891,14 +1121,12 @@ jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
   return env->NewDirectByteBuffer(reinterpret_cast<void *>(address), length);
 }
 
-// JNI method tables
+// ==================== JNI Method Tables ====================
+
 static JNINativeMethod playerMethods[] = {
     // Player lifecycle
-    {"nativeNewPlayer", "(Ljava/lang/Object;)J", (void *)nativeNewPlayer},
+    {"nativeNewPlayer", "(I)J", (void *)nativeNewPlayer},
     {"nativeDestroy", "(J)I", (void *)nativeDestroy},
-
-    // Config
-    {"nativeInitConfig", "(Ljava/lang/Object;)I", (void *)nativeInitConfig},
 
     // Loading
     {"nativeLoadAnimationData", "(JLjava/lang/String;II)I",
@@ -922,21 +1150,57 @@ static JNINativeMethod playerMethods[] = {
     {"nativeClear", "(J)I", (void *)nativeClear},
 
     // State queries
-    {"nativeIsLoaded", "(J)I", (void *)nativeIsLoaded},
-    {"nativeIsPlaying", "(J)I", (void *)nativeIsPlaying},
-    {"nativeIsPaused", "(J)I", (void *)nativeIsPaused},
-    {"nativeIsStopped", "(J)I", (void *)nativeIsStopped},
-    {"nativeIsComplete", "(J)I", (void *)nativeIsComplete},
+    {"nativeIsLoaded", "(J)Z", (void *)nativeIsLoaded},
+    {"nativeIsPlaying", "(J)Z", (void *)nativeIsPlaying},
+    {"nativeIsPaused", "(J)Z", (void *)nativeIsPaused},
+    {"nativeIsStopped", "(J)Z", (void *)nativeIsStopped},
+    {"nativeIsComplete", "(J)Z", (void *)nativeIsComplete},
 
     // Getters
     {"nativeCurrentFrame", "(J)F", (void *)nativeCurrentFrame},
     {"nativeTotalFrames", "(J)F", (void *)nativeTotalFrames},
     {"nativeDuration", "(J)F", (void *)nativeDuration},
     {"nativeLoopCount", "(J)I", (void *)nativeLoopCount},
-    {"nativeBufferPtr", "(J)J", (void *)nativeBufferPtr},
-    {"nativeBufferLen", "(J)J", (void *)nativeBufferLen},
     {"nativeSegmentDuration", "(J)F", (void *)nativeSegmentDuration},
     {"nativeAnimationSize", "(J)[F", (void *)nativeAnimationSize},
+
+    // Buffer management
+    {"nativeAllocateBuffer", "(II)J", (void *)nativeAllocateBuffer},
+    {"nativeFreeBuffer", "(J)V", (void *)nativeFreeBuffer},
+    {"nativeSetSwTarget", "(JJII)I", (void *)nativeSetSwTarget},
+
+    // Config setters
+    {"nativeSetMode", "(JI)I", (void *)nativeSetMode},
+    {"nativeSetSpeed", "(JF)I", (void *)nativeSetSpeed},
+    {"nativeSetLoop", "(JZ)I", (void *)nativeSetLoop},
+    {"nativeSetLoopCount", "(JI)I", (void *)nativeSetLoopCount},
+    {"nativeSetAutoplay", "(JZ)I", (void *)nativeSetAutoplay},
+    {"nativeSetUseFrameInterpolation", "(JZ)I",
+     (void *)nativeSetUseFrameInterpolation},
+    {"nativeSetBackgroundColor", "(JI)I", (void *)nativeSetBackgroundColor},
+    {"nativeSetSegment", "(JFF)I", (void *)nativeSetSegment},
+    {"nativeClearSegment", "(J)I", (void *)nativeClearSegment},
+    {"nativeSetMarker", "(JLjava/lang/String;)I", (void *)nativeSetMarker},
+    {"nativeSetLayout", "(JIFF)I", (void *)nativeSetLayout},
+
+    // Config getters
+    {"nativeGetMode", "(J)I", (void *)nativeGetMode},
+    {"nativeGetSpeed", "(J)F", (void *)nativeGetSpeed},
+    {"nativeGetLoop", "(J)Z", (void *)nativeGetLoop},
+    {"nativeGetLoopCount", "(J)I", (void *)nativeGetLoopCount},
+    {"nativeGetAutoplay", "(J)Z", (void *)nativeGetAutoplay},
+    {"nativeGetUseFrameInterpolation", "(J)Z",
+     (void *)nativeGetUseFrameInterpolation},
+    {"nativeGetBackgroundColor", "(J)I", (void *)nativeGetBackgroundColor},
+    {"nativeGetSegment", "(J)[F", (void *)nativeGetSegment},
+    {"nativeGetActiveMarker", "(J)Ljava/lang/String;",
+     (void *)nativeGetActiveMarker},
+    {"nativeGetLayout", "(J)[F", (void *)nativeGetLayout},
+
+    // Manifest & markers
+    {"nativeManifest", "(J)Ljava/lang/String;", (void *)nativeManifest},
+    {"nativeMarkersCount", "(J)I", (void *)nativeMarkersCount},
+    {"nativeMarker", "(JI)[Ljava/lang/String;", (void *)nativeMarker},
 
     // Theme
     {"nativeSetTheme", "(JLjava/lang/String;)I", (void *)nativeSetTheme},
@@ -971,7 +1235,8 @@ static JNINativeMethod playerMethods[] = {
     {"nativeStateMachineLoadData", "(JLjava/lang/String;)J",
      (void *)nativeStateMachineLoadData},
     {"nativeStateMachineRelease", "(J)V", (void *)nativeStateMachineRelease},
-    {"nativeStateMachineStart", "(J)I", (void *)nativeStateMachineStart},
+    {"nativeStateMachineStart", "(JLjava/lang/String;Z)I",
+     (void *)nativeStateMachineStart},
     {"nativeStateMachineStop", "(J)I", (void *)nativeStateMachineStop},
     {"nativeStateMachineTick", "(J)I", (void *)nativeStateMachineTick},
     {"nativeStateMachineSetNumericInput", "(JLjava/lang/String;F)I",
@@ -1002,6 +1267,8 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeStateMachinePollEvent},
     {"nativeStateMachinePollInternalEvent", "(J)Ljava/lang/String;",
      (void *)nativeStateMachinePollInternalEvent},
+    {"nativeGetStateMachine", "(JLjava/lang/String;)Ljava/lang/String;",
+     (void *)nativeGetStateMachine},
 };
 
 static JNINativeMethod pointerMethods[] = {
@@ -1026,7 +1293,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   }
 
   int methodCount = sizeof(playerMethods) / sizeof(playerMethods[0]);
-  if (env->RegisterNatives(playerClazz, playerMethods, methodCount) != JNI_OK) {
+  if (env->RegisterNatives(playerClazz, playerMethods, methodCount) !=
+      JNI_OK) {
     LOGE("Failed to register native methods");
     return JNI_ERR;
   }
@@ -1053,92 +1321,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
        pointerMethodCount);
   env->DeleteLocalRef(pointerClazz);
 
-  // Cache Config class field IDs
-  jclass configClass = env->FindClass("com/dotlottie/dlplayer/Config");
-  if (configClass == nullptr) {
-    LOGE("Failed to find Config class");
-    return JNI_ERR;
-  }
-  gConfigFields.configClass = (jclass)env->NewGlobalRef(configClass);
-  gConfigFields.mode =
-      env->GetFieldID(configClass, "mode", "Lcom/dotlottie/dlplayer/Mode;");
-  gConfigFields.loopAnimation =
-      env->GetFieldID(configClass, "loopAnimation", "Z");
-  gConfigFields.loopCount = env->GetFieldID(configClass, "loopCount", "I");
-  gConfigFields.speed = env->GetFieldID(configClass, "speed", "F");
-  gConfigFields.useFrameInterpolation =
-      env->GetFieldID(configClass, "useFrameInterpolation", "Z");
-  gConfigFields.autoplay = env->GetFieldID(configClass, "autoplay", "Z");
-  gConfigFields.segment =
-      env->GetFieldID(configClass, "segment", "Ljava/util/List;");
-  gConfigFields.backgroundColor =
-      env->GetFieldID(configClass, "backgroundColor", "I");
-  gConfigFields.layout =
-      env->GetFieldID(configClass, "layout", "Lcom/dotlottie/dlplayer/Layout;");
-  gConfigFields.marker =
-      env->GetFieldID(configClass, "marker", "Ljava/lang/String;");
-  gConfigFields.themeId =
-      env->GetFieldID(configClass, "themeId", "Ljava/lang/String;");
-  gConfigFields.stateMachineId =
-      env->GetFieldID(configClass, "stateMachineId", "Ljava/lang/String;");
-  gConfigFields.animationId =
-      env->GetFieldID(configClass, "animationId", "Ljava/lang/String;");
-  env->DeleteLocalRef(configClass);
-
-  // Cache Layout class field IDs
-  jclass layoutClass = env->FindClass("com/dotlottie/dlplayer/Layout");
-  if (layoutClass == nullptr) {
-    LOGE("Failed to find Layout class");
-    return JNI_ERR;
-  }
-  gLayoutFields.layoutClass = (jclass)env->NewGlobalRef(layoutClass);
-  gLayoutFields.fit =
-      env->GetFieldID(layoutClass, "fit", "Lcom/dotlottie/dlplayer/Fit;");
-  gLayoutFields.align =
-      env->GetFieldID(layoutClass, "align", "Ljava/util/List;");
-  env->DeleteLocalRef(layoutClass);
-
-  // Cache Mode enum field IDs
-  jclass modeClass = env->FindClass("com/dotlottie/dlplayer/Mode");
-  if (modeClass == nullptr) {
-    LOGE("Failed to find Mode class");
-    return JNI_ERR;
-  }
-  gModeFields.modeClass = (jclass)env->NewGlobalRef(modeClass);
-  gModeFields.value = env->GetFieldID(modeClass, "value", "I");
-  env->DeleteLocalRef(modeClass);
-
-  // Cache Fit enum field IDs
-  jclass fitClass = env->FindClass("com/dotlottie/dlplayer/Fit");
-  if (fitClass == nullptr) {
-    LOGE("Failed to find Fit class");
-    return JNI_ERR;
-  }
-  gFitFields.fitClass = (jclass)env->NewGlobalRef(fitClass);
-  gFitFields.value = env->GetFieldID(fitClass, "value", "I");
-  env->DeleteLocalRef(fitClass);
-
-  // Cache List and Float method IDs
-  jclass listClass = env->FindClass("java/util/List");
-  if (listClass == nullptr) {
-    LOGE("Failed to find List class");
-    return JNI_ERR;
-  }
-  gListFields.listClass = (jclass)env->NewGlobalRef(listClass);
-  gListFields.get = env->GetMethodID(listClass, "get", "(I)Ljava/lang/Object;");
-  gListFields.size = env->GetMethodID(listClass, "size", "()I");
-  env->DeleteLocalRef(listClass);
-
-  jclass floatClass = env->FindClass("java/lang/Float");
-  if (floatClass == nullptr) {
-    LOGE("Failed to find Float class");
-    return JNI_ERR;
-  }
-  gListFields.floatClass = (jclass)env->NewGlobalRef(floatClass);
-  gListFields.floatValue = env->GetMethodID(floatClass, "floatValue", "()F");
-  env->DeleteLocalRef(floatClass);
-
-  LOGI("JNI_OnLoad: Successfully cached all field IDs");
+  LOGI("JNI_OnLoad: Initialization complete (no cached field IDs needed)");
 
   return JNI_VERSION_1_6;
 }

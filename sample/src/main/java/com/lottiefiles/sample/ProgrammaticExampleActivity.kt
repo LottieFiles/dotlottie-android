@@ -290,10 +290,10 @@ class ProgrammaticExampleActivity : ComponentActivity() {
                     manifest?.let {
                         Log.d(TAG, "   Manifest:")
                         Log.d(TAG, "      Version: ${it.version}")
-                        it.stateMachines?.let { sms ->
-                            Log.d(TAG, "      State Machines: ${sms.size}")
-                            sms.forEach { sm ->
-                                Log.d(TAG, "         - ${sm.name} (id: ${sm.id})")
+                        it.states?.let { states ->
+                            Log.d(TAG, "      State Machines: ${states.size}")
+                            states.forEach { state ->
+                                Log.d(TAG, "         - $state")
                             }
                         }
                     }

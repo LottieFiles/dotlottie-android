@@ -16,15 +16,10 @@ object DotLottiePlayer {
     // ==================== Player Lifecycle ====================
 
     @JvmStatic
-    external fun nativeNewPlayer(config: Any?): Long
+    external fun nativeNewPlayer(threads: Int): Long
 
     @JvmStatic
     external fun nativeDestroy(ptr: Long): Int
-
-    // ==================== Config ====================
-
-    @JvmStatic
-    external fun nativeInitConfig(config: Any?): Int
 
     // ==================== Loading ====================
 
@@ -75,19 +70,19 @@ object DotLottiePlayer {
     // ==================== State Queries ====================
 
     @JvmStatic
-    external fun nativeIsLoaded(ptr: Long): Int
+    external fun nativeIsLoaded(ptr: Long): Boolean
 
     @JvmStatic
-    external fun nativeIsPlaying(ptr: Long): Int
+    external fun nativeIsPlaying(ptr: Long): Boolean
 
     @JvmStatic
-    external fun nativeIsPaused(ptr: Long): Int
+    external fun nativeIsPaused(ptr: Long): Boolean
 
     @JvmStatic
-    external fun nativeIsStopped(ptr: Long): Int
+    external fun nativeIsStopped(ptr: Long): Boolean
 
     @JvmStatic
-    external fun nativeIsComplete(ptr: Long): Int
+    external fun nativeIsComplete(ptr: Long): Boolean
 
     // ==================== Getters ====================
 
@@ -104,16 +99,99 @@ object DotLottiePlayer {
     external fun nativeLoopCount(ptr: Long): Int
 
     @JvmStatic
-    external fun nativeBufferPtr(ptr: Long): Long
-
-    @JvmStatic
-    external fun nativeBufferLen(ptr: Long): Long
-
-    @JvmStatic
     external fun nativeSegmentDuration(ptr: Long): Float
 
     @JvmStatic
     external fun nativeAnimationSize(ptr: Long): FloatArray
+
+    // ==================== Buffer Management ====================
+
+    @JvmStatic
+    external fun nativeAllocateBuffer(width: Int, height: Int): Long
+
+    @JvmStatic
+    external fun nativeFreeBuffer(bufferPtr: Long)
+
+    @JvmStatic
+    external fun nativeSetSwTarget(playerPtr: Long, bufferPtr: Long, width: Int, height: Int): Int
+
+    // ==================== Config Setters ====================
+
+    @JvmStatic
+    external fun nativeSetMode(ptr: Long, mode: Int): Int
+
+    @JvmStatic
+    external fun nativeSetSpeed(ptr: Long, speed: Float): Int
+
+    @JvmStatic
+    external fun nativeSetLoop(ptr: Long, loop: Boolean): Int
+
+    @JvmStatic
+    external fun nativeSetLoopCount(ptr: Long, count: Int): Int
+
+    @JvmStatic
+    external fun nativeSetAutoplay(ptr: Long, autoplay: Boolean): Int
+
+    @JvmStatic
+    external fun nativeSetUseFrameInterpolation(ptr: Long, enabled: Boolean): Int
+
+    @JvmStatic
+    external fun nativeSetBackgroundColor(ptr: Long, color: Int): Int
+
+    @JvmStatic
+    external fun nativeSetSegment(ptr: Long, start: Float, end: Float): Int
+
+    @JvmStatic
+    external fun nativeClearSegment(ptr: Long): Int
+
+    @JvmStatic
+    external fun nativeSetMarker(ptr: Long, marker: String?): Int
+
+    @JvmStatic
+    external fun nativeSetLayout(ptr: Long, fit: Int, alignX: Float, alignY: Float): Int
+
+    // ==================== Config Getters ====================
+
+    @JvmStatic
+    external fun nativeGetMode(ptr: Long): Int
+
+    @JvmStatic
+    external fun nativeGetSpeed(ptr: Long): Float
+
+    @JvmStatic
+    external fun nativeGetLoop(ptr: Long): Boolean
+
+    @JvmStatic
+    external fun nativeGetLoopCount(ptr: Long): Int
+
+    @JvmStatic
+    external fun nativeGetAutoplay(ptr: Long): Boolean
+
+    @JvmStatic
+    external fun nativeGetUseFrameInterpolation(ptr: Long): Boolean
+
+    @JvmStatic
+    external fun nativeGetBackgroundColor(ptr: Long): Int
+
+    @JvmStatic
+    external fun nativeGetSegment(ptr: Long): FloatArray
+
+    @JvmStatic
+    external fun nativeGetActiveMarker(ptr: Long): String
+
+    @JvmStatic
+    external fun nativeGetLayout(ptr: Long): FloatArray
+
+    // ==================== Manifest & Markers ====================
+
+    @JvmStatic
+    external fun nativeManifest(ptr: Long): String?
+
+    @JvmStatic
+    external fun nativeMarkersCount(ptr: Long): Int
+
+    @JvmStatic
+    external fun nativeMarker(ptr: Long, idx: Int): Array<String?>?
 
     // ==================== Theme ====================
 
@@ -159,35 +237,22 @@ object DotLottiePlayer {
 
     // ==================== Poll Events ====================
 
-    /**
-     * Poll for next player event.
-     * Returns IntArray [eventType, data1, data2] or null if no events.
-     */
     @JvmStatic
     external fun nativePollEvent(ptr: Long): IntArray?
 
     // ==================== State Machine ====================
 
-    /**
-     * Load state machine by ID. Returns state machine pointer (0 on failure).
-     */
     @JvmStatic
     external fun nativeStateMachineLoad(playerPtr: Long, stateMachineId: String): Long
 
-    /**
-     * Load state machine from JSON data. Returns state machine pointer (0 on failure).
-     */
     @JvmStatic
     external fun nativeStateMachineLoadData(playerPtr: Long, data: String): Long
 
-    /**
-     * Release/destroy state machine.
-     */
     @JvmStatic
     external fun nativeStateMachineRelease(smPtr: Long)
 
     @JvmStatic
-    external fun nativeStateMachineStart(smPtr: Long): Int
+    external fun nativeStateMachineStart(smPtr: Long, whitelist: String?, requireUserInteraction: Boolean): Int
 
     @JvmStatic
     external fun nativeStateMachineStop(smPtr: Long): Int
@@ -225,23 +290,15 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeStateMachinePostEvent(smPtr: Long, eventTag: Int, x: Float, y: Float): Int
 
-    /**
-     * Get framework setup flags (bit flags for required interactions)
-     */
     @JvmStatic
     external fun nativeStateMachineFrameworkSetup(smPtr: Long): Int
 
-    /**
-     * Poll for next state machine event.
-     * Returns String array or null if no events.
-     */
     @JvmStatic
     external fun nativeStateMachinePollEvent(smPtr: Long): Array<String?>?
 
-    /**
-     * Poll for internal state machine event.
-     * Returns message string or null if no events.
-     */
     @JvmStatic
     external fun nativeStateMachinePollInternalEvent(smPtr: Long): String?
+
+    @JvmStatic
+    external fun nativeGetStateMachine(playerPtr: Long, id: String): String?
 }

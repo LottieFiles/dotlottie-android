@@ -1,7 +1,5 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
-import android.os.Handler
-import android.os.Looper
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
@@ -10,7 +8,6 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
-import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
@@ -37,9 +34,7 @@ enum class DotLottiePlayerState {
 
 class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
-    private var observer: Observer? = null
     private var config: Config = createDefaultConfig()
-    private val handler = Handler(Looper.getMainLooper())
 
     private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
     val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
@@ -125,91 +120,31 @@ class DotLottieController {
         _bufferNeedsUpdate.value = false
     }
 
+    @InternalDotLottieApi
+    fun updateState(state: DotLottiePlayerState) {
+        _currentState.update { state }
+    }
+
     // Signal to trigger bitmap update after setFrame() when not playing
     private val _frameUpdateRequested = MutableStateFlow(0L)
     val frameUpdateRequested: StateFlow<Long> = _frameUpdateRequested.asStateFlow()
 
     fun play() {
         dlplayer?.play()
+        _currentState.update { DotLottiePlayerState.PLAYING }
         shouldPlayOnInit = true
     }
 
     fun pause() {
         dlplayer?.pause()
+        _currentState.update { DotLottiePlayerState.PAUSED }
         shouldPlayOnInit = false
     }
 
     fun stop() {
         dlplayer?.stop()
+        _currentState.update { DotLottiePlayerState.STOPPED }
         shouldPlayOnInit = false
-    }
-
-    private fun subscribe() {
-        observer = object : Observer {
-            override fun onComplete() {
-                _currentState.update { DotLottiePlayerState.COMPLETED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onComplete)
-                }, 0)
-            }
-
-            override fun onFrame(frameNo: Float) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onFrame(frameNo) }
-                }, 0)
-            }
-
-            override fun onPause() {
-                _currentState.update { DotLottiePlayerState.PAUSED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onPause)
-                }, 0)
-            }
-
-            override fun onStop() {
-                _currentState.update { DotLottiePlayerState.STOPPED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onStop)
-                }, 0)
-            }
-
-            override fun onPlay() {
-                _currentState.update { DotLottiePlayerState.PLAYING }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onPlay)
-                }, 0)
-            }
-
-            override fun onLoad() {
-                _currentState.update { DotLottiePlayerState.LOADED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onLoad)
-                }, 0)
-            }
-
-            override fun onLoop(loopCount: UInt) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onLoop(loopCount.toInt()) }
-                }, 0)
-            }
-
-            override fun onRender(frameNo: Float) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onRender(frameNo) }
-                }, 0)
-            }
-
-            override fun onLoadError() {
-                _currentState.update { DotLottiePlayerState.ERROR }
-                handler.postDelayed({
-                    eventListeners.forEach { listener ->
-                        listener.onLoadError()
-                        listener.onLoadError(Throwable("Load error occurred"))
-                    }
-                }, 0)
-            }
-        }
-        dlplayer?.subscribe(observer!!)
     }
 
     fun stateMachineStart(
@@ -392,7 +327,6 @@ class DotLottieController {
         dlplayer?.destroy()
         dlplayer = player
         this.config = config
-        subscribe()
     }
 
     @InternalDotLottieApi
@@ -439,12 +373,14 @@ class DotLottieController {
 
     fun freeze() {
         dlplayer?.pause()
+        _currentState.update { DotLottiePlayerState.PAUSED }
         shouldPlayOnInit = false
         eventListeners.forEach(DotLottieEventListener::onFreeze)
     }
 
     fun unFreeze() {
         dlplayer?.play()
+        _currentState.update { DotLottiePlayerState.PLAYING }
         shouldPlayOnInit = true
         eventListeners.forEach(DotLottieEventListener::onUnFreeze)
     }

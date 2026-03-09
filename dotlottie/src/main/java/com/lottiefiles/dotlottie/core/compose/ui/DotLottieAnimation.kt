@@ -34,12 +34,15 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
+import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.dotlottie.dlplayer.Pointer
+import com.dotlottie.dlplayer.DotLottiePlayerEvent
+import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -53,6 +56,100 @@ import kotlin.math.pow
 import com.dotlottie.dlplayer.Config as DLConfig
 
 private const val BYTES_PER_PIXEL = 4
+
+private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
+    var event = dlPlayer.pollEvent()
+    while (event != null) {
+        val e = event
+        when (e) {
+            is DotLottiePlayerEvent.Load -> {
+                controller.updateState(DotLottiePlayerState.LOADED)
+                controller.eventListeners.forEach(DotLottieEventListener::onLoad)
+            }
+            is DotLottiePlayerEvent.LoadError -> {
+                controller.updateState(DotLottiePlayerState.ERROR)
+                controller.eventListeners.forEach { listener ->
+                    listener.onLoadError()
+                    listener.onLoadError(Throwable("Load error occurred"))
+                }
+            }
+            is DotLottiePlayerEvent.Play -> {
+                controller.updateState(DotLottiePlayerState.PLAYING)
+                controller.eventListeners.forEach(DotLottieEventListener::onPlay)
+            }
+            is DotLottiePlayerEvent.Pause -> {
+                controller.updateState(DotLottiePlayerState.PAUSED)
+                controller.eventListeners.forEach(DotLottieEventListener::onPause)
+            }
+            is DotLottiePlayerEvent.Stop -> {
+                controller.updateState(DotLottiePlayerState.STOPPED)
+                controller.eventListeners.forEach(DotLottieEventListener::onStop)
+            }
+            is DotLottiePlayerEvent.Frame -> {
+                controller.eventListeners.forEach { it.onFrame(e.frameNo) }
+            }
+            is DotLottiePlayerEvent.Render -> {
+                controller.eventListeners.forEach { it.onRender(e.frameNo) }
+            }
+            is DotLottiePlayerEvent.Loop -> {
+                controller.eventListeners.forEach { it.onLoop(e.loopCount.toInt()) }
+            }
+            is DotLottiePlayerEvent.Complete -> {
+                controller.updateState(DotLottiePlayerState.COMPLETED)
+                controller.eventListeners.forEach(DotLottieEventListener::onComplete)
+            }
+        }
+        event = dlPlayer.pollEvent()
+    }
+}
+
+private fun pollStateMachineEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
+    var smEvent = dlPlayer.stateMachinePollEvent()
+    while (smEvent != null) {
+        val e = smEvent
+        when (e) {
+            is StateMachinePlayerEvent.Start -> {
+                controller.stateMachineListeners.forEach { it.onStart() }
+            }
+            is StateMachinePlayerEvent.Stop -> {
+                controller.stateMachineListeners.forEach { it.onStop() }
+            }
+            is StateMachinePlayerEvent.Transition -> {
+                controller.stateMachineListeners.forEach { it.onTransition(e.previousState, e.newState) }
+            }
+            is StateMachinePlayerEvent.StateEntered -> {
+                controller.stateMachineListeners.forEach { it.onStateEntered(e.state) }
+            }
+            is StateMachinePlayerEvent.StateExit -> {
+                controller.stateMachineListeners.forEach { it.onStateExit(e.state) }
+            }
+            is StateMachinePlayerEvent.CustomEvent -> {
+                controller.stateMachineListeners.forEach { it.onCustomEvent(e.message) }
+            }
+            is StateMachinePlayerEvent.Error -> {
+                controller.stateMachineListeners.forEach { it.onError(e.message) }
+            }
+            is StateMachinePlayerEvent.StringInputChange -> {
+                controller.stateMachineListeners.forEach { it.onStringInputValueChange(e.name, e.oldValue, e.newValue) }
+            }
+            is StateMachinePlayerEvent.NumericInputChange -> {
+                controller.stateMachineListeners.forEach { it.onNumericInputValueChange(e.name, e.oldValue, e.newValue) }
+            }
+            is StateMachinePlayerEvent.BooleanInputChange -> {
+                controller.stateMachineListeners.forEach { it.onBooleanInputValueChange(e.name, e.oldValue, e.newValue) }
+            }
+            is StateMachinePlayerEvent.InputFired -> {
+                controller.stateMachineListeners.forEach { it.onInputFired(e.name) }
+            }
+        }
+        smEvent = dlPlayer.stateMachinePollEvent()
+    }
+    // Poll internal events
+    var internalEvent = dlPlayer.stateMachinePollInternalEvent()
+    while (internalEvent != null) {
+        internalEvent = dlPlayer.stateMachinePollInternalEvent()
+    }
+}
 
 @OptIn(InternalDotLottieApi::class, ExperimentalCoroutinesApi::class)
 @Composable
@@ -109,6 +206,7 @@ fun DotLottieAnimation(
     }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var nativeBuffer by remember { mutableStateOf<Pointer?>(null) }
+    var nativeBufferAddress by remember { mutableStateOf(0L) }
     var bufferBytes by remember { mutableStateOf<ByteBuffer?>(null) }
     var imageBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     val choreographer = remember { Choreographer.getInstance() }
@@ -139,17 +237,12 @@ fun DotLottieAnimation(
                     return
                 }
 
-                // Check if buffer needs updating
-                if (rController.bufferNeedsUpdate.value) {
-                    nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
-                    bufferBytes = nativeBuffer!!.getByteBuffer(
-                        0,
-                        dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL
-                    )
-                    rController.markBufferUpdated()
-                }
-
                 val ticked = dlPlayer.tick()
+
+                // Poll and dispatch player events to controller listeners
+                pollPlayerEvents(dlPlayer, rController)
+                // Poll and dispatch state machine events to controller listeners
+                pollStateMachineEvents(dlPlayer, rController)
 
                 if (ticked || forceUpdateBitmap) {
                     val shouldResetFlag = !ticked && forceUpdateBitmap
@@ -165,7 +258,6 @@ fun DotLottieAnimation(
 
                                 bytes?.let { b ->
                                     bmp?.let { targetBitmap ->
-                                        // Check if bitmap is still valid before using
                                         if (!targetBitmap.isRecycled) {
                                             withContext(Dispatchers.Default) {
                                                 b.rewind()
@@ -210,8 +302,15 @@ fun DotLottieAnimation(
             val height = layoutSize.height.toUInt()
             val width = layoutSize.width.toUInt()
             val isLoaded = dlPlayer.isLoaded()
-            // Pass the size to the controller
             rController.resize(height, width)
+
+            // Allocate caller-managed buffer and register SW target
+            if (nativeBufferAddress != 0L) {
+                dlPlayer.freeBuffer(nativeBufferAddress)
+            }
+            nativeBufferAddress = dlPlayer.allocateBuffer(width.toInt(), height.toInt())
+            nativeBuffer = Pointer(nativeBufferAddress)
+            dlPlayer.setSwTarget(nativeBufferAddress, width, height)
 
             when (animationData) {
                 is DotLottieContent.Json -> {
@@ -223,8 +322,7 @@ fun DotLottieAnimation(
                 }
             }
 
-            // Set local and native buffer
-            nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
+            // Set local buffer
             bufferBytes =
                 nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
             bitmap = createBitmap(width.toInt(), height.toInt())
@@ -311,17 +409,28 @@ fun DotLottieAnimation(
 
     LaunchedEffect(_width, _height) {
         if (dlPlayer.isLoaded() && (_height != 0u || _width != 0u)) {
+            // Skip if already at the correct size (avoids destroying the buffer init() just populated)
+            val currentBmp = bitmap
+            if (currentBmp != null && !currentBmp.isRecycled
+                && currentBmp.width == _width.toInt() && currentBmp.height == _height.toInt()) {
+                return@LaunchedEffect
+            }
             // Wait for any pending render to complete
             renderMutex.withLock {
                 val oldBitmap = bitmap
                 bitmap = createBitmap(_width.toInt(), _height.toInt())
+
+                // Free old buffer, allocate new, resize, re-register SW target
+                if (nativeBufferAddress != 0L) {
+                    dlPlayer.freeBuffer(nativeBufferAddress)
+                }
+                nativeBufferAddress = dlPlayer.allocateBuffer(_width.toInt(), _height.toInt())
+                nativeBuffer = Pointer(nativeBufferAddress)
                 dlPlayer.resize(_width, _height)
-                nativeBuffer = Pointer(dlPlayer.bufferPtr().toLong())
+                dlPlayer.setSwTarget(nativeBufferAddress, _width, _height)
                 bufferBytes =
                     nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
                 imageBitmap = bitmap!!.asImageBitmap()
-                // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
-                // On API 26+ bitmap memory is in native heap and GC handles it safely.
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                     oldBitmap?.recycle()
                 }
@@ -341,9 +450,12 @@ fun DotLottieAnimation(
             frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
             renderScope.cancel()
+            // Free native buffer before destroying player
+            if (nativeBufferAddress != 0L) {
+                dlPlayer.freeBuffer(nativeBufferAddress)
+                nativeBufferAddress = 0
+            }
             dlPlayer.destroy()
-            // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
-            // On API 26+ bitmap memory is in native heap and GC handles it safely.
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 bitmap?.recycle()
             }
@@ -364,7 +476,6 @@ fun DotLottieAnimation(
                 awaitEachGesture {
                     // First touch (Down)
                     val down = awaitFirstDown()
-                    //      down.consume() // Consume the down event
 
                     val downPosition = down.position
                     val scaledX = downPosition.x
@@ -374,41 +485,35 @@ fun DotLottieAnimation(
 
                     // Variables to track movement distance
                     var movedTooMuch = false
-                    val touchSlop = 20f // Define a reasonable threshold for tap movement
+                    val touchSlop = 20f
 
                     // Handle move and up events
                     do {
                         val event = awaitPointerEvent()
                         val position = event.changes.first()
 
-                        // Handle move
                         if (!position.pressed) {
-                            // Touch up detected
                             val upPosition = position.position
                             val upScaledX = upPosition.x
                             val upScaledY = upPosition.y
 
                             rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
 
-                            // Check for pointer movement distance
                             val distance = kotlin.math.sqrt(
                                 (upPosition.x - downPosition.x).pow(2) +
                                         (upPosition.y - downPosition.y).pow(2)
                             )
 
-                            // If the pointer down has moved too much
                             if (distance < touchSlop && !movedTooMuch) {
                                 rController.stateMachinePostEvent(Event.Click(upScaledX, upScaledY))
                             }
 
                             break
                         } else {
-                            // Move detected
                             val movePosition = position.position
                             val moveX = movePosition.x
                             val moveY = movePosition.y
 
-                            // Check if we've moved beyond the threshold to be considered a tap
                             val moveDistance = kotlin.math.sqrt(
                                 (movePosition.x - downPosition.x).pow(2) +
                                         (movePosition.y - downPosition.y).pow(2)

@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-//                    DefaultAnimationDemo()
+                    // DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
 //                    LayoutExample()
 //                    ThreadCountExample()
 //                    StateMachineExample()
-                    StateMachine()
+                   StateMachine()
                 }
             }
         }
@@ -140,8 +140,8 @@ fun DefaultAnimationDemo() {
                             eventListeners = listOf(events),
 //                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
 //                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
-                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
-//                                        source = DotLottieSource.Asset("swinging.json"),
+//                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
+                                        source = DotLottieSource.Asset("swinging.json"),
                             modifier = Modifier
                                 .background(Color.LightGray)
                                 .size(200.dp),
@@ -625,9 +625,9 @@ fun StateMachine() {
     ) {
         repeat(1) { index ->
             DotLottieAnimation(
-//                source = DotLottieSource.Url("https://lottie.host/8d358ee2-a9b5-4d44-8a5a-330f9a0deec5/2Te0G4A0dH.lottie"),
-                stateMachineId = "StateMachine1",
-                source = DotLottieSource.Asset("check.json"),
+               source = DotLottieSource.Url("https://asset-cdn.lottiefiles.dev/0d541c4f-dfd4-4415-876a-a59e558b605c/YKooNpfjkG.lottie"),
+                // stateMachineId = "StateMachine1",
+                // source = DotLottieSource.Asset("check.json"),
                 autoplay = true,
                 loop = true,
                 eventListeners = listOf(object : DotLottieEventListener {

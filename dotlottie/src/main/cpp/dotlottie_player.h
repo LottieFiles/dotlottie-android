@@ -19,35 +19,18 @@ typedef struct dotlottieDotLottieConfig DotLottieConfig;
 #define DOTLOTTIE_SUCCESS 0
 
 
+#define dotlottieDEFAULT_BACKGROUND_COLOR 0
+
 #define dotlottieMAX_EVENTS 256
 
-#define dotlottieDOTLOTTIE_SUCCESS 0
-
-#define dotlottieDOTLOTTIE_ERROR 1
-
-#define dotlottieDOTLOTTIE_INVALID_PARAMETER 2
-
-#define dotlottieDOTLOTTIE_MANIFEST_NOT_AVAILABLE 3
-
-#define dotlottieDOTLOTTIE_MAX_STR_LENGTH 512
-
-#define dotlottieINTERACTION_TYPE_UNSET 0
-
-#define dotlottieINTERACTION_TYPE_POINTER_UP (1 << 0)
-
-#define dotlottieINTERACTION_TYPE_POINTER_DOWN (1 << 1)
-
-#define dotlottieINTERACTION_TYPE_POINTER_ENTER (1 << 2)
-
-#define dotlottieINTERACTION_TYPE_POINTER_EXIT (1 << 3)
-
-#define dotlottieINTERACTION_TYPE_POINTER_MOVE (1 << 4)
-
-#define dotlottieINTERACTION_TYPE_CLICK (1 << 5)
-
-#define dotlottieINTERACTION_TYPE_ON_COMPLETE (1 << 6)
-
-#define dotlottieINTERACTION_TYPE_ON_LOOP_COMPLETE (1 << 7)
+typedef enum dotlottieDotLottieResult {
+  Success = 0,
+  Error = 1,
+  InvalidParameter = 2,
+  ManifestNotAvailable = 3,
+  AnimationNotLoaded = 4,
+  InsufficientCondition = 5,
+} dotlottieDotLottieResult;
 
 typedef enum dotlottieMode {
   Forward,
@@ -56,14 +39,32 @@ typedef enum dotlottieMode {
   ReverseBounce,
 } dotlottieMode;
 
-typedef enum dotlottieDotLottieFit {
+typedef enum dotlottieFit {
   Contain,
   Fill,
   Cover,
   FitWidth,
   FitHeight,
-  Void,
-} dotlottieDotLottieFit;
+  None,
+} dotlottieFit;
+
+typedef enum dotlottiePlaybackStatus {
+  Playing = 0,
+  Paused = 1,
+  Stopped = 2,
+} dotlottiePlaybackStatus;
+
+typedef enum dotlottieColorSpace {
+  ABGR8888,
+  ABGR8888S,
+  ARGB8888,
+  ARGB8888S,
+} dotlottieColorSpace;
+
+typedef enum dotlottieDotLottieWgpuTargetType {
+  Surface = 0,
+  Texture = 1,
+} dotlottieDotLottieWgpuTargetType;
 
 typedef enum dotlottieDotLottiePlayerEventType {
   Load = 0,
@@ -95,65 +96,10 @@ typedef struct dotlottieDotLottiePlayer dotlottieDotLottiePlayer;
 
 typedef struct dotlottieStateMachineEngine dotlottieStateMachineEngine;
 
-typedef struct dotlottieDotLottieLayout {
-  enum dotlottieDotLottieFit fit;
-  float align_x;
-  float align_y;
-} dotlottieDotLottieLayout;
-
-typedef struct dotlottieDotLottieString {
-  char value[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
-} dotlottieDotLottieString;
-
-typedef struct dotlottieDotLottieConfig {
-  enum dotlottieMode mode;
-  bool loop_animation;
-  uint32_t loop_count;
-  float speed;
-  bool use_frame_interpolation;
-  bool autoplay;
-  float segment_start;
-  float segment_end;
-  uint32_t background_color;
-  struct dotlottieDotLottieLayout layout;
-  struct dotlottieDotLottieString marker;
-  struct dotlottieDotLottieString theme_id;
-  struct dotlottieDotLottieString state_machine_id;
-  struct dotlottieDotLottieString animation_id;
-} dotlottieDotLottieConfig;
-
-typedef struct dotlottieDotLottieOption_DotLottieString {
-  struct dotlottieDotLottieString value;
-  bool defined;
-} dotlottieDotLottieOption_DotLottieString;
-
-typedef struct dotlottieDotLottieManifest {
-  struct dotlottieDotLottieOption_DotLottieString generator;
-  struct dotlottieDotLottieOption_DotLottieString version;
-} dotlottieDotLottieManifest;
-
-typedef struct dotlottieDotLottieManifestAnimation {
-  struct dotlottieDotLottieOption_DotLottieString id;
-  struct dotlottieDotLottieOption_DotLottieString name;
-  struct dotlottieDotLottieOption_DotLottieString initial_theme;
-  struct dotlottieDotLottieOption_DotLottieString background;
-} dotlottieDotLottieManifestAnimation;
-
-typedef struct dotlottieDotLottieManifestTheme {
-  struct dotlottieDotLottieString id;
-  struct dotlottieDotLottieOption_DotLottieString name;
-} dotlottieDotLottieManifestTheme;
-
-typedef struct dotlottieDotLottieManifestStateMachine {
-  struct dotlottieDotLottieString id;
-  struct dotlottieDotLottieOption_DotLottieString name;
-} dotlottieDotLottieManifestStateMachine;
-
-typedef struct dotlottieDotLottieMarker {
-  struct dotlottieDotLottieString name;
-  float duration;
-  float time;
-} dotlottieDotLottieMarker;
+typedef struct dotlottieLayout {
+  enum dotlottieFit fit;
+  float align[2];
+} dotlottieLayout;
 
 typedef struct dotlottieLayerBoundingBox {
   float x1;
@@ -175,11 +121,6 @@ typedef struct dotlottieDotLottiePlayerEvent {
   enum dotlottieDotLottiePlayerEventType event_type;
   union dotlottieDotLottiePlayerEventData data;
 } dotlottieDotLottiePlayerEvent;
-
-typedef struct dotlottieDotLottieOpenUrlPolicy {
-  struct dotlottieDotLottieString whitelist;
-  bool require_user_interaction;
-} dotlottieDotLottieOpenUrlPolicy;
 
 typedef enum dotlottieDotLottieEvent_Tag {
   PointerDown,
@@ -234,37 +175,90 @@ typedef struct dotlottieDotLottieEvent {
   };
 } dotlottieDotLottieEvent;
 
-typedef struct dotlottieStateMachineStringData {
-  char str1[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
-  char str2[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
-  char str3[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
-} dotlottieStateMachineStringData;
+/**
+ * Transition event data with pointers to state names
+ */
+typedef struct dotlottieStateMachineTransitionData {
+  const char *previous_state;
+  const char *new_state;
+} dotlottieStateMachineTransitionData;
 
-typedef struct dotlottieStateMachineNumericData {
-  char name[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
+/**
+ * State event data (for StateEntered/StateExit)
+ */
+typedef struct dotlottieStateMachineStateData {
+  const char *state;
+} dotlottieStateMachineStateData;
+
+/**
+ * Message event data (for CustomEvent/Error)
+ */
+typedef struct dotlottieStateMachineMessageData {
+  const char *message;
+} dotlottieStateMachineMessageData;
+
+/**
+ * String input change event data
+ */
+typedef struct dotlottieStateMachineStringInputData {
+  const char *name;
+  const char *old_value;
+  const char *new_value;
+} dotlottieStateMachineStringInputData;
+
+/**
+ * Numeric input change event data
+ */
+typedef struct dotlottieStateMachineNumericInputData {
+  const char *name;
   float old_value;
   float new_value;
-} dotlottieStateMachineNumericData;
+} dotlottieStateMachineNumericInputData;
 
-typedef struct dotlottieStateMachineBooleanData {
-  char name[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
+/**
+ * Boolean input change event data
+ */
+typedef struct dotlottieStateMachineBooleanInputData {
+  const char *name;
   bool old_value;
   bool new_value;
-} dotlottieStateMachineBooleanData;
+} dotlottieStateMachineBooleanInputData;
 
+/**
+ * Input fired event data
+ */
+typedef struct dotlottieStateMachineInputFiredData {
+  const char *name;
+} dotlottieStateMachineInputFiredData;
+
+/**
+ * Union of all possible state machine event data types
+ */
 typedef union dotlottieStateMachineEventData {
-  struct dotlottieStateMachineStringData strings;
-  struct dotlottieStateMachineNumericData numeric;
-  struct dotlottieStateMachineBooleanData boolean;
+  struct dotlottieStateMachineTransitionData transition;
+  struct dotlottieStateMachineStateData state;
+  struct dotlottieStateMachineMessageData message;
+  struct dotlottieStateMachineStringInputData string_input;
+  struct dotlottieStateMachineNumericInputData numeric_input;
+  struct dotlottieStateMachineBooleanInputData boolean_input;
+  struct dotlottieStateMachineInputFiredData input_fired;
 } dotlottieStateMachineEventData;
 
+/**
+ * State machine event with type tag and data union.
+ * String pointers are valid until the next poll call.
+ */
 typedef struct dotlottieStateMachineEvent {
   enum dotlottieStateMachineEventType event_type;
   union dotlottieStateMachineEventData data;
 } dotlottieStateMachineEvent;
 
+/**
+ * Internal state machine event (for framework use).
+ * The message pointer is valid until the next poll call.
+ */
 typedef struct dotlottieStateMachineInternalEvent {
-  char message[dotlottieDOTLOTTIE_MAX_STR_LENGTH];
+  const char *message;
 } dotlottieStateMachineInternalEvent;
 
 #ifdef __cplusplus
@@ -273,84 +267,280 @@ extern "C" {
 
 extern double emscripten_get_now(void);
 
-struct dotlottieDotLottiePlayer *dotlottie_new_player(const struct dotlottieDotLottieConfig *ptr);
+struct dotlottieDotLottiePlayer *dotlottie_new_player(uint32_t threads);
 
-int32_t dotlottie_destroy(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_load_font(const char *name,
+                                                  const uint8_t *data,
+                                                  uintptr_t size);
 
-int32_t dotlottie_init_config(struct dotlottieDotLottieConfig *config);
+enum dotlottieDotLottieResult dotlottie_unload_font(const char *name);
 
-int32_t dotlottie_load_animation_data(struct dotlottieDotLottiePlayer *ptr,
-                                      const char *animation_data,
-                                      uint32_t width,
-                                      uint32_t height);
+enum dotlottieDotLottieResult dotlottie_destroy(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_load_animation_path(struct dotlottieDotLottiePlayer *ptr,
-                                      const char *animation_path,
-                                      uint32_t width,
-                                      uint32_t height);
+enum dotlottieDotLottieResult dotlottie_load_animation_data(struct dotlottieDotLottiePlayer *ptr,
+                                                            const char *animation_data,
+                                                            uint32_t width,
+                                                            uint32_t height);
 
-int32_t dotlottie_load_animation(struct dotlottieDotLottiePlayer *ptr,
-                                 const char *animation_id,
-                                 uint32_t width,
-                                 uint32_t height);
+enum dotlottieDotLottieResult dotlottie_load_animation_path(struct dotlottieDotLottiePlayer *ptr,
+                                                            const char *animation_path,
+                                                            uint32_t width,
+                                                            uint32_t height);
 
-int32_t dotlottie_load_dotlottie_data(struct dotlottieDotLottiePlayer *ptr,
-                                      const char *file_data,
-                                      uintptr_t file_size,
-                                      uint32_t width,
-                                      uint32_t height);
+enum dotlottieDotLottieResult dotlottie_load_animation(struct dotlottieDotLottiePlayer *ptr,
+                                                       const char *animation_id,
+                                                       uint32_t width,
+                                                       uint32_t height);
 
-int32_t dotlottie_manifest(struct dotlottieDotLottiePlayer *ptr,
-                           struct dotlottieDotLottieManifest *result);
+enum dotlottieDotLottieResult dotlottie_load_dotlottie_data(struct dotlottieDotLottiePlayer *ptr,
+                                                            const char *file_data,
+                                                            uintptr_t file_size,
+                                                            uint32_t width,
+                                                            uint32_t height);
 
-int32_t dotlottie_manifest_animations(struct dotlottieDotLottiePlayer *ptr,
-                                      struct dotlottieDotLottieManifestAnimation *result,
-                                      uintptr_t *size);
+/**
+ * Get the manifest as a JSON string.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `buffer`: Buffer to store the JSON, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::ManifestNotAvailable` if no manifest is available
+ * - `DotLottieResult::InvalidParameter` if ptr is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_manifest(struct dotlottieDotLottiePlayer *ptr,
+                                                 char *buffer,
+                                                 uintptr_t *size_out);
 
-int32_t dotlottie_manifest_themes(struct dotlottieDotLottiePlayer *ptr,
-                                  struct dotlottieDotLottieManifestTheme *result,
-                                  uintptr_t *size);
+enum dotlottieDotLottieResult dotlottie_set_mode(struct dotlottieDotLottiePlayer *ptr,
+                                                 enum dotlottieMode mode);
 
-int32_t dotlottie_manifest_state_machines(struct dotlottieDotLottiePlayer *ptr,
-                                          struct dotlottieDotLottieManifestStateMachine *result,
-                                          uintptr_t *size);
+enum dotlottieDotLottieResult dotlottie_set_speed(struct dotlottieDotLottiePlayer *ptr,
+                                                  float speed);
 
-int32_t dotlottie_buffer_ptr(struct dotlottieDotLottiePlayer *ptr, const uint32_t **result);
+enum dotlottieDotLottieResult dotlottie_set_loop(struct dotlottieDotLottiePlayer *ptr,
+                                                 bool loop_animation);
 
-int32_t dotlottie_buffer_len(struct dotlottieDotLottiePlayer *ptr, uint64_t *result);
+enum dotlottieDotLottieResult dotlottie_set_loop_count(struct dotlottieDotLottiePlayer *ptr,
+                                                       uint32_t loop_count);
 
-int32_t dotlottie_config(struct dotlottieDotLottiePlayer *ptr,
-                         struct dotlottieDotLottieConfig *result);
+enum dotlottieDotLottieResult dotlottie_set_autoplay(struct dotlottieDotLottiePlayer *ptr,
+                                                     bool autoplay);
 
-int32_t dotlottie_total_frames(struct dotlottieDotLottiePlayer *ptr, float *result);
+enum dotlottieDotLottieResult dotlottie_set_use_frame_interpolation(struct dotlottieDotLottiePlayer *ptr,
+                                                                    bool enabled);
 
-int32_t dotlottie_duration(struct dotlottieDotLottiePlayer *ptr, float *result);
+enum dotlottieDotLottieResult dotlottie_set_background_color(struct dotlottieDotLottiePlayer *ptr,
+                                                             uint32_t color);
 
-int32_t dotlottie_current_frame(struct dotlottieDotLottiePlayer *ptr, float *result);
+/**
+ * Sets the playback segment for the animation.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `segment`: Pointer to an array of 2 floats [start_frame, end_frame], or NULL to clear
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if the player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_set_segment(struct dotlottieDotLottiePlayer *ptr,
+                                                    const float (*segment)[2]);
 
-int32_t dotlottie_loop_count(struct dotlottieDotLottiePlayer *ptr, uint32_t *result);
+/**
+ * Sets the active marker for the animation.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `marker`: Pointer to a null-terminated C string with the marker name, or NULL to clear
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if the player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_set_marker(struct dotlottieDotLottiePlayer *ptr,
+                                                   const char *marker);
 
-int32_t dotlottie_is_loaded(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Sets the layout configuration for the animation.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `layout`: Layout configuration (fit mode and alignment)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if the player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_set_layout(struct dotlottieDotLottiePlayer *ptr,
+                                                   struct dotlottieLayout layout);
 
-int32_t dotlottie_is_playing(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns the current playback mode.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * The current Mode, or Mode::Forward if the pointer is invalid
+ */
+enum dotlottieMode dotlottie_get_mode(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_is_paused(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns the current playback speed.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * The current speed multiplier, or 1.0 if the pointer is invalid
+ */
+float dotlottie_get_speed(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_is_stopped(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns whether looping is enabled.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * true if looping is enabled, false otherwise or if the pointer is invalid
+ */
+bool dotlottie_get_loop(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_play(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns the configured loop count (0 = infinite).
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * The configured loop count, or 0 if the pointer is invalid
+ */
+uint32_t dotlottie_get_loop_count(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_pause(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns whether autoplay is enabled.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * true if autoplay is enabled, false otherwise or if the pointer is invalid
+ */
+bool dotlottie_get_autoplay(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_stop(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns whether frame interpolation is enabled.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * true if frame interpolation is enabled, false otherwise or if the pointer is invalid
+ */
+bool dotlottie_get_use_frame_interpolation(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_request_frame(struct dotlottieDotLottiePlayer *ptr, float *result);
+/**
+ * Returns the current background color.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * The background color as ARGB u32, or 0 if the pointer is invalid
+ */
+uint32_t dotlottie_get_background_color(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_set_frame(struct dotlottieDotLottiePlayer *ptr, float no);
+/**
+ * Returns the current segment.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `result`: Pointer to a [f32; 2] array to store [start_frame, end_frame]
+ *
+ * # Returns
+ * - `DotLottieResult::Success` if segment exists and was copied
+ * - `DotLottieResult::InvalidParameter` if pointers are invalid or no segment is set
+ */
+enum dotlottieDotLottieResult dotlottie_get_segment(struct dotlottieDotLottiePlayer *ptr,
+                                                    float (*result)[2]);
 
-int32_t dotlottie_seek(struct dotlottieDotLottiePlayer *ptr, float no);
+/**
+ * Returns the current marker name.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `buffer`: Buffer to store the marker name, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Usage
+ * ```c
+ * size_t size;
+ * dotlottie_get_active_marker(player, NULL, &size);  // get required size
+ * char* buf = malloc(size);
+ * dotlottie_get_active_marker(player, buf, NULL);    // get string
+ * ```
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if no marker is set or player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_get_active_marker(struct dotlottieDotLottiePlayer *ptr,
+                                                          char *buffer,
+                                                          uintptr_t *size_out);
 
-int32_t dotlottie_render(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_get_layout(struct dotlottieDotLottiePlayer *ptr,
+                                                   struct dotlottieLayout *result);
+
+enum dotlottieDotLottieResult dotlottie_total_frames(struct dotlottieDotLottiePlayer *ptr,
+                                                     float *result);
+
+enum dotlottieDotLottieResult dotlottie_duration(struct dotlottieDotLottiePlayer *ptr,
+                                                 float *result);
+
+enum dotlottieDotLottieResult dotlottie_current_frame(struct dotlottieDotLottiePlayer *ptr,
+                                                      float *result);
+
+enum dotlottieDotLottieResult dotlottie_current_loop_count(struct dotlottieDotLottiePlayer *ptr,
+                                                           uint32_t *result);
+
+/**
+ * Returns whether an animation is loaded.
+ */
+bool dotlottie_is_loaded(struct dotlottieDotLottiePlayer *ptr);
+
+/**
+ * Returns the current playback status.
+ *
+ * Priority order: Playing > Paused > Stopped
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ *
+ * # Returns
+ * The current PlaybackStatus (Playing, Paused, or Stopped)
+ * Returns Stopped if the pointer is invalid
+ */
+enum dotlottiePlaybackStatus dotlottie_playback_status(struct dotlottieDotLottiePlayer *ptr);
+
+enum dotlottieDotLottieResult dotlottie_play(struct dotlottieDotLottiePlayer *ptr);
+
+enum dotlottieDotLottieResult dotlottie_pause(struct dotlottieDotLottiePlayer *ptr);
+
+enum dotlottieDotLottieResult dotlottie_stop(struct dotlottieDotLottiePlayer *ptr);
+
+enum dotlottieDotLottieResult dotlottie_request_frame(struct dotlottieDotLottiePlayer *ptr,
+                                                      float *result);
+
+enum dotlottieDotLottieResult dotlottie_set_frame(struct dotlottieDotLottiePlayer *ptr, float no);
+
+enum dotlottieDotLottieResult dotlottie_seek(struct dotlottieDotLottiePlayer *ptr, float no);
+
+enum dotlottieDotLottieResult dotlottie_render(struct dotlottieDotLottiePlayer *ptr);
 
 /**
  * This is the primary method for animating in a render loop.
@@ -367,24 +557,75 @@ int32_t dotlottie_render(struct dotlottieDotLottiePlayer *ptr);
  * ```c
  *     while(true) {
  *       dotlottie_tick(player);
- *       dotlottie_buffer_ptr(player, &buffer);
  *       display(buffer, width, height);
  *     }
  * ```
  */
-int32_t dotlottie_tick(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_tick(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_resize(struct dotlottieDotLottiePlayer *ptr, uint32_t width, uint32_t height);
+enum dotlottieDotLottieResult dotlottie_resize(struct dotlottieDotLottiePlayer *ptr,
+                                               uint32_t width,
+                                               uint32_t height);
 
-int32_t dotlottie_clear(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_clear(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_is_complete(struct dotlottieDotLottiePlayer *ptr);
+/**
+ * Returns whether the animation has completed playback.
+ */
+bool dotlottie_is_complete(struct dotlottieDotLottiePlayer *ptr);
 
-int32_t dotlottie_set_theme(struct dotlottieDotLottiePlayer *ptr, const char *theme_id);
+/**
+ * Sets the software rendering target.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `buffer`: Pointer to the pixel buffer (must be width * height in size)
+ * - `width`: Width of the buffer in pixels
+ * - `height`: Height of the buffer in pixels
+ * - `color_space`: Color space for the buffer
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if buffer is too small or pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_set_sw_target(struct dotlottieDotLottiePlayer *ptr,
+                                                      uint32_t *buffer,
+                                                      uint32_t width,
+                                                      uint32_t height,
+                                                      enum dotlottieColorSpace color_space);
 
-int32_t dotlottie_reset_theme(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_set_gl_target(struct dotlottieDotLottiePlayer *ptr,
+                                                      void *context,
+                                                      int32_t id,
+                                                      uint32_t width,
+                                                      uint32_t height);
 
-int32_t dotlottie_set_theme_data(struct dotlottieDotLottiePlayer *ptr, const char *theme_data);
+enum dotlottieDotLottieResult dotlottie_set_wg_target(struct dotlottieDotLottiePlayer *ptr,
+                                                      void *device,
+                                                      void *instance,
+                                                      void *target,
+                                                      uint32_t width,
+                                                      uint32_t height,
+                                                      enum dotlottieDotLottieWgpuTargetType target_type);
+
+enum dotlottieDotLottieResult dotlottie_set_theme(struct dotlottieDotLottiePlayer *ptr,
+                                                  const char *theme_id);
+
+enum dotlottieDotLottieResult dotlottie_reset_theme(struct dotlottieDotLottiePlayer *ptr);
+
+/**
+ * Sets the theme using raw theme data.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `theme_data`: Null-terminated C string containing the theme JSON data
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if the data is invalid or pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_set_theme_data(struct dotlottieDotLottiePlayer *ptr,
+                                                       const char *theme_data);
 
 /**
  * Set slots using a JSON string
@@ -400,94 +641,155 @@ int32_t dotlottie_set_theme_data(struct dotlottieDotLottiePlayer *ptr, const cha
  * }
  * ```
  */
-int32_t dotlottie_set_slots_str(struct dotlottieDotLottiePlayer *ptr, const char *slots_json);
+enum dotlottieDotLottieResult dotlottie_set_slots_str(struct dotlottieDotLottiePlayer *ptr,
+                                                      const char *slots_json);
 
 /**
  * Clear all slots
  */
-int32_t dotlottie_clear_slots(struct dotlottieDotLottiePlayer *ptr);
+enum dotlottieDotLottieResult dotlottie_clear_slots(struct dotlottieDotLottiePlayer *ptr);
 
 /**
  * Clear a specific slot by ID
  */
-int32_t dotlottie_clear_slot(struct dotlottieDotLottiePlayer *ptr, const char *slot_id);
+enum dotlottieDotLottieResult dotlottie_clear_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                   const char *slot_id);
 
 /**
  * Set a color slot with RGB values (0.0 to 1.0)
  */
-int32_t dotlottie_set_color_slot(struct dotlottieDotLottiePlayer *ptr,
-                                 const char *slot_id,
-                                 float r,
-                                 float g,
-                                 float b);
+enum dotlottieDotLottieResult dotlottie_set_color_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                       const char *slot_id,
+                                                       float r,
+                                                       float g,
+                                                       float b);
 
 /**
  * Set a scalar slot with a single float value
  */
-int32_t dotlottie_set_scalar_slot(struct dotlottieDotLottiePlayer *ptr,
-                                  const char *slot_id,
-                                  float value);
+enum dotlottieDotLottieResult dotlottie_set_scalar_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                        const char *slot_id,
+                                                        float value);
 
 /**
  * Set a text slot with a text string
  */
-int32_t dotlottie_set_text_slot(struct dotlottieDotLottiePlayer *ptr,
-                                const char *slot_id,
-                                const char *text);
+enum dotlottieDotLottieResult dotlottie_set_text_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                      const char *slot_id,
+                                                      const char *text);
 
 /**
  * Set a 2D vector slot
  */
-int32_t dotlottie_set_vector_slot(struct dotlottieDotLottiePlayer *ptr,
-                                  const char *slot_id,
-                                  float x,
-                                  float y);
+enum dotlottieDotLottieResult dotlottie_set_vector_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                        const char *slot_id,
+                                                        float x,
+                                                        float y);
 
 /**
  * Set a 2D position slot
  */
-int32_t dotlottie_set_position_slot(struct dotlottieDotLottiePlayer *ptr,
-                                    const char *slot_id,
-                                    float x,
-                                    float y);
+enum dotlottieDotLottieResult dotlottie_set_position_slot(struct dotlottieDotLottiePlayer *ptr,
+                                                          const char *slot_id,
+                                                          float x,
+                                                          float y);
 
 /**
  * Set an image slot from a file path
  */
-int32_t dotlottie_set_image_slot_path(struct dotlottieDotLottiePlayer *ptr,
-                                      const char *slot_id,
-                                      const char *path);
+enum dotlottieDotLottieResult dotlottie_set_image_slot_path(struct dotlottieDotLottiePlayer *ptr,
+                                                            const char *slot_id,
+                                                            const char *path);
 
 /**
  * Set an image slot from a data URL (base64 encoded)
  */
-int32_t dotlottie_set_image_slot_data_url(struct dotlottieDotLottiePlayer *ptr,
-                                          const char *slot_id,
-                                          const char *data_url);
+enum dotlottieDotLottieResult dotlottie_set_image_slot_data_url(struct dotlottieDotLottiePlayer *ptr,
+                                                                const char *slot_id,
+                                                                const char *data_url);
 
-int32_t dotlottie_markers(struct dotlottieDotLottiePlayer *ptr,
-                          struct dotlottieDotLottieMarker *result,
-                          uintptr_t *size);
+/**
+ * Gets the number of markers in the current animation.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `count`: Pointer to receive the marker count
+ *
+ * # Returns
+ * - `DOTLOTTIE_SUCCESS` on success
+ * - `DOTLOTTIE_INVALID_PARAMETER` if pointers are null
+ */
+enum dotlottieDotLottieResult dotlottie_markers_count(struct dotlottieDotLottiePlayer *ptr,
+                                                      uint32_t *count);
 
-int32_t dotlottie_active_animation_id(struct dotlottieDotLottiePlayer *ptr, char *result);
+/**
+ * Gets a marker by index.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `idx`: Index of the marker (0-based)
+ * - `name`: Pointer to receive the marker name (library-owned, do not free)
+ * - `time`: Pointer to receive the marker time (start frame), or NULL to skip
+ * - `duration`: Pointer to receive the marker duration (in frames), or NULL to skip
+ *
+ * # Returns
+ * - `DOTLOTTIE_SUCCESS` on success
+ * - `DOTLOTTIE_INVALID_PARAMETER` if ptr/name is null or index is out of bounds
+ */
+enum dotlottieDotLottieResult dotlottie_marker(struct dotlottieDotLottiePlayer *ptr,
+                                               uint32_t idx,
+                                               const char **name,
+                                               float *time,
+                                               float *duration);
 
-int32_t dotlottie_active_theme_id(struct dotlottieDotLottiePlayer *ptr, char *result);
+/**
+ * Returns the active animation ID.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `buffer`: Buffer to store the ID, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if no animation is active or player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_animation_id(struct dotlottieDotLottiePlayer *ptr,
+                                                     char *buffer,
+                                                     uintptr_t *size_out);
 
-int32_t dotlottie_set_viewport(struct dotlottieDotLottiePlayer *ptr,
-                               int32_t x,
-                               int32_t y,
-                               int32_t w,
-                               int32_t h);
+/**
+ * Returns the active theme ID.
+ *
+ * # Parameters
+ * - `ptr`: Pointer to the DotLottiePlayer instance
+ * - `buffer`: Buffer to store the ID, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if no theme is active or player pointer is invalid
+ */
+enum dotlottieDotLottieResult dotlottie_theme_id(struct dotlottieDotLottiePlayer *ptr,
+                                                 char *buffer,
+                                                 uintptr_t *size_out);
 
-int32_t dotlottie_segment_duration(struct dotlottieDotLottiePlayer *ptr, float *result);
+enum dotlottieDotLottieResult dotlottie_set_viewport(struct dotlottieDotLottiePlayer *ptr,
+                                                     int32_t x,
+                                                     int32_t y,
+                                                     int32_t w,
+                                                     int32_t h);
 
-int32_t dotlottie_animation_size(struct dotlottieDotLottiePlayer *ptr,
-                                 float *picture_width,
-                                 float *picture_height);
+enum dotlottieDotLottieResult dotlottie_segment_duration(struct dotlottieDotLottiePlayer *ptr,
+                                                         float *result);
 
-int32_t dotlottie_get_layer_bounds(struct dotlottieDotLottiePlayer *ptr,
-                                   const char *layer_name,
-                                   struct dotlottieLayerBoundingBox *result);
+enum dotlottieDotLottieResult dotlottie_animation_size(struct dotlottieDotLottiePlayer *ptr,
+                                                       float *picture_width,
+                                                       float *picture_height);
+
+enum dotlottieDotLottieResult dotlottie_get_layer_bounds(struct dotlottieDotLottiePlayer *ptr,
+                                                         const char *layer_name,
+                                                         struct dotlottieLayerBoundingBox *result);
 
 /**
  * Poll for the next player event from the event queue
@@ -537,13 +839,19 @@ struct dotlottieStateMachineEngine *dotlottie_state_machine_load_data(struct dot
                                                                       const char *state_machine_definition);
 
 /**
- * Start the state machine with the specified URL policy
+ * Start the state machine with the specified URL policy.
+ *
+ * # Parameters
+ * - `sm`: Pointer to the StateMachineEngine instance
+ * - `whitelist`: Comma-separated list of allowed URL patterns (or NULL for empty)
+ * - `require_user_interaction`: Whether user interaction is required before opening URLs
  *
  * # Returns
- * DOTLOTTIE_SUCCESS if started, DOTLOTTIE_ERROR if failed
+ * DotLottieResult::Success if started, error variant if failed
  */
-int32_t dotlottie_state_machine_start(struct dotlottieStateMachineEngine *sm,
-                                      const struct dotlottieDotLottieOpenUrlPolicy *policy);
+enum dotlottieDotLottieResult dotlottie_state_machine_start(struct dotlottieStateMachineEngine *sm,
+                                                            const char *whitelist,
+                                                            bool require_user_interaction);
 
 /**
  * Stop the state machine (does not release the borrow)
@@ -551,7 +859,7 @@ int32_t dotlottie_state_machine_start(struct dotlottieStateMachineEngine *sm,
  * Call dotlottie_state_machine_release() to actually destroy the state machine
  * and release the runtime borrow.
  */
-int32_t dotlottie_state_machine_stop(struct dotlottieStateMachineEngine *sm);
+enum dotlottieDotLottieResult dotlottie_state_machine_stop(struct dotlottieStateMachineEngine *sm);
 
 /**
  * Destroy the state machine and release the runtime borrow
@@ -568,98 +876,131 @@ void dotlottie_state_machine_release(struct dotlottieStateMachineEngine *sm);
 /**
  * Tick the state machine (advances animation and processes state logic)
  */
-int32_t dotlottie_state_machine_tick(struct dotlottieStateMachineEngine *sm);
+enum dotlottieDotLottieResult dotlottie_state_machine_tick(struct dotlottieStateMachineEngine *sm);
 
 /**
  * Post a pointer/click event to the state machine
  */
-int32_t dotlottie_state_machine_post_event(struct dotlottieStateMachineEngine *sm,
-                                           const struct dotlottieDotLottieEvent *event);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_event(struct dotlottieStateMachineEngine *sm,
+                                                                 const struct dotlottieDotLottieEvent *event);
 
 /**
  * Helper functions for posting specific event types
  */
-int32_t dotlottie_state_machine_post_click(struct dotlottieStateMachineEngine *sm,
-                                           float x,
-                                           float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_click(struct dotlottieStateMachineEngine *sm,
+                                                                 float x,
+                                                                 float y);
 
-int32_t dotlottie_state_machine_post_pointer_down(struct dotlottieStateMachineEngine *sm,
-                                                  float x,
-                                                  float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_pointer_down(struct dotlottieStateMachineEngine *sm,
+                                                                        float x,
+                                                                        float y);
 
-int32_t dotlottie_state_machine_post_pointer_up(struct dotlottieStateMachineEngine *sm,
-                                                float x,
-                                                float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_pointer_up(struct dotlottieStateMachineEngine *sm,
+                                                                      float x,
+                                                                      float y);
 
-int32_t dotlottie_state_machine_post_pointer_move(struct dotlottieStateMachineEngine *sm,
-                                                  float x,
-                                                  float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_pointer_move(struct dotlottieStateMachineEngine *sm,
+                                                                        float x,
+                                                                        float y);
 
-int32_t dotlottie_state_machine_post_pointer_enter(struct dotlottieStateMachineEngine *sm,
-                                                   float x,
-                                                   float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_pointer_enter(struct dotlottieStateMachineEngine *sm,
+                                                                         float x,
+                                                                         float y);
 
-int32_t dotlottie_state_machine_post_pointer_exit(struct dotlottieStateMachineEngine *sm,
-                                                  float x,
-                                                  float y);
+enum dotlottieDotLottieResult dotlottie_state_machine_post_pointer_exit(struct dotlottieStateMachineEngine *sm,
+                                                                        float x,
+                                                                        float y);
 
 /**
  * Fire a named event input
  */
-int32_t dotlottie_state_machine_fire_event(struct dotlottieStateMachineEngine *sm,
-                                           const char *event_name);
+enum dotlottieDotLottieResult dotlottie_state_machine_fire_event(struct dotlottieStateMachineEngine *sm,
+                                                                 const char *event_name);
 
 /**
  * Set a numeric input
  */
-int32_t dotlottie_state_machine_set_numeric_input(struct dotlottieStateMachineEngine *sm,
-                                                  const char *key,
-                                                  float value);
+enum dotlottieDotLottieResult dotlottie_state_machine_set_numeric_input(struct dotlottieStateMachineEngine *sm,
+                                                                        const char *key,
+                                                                        float value);
 
 /**
  * Set a string input
  */
-int32_t dotlottie_state_machine_set_string_input(struct dotlottieStateMachineEngine *sm,
-                                                 const char *key,
-                                                 const char *value);
+enum dotlottieDotLottieResult dotlottie_state_machine_set_string_input(struct dotlottieStateMachineEngine *sm,
+                                                                       const char *key,
+                                                                       const char *value);
 
 /**
  * Set a boolean input
  */
-int32_t dotlottie_state_machine_set_boolean_input(struct dotlottieStateMachineEngine *sm,
-                                                  const char *key,
-                                                  bool value);
+enum dotlottieDotLottieResult dotlottie_state_machine_set_boolean_input(struct dotlottieStateMachineEngine *sm,
+                                                                        const char *key,
+                                                                        bool value);
 
 /**
  * Get a numeric input value
  */
-int32_t dotlottie_state_machine_get_numeric_input(struct dotlottieStateMachineEngine *sm,
-                                                  const char *key,
-                                                  float *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_get_numeric_input(struct dotlottieStateMachineEngine *sm,
+                                                                        const char *key,
+                                                                        float *result);
 
 /**
- * Get a string input value
+ * Get a string input value.
+ *
+ * # Parameters
+ * - `sm`: Pointer to the StateMachineEngine instance
+ * - `key`: Null-terminated C string with the input key
+ * - `buffer`: Buffer to store the value, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if the input doesn't exist or pointers are invalid
  */
-int32_t dotlottie_state_machine_get_string_input(struct dotlottieStateMachineEngine *sm,
-                                                 const char *key,
-                                                 char *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_get_string_input(struct dotlottieStateMachineEngine *sm,
+                                                                       const char *key,
+                                                                       char *buffer,
+                                                                       uintptr_t *size_out);
 
 /**
  * Get a boolean input value
  */
-int32_t dotlottie_state_machine_get_boolean_input(struct dotlottieStateMachineEngine *sm,
-                                                  const char *key,
-                                                  bool *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_get_boolean_input(struct dotlottieStateMachineEngine *sm,
+                                                                        const char *key,
+                                                                        bool *result);
 
 /**
- * Get current state name
+ * Get current state name.
+ *
+ * # Parameters
+ * - `sm`: Pointer to the StateMachineEngine instance
+ * - `buffer`: Buffer to store the state name, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if pointer is invalid
  */
-int32_t dotlottie_state_machine_current_state(struct dotlottieStateMachineEngine *sm, char *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_current_state(struct dotlottieStateMachineEngine *sm,
+                                                                    char *buffer,
+                                                                    uintptr_t *size_out);
 
 /**
- * Get state machine status
+ * Get state machine status.
+ *
+ * # Parameters
+ * - `sm`: Pointer to the StateMachineEngine instance
+ * - `buffer`: Buffer to store the status, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if pointer is invalid
  */
-int32_t dotlottie_state_machine_status(struct dotlottieStateMachineEngine *sm, char *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_status(struct dotlottieStateMachineEngine *sm,
+                                                             char *buffer,
+                                                             uintptr_t *size_out);
 
 /**
  * Get interaction types for framework setup
@@ -667,13 +1008,32 @@ int32_t dotlottie_state_machine_status(struct dotlottieStateMachineEngine *sm, c
  * Returns bit flags indicating which interaction types are needed.
  * Frameworks should register listeners for the returned interaction types.
  */
-int32_t dotlottie_state_machine_framework_setup(struct dotlottieStateMachineEngine *sm,
-                                                uint16_t *result);
+enum dotlottieDotLottieResult dotlottie_state_machine_framework_setup(struct dotlottieStateMachineEngine *sm,
+                                                                      uint16_t *result);
 
 /**
  * Poll for the next state machine event
  *
  * Returns 1 if an event was retrieved, 0 if no events are available, or -1 on error.
+ * String pointers in the event struct are valid until the next poll call.
+ *
+ * # Example
+ * ```c
+ * StateMachineEvent event;
+ * while (dotlottie_state_machine_poll_event(sm, &event) == 1) {
+ *     switch (event.event_type) {
+ *         case StateMachineEventType_StateMachineTransition:
+ *             // Pointers valid until next poll
+ *             printf("Transition: %s -> %s\n",
+ *                    event.data.transition.previous_state,
+ *                    event.data.transition.new_state);
+ *             break;
+ *         case StateMachineEventType_StateMachineStateEntered:
+ *             printf("Entered: %s\n", event.data.state.state);
+ *             break;
+ *     }
+ * }
+ * ```
  */
 int32_t dotlottie_state_machine_poll_event(struct dotlottieStateMachineEngine *sm,
                                            struct dotlottieStateMachineEvent *event);
@@ -682,16 +1042,202 @@ int32_t dotlottie_state_machine_poll_event(struct dotlottieStateMachineEngine *s
  * Poll for the next internal state machine event
  *
  * Returns 1 if an event was retrieved, 0 if no events are available, or -1 on error.
+ * The message pointer is valid until the next poll call.
  */
 int32_t dotlottie_state_machine_poll_internal_event(struct dotlottieStateMachineEngine *sm,
                                                     struct dotlottieStateMachineInternalEvent *event);
 
 /**
- * Get the state machine definition as JSON string
+ * Get the state machine definition as JSON string.
+ *
+ * # Parameters
+ * - `runtime`: Pointer to the DotLottiePlayer instance
+ * - `state_machine_id`: Null-terminated C string with the state machine ID
+ * - `buffer`: Buffer to store the JSON, or NULL to query required size
+ * - `size_out`: Pointer to receive the required buffer size (including null terminator)
+ *
+ * # Returns
+ * - `DotLottieResult::Success` on success
+ * - `DotLottieResult::InvalidParameter` if state machine not found or pointers are invalid
  */
-int32_t dotlottie_get_state_machine(struct dotlottieDotLottiePlayer *runtime,
-                                    const char *state_machine_id,
-                                    char *result);
+enum dotlottieDotLottieResult dotlottie_get_state_machine(struct dotlottieDotLottiePlayer *runtime,
+                                                          const char *state_machine_id,
+                                                          char *buffer,
+                                                          uintptr_t *size_out);
+
+/**
+ * Create WebGPU context from Metal layer (macOS/iOS only)
+ *
+ * # Arguments
+ * * `metal_layer` - Pointer to CAMetalLayer from Swift
+ *
+ * # Returns
+ * * Opaque pointer to WgpuContext, or NULL on failure
+ *
+ * # Safety
+ * The metal_layer pointer must be valid and point to a CAMetalLayer object
+ */
+void *dotlottie_create_wgpu_context_from_metal_layer(void *metal_layer);
+
+/**
+ * Get WebGPU pointers from context (device, instance, surface)
+ *
+ * # Arguments
+ * * `context` - Opaque pointer from dotlottie_create_wgpu_context_from_metal_layer
+ * * `out_device` - Output pointer for device
+ * * `out_instance` - Output pointer for instance
+ * * `out_surface` - Output pointer for surface
+ *
+ * # Safety
+ * context must be a valid pointer from dotlottie_create_wgpu_context_from_metal_layer
+ */
+void dotlottie_wgpu_context_get_pointers(const void *context,
+                                         uint64_t *out_device,
+                                         uint64_t *out_instance,
+                                         uint64_t *out_surface);
+
+/**
+ * Free WebGPU context
+ *
+ * # Arguments
+ * * `context` - Opaque pointer from dotlottie_create_wgpu_context_from_metal_layer
+ *
+ * # Safety
+ * context must be a valid pointer and will be invalid after this call
+ */
+void dotlottie_free_wgpu_context(void *context);
+
+/**
+ * Present WebGPU surface to display rendered frame
+ *
+ * CRITICAL: Must be called after rendering to show the frame on screen.
+ * Without this call, rendering happens off-screen but never displays.
+ *
+ * # Arguments
+ * * `context` - Opaque pointer from dotlottie_create_wgpu_context_from_metal_layer
+ *
+ * # Safety
+ * context must be a valid pointer from dotlottie_create_wgpu_context_from_metal_layer
+ */
+void dotlottie_wgpu_context_present(const void *context);
+
+/**
+ * Create a WebGL context for a canvas selector
+ *
+ * # Arguments
+ * * `selector` - CSS selector for the canvas element (e.g., "#myCanvas")
+ *
+ * # Returns
+ * A handle (uintptr_t) to the WebGL context, or 0 on failure
+ */
+uintptr_t dotlottie_webgl_context_create(const char *selector);
+
+/**
+ * Make a WebGL context current
+ *
+ * # Returns
+ * 0 on success, non-zero on failure
+ */
+int32_t dotlottie_webgl_context_make_current(uintptr_t context);
+
+/**
+ * Check if a WebGL context is lost
+ *
+ * # Returns
+ * 1 if context is lost, 0 otherwise
+ */
+int32_t dotlottie_webgl_is_context_lost(uintptr_t context);
+
+/**
+ * Destroy a WebGL context
+ */
+void dotlottie_webgl_context_destroy(uintptr_t context);
+
+extern uintptr_t emscripten_webgpu_get_device(void);
+
+extern uintptr_t wgpuCreateInstance(const void *descriptor);
+
+extern uintptr_t wgpuInstanceCreateSurface(uintptr_t instance, const void *descriptor);
+
+extern void wgpuInstanceRelease(uintptr_t instance);
+
+extern void wgpuAdapterRelease(uintptr_t adapter);
+
+extern void wgpuDeviceRelease(uintptr_t device);
+
+extern void wgpuSurfaceRelease(uintptr_t surface);
+
+/**
+ * Get the WebGPU adapter handle
+ *
+ * # Returns
+ * Handle to the adapter, or 0 if not available
+ */
+uintptr_t dotlottie_webgpu_get_adapter(void);
+
+/**
+ * Get the WebGPU device handle
+ *
+ * # Returns
+ * Handle to the device, or fallback to emscripten's device
+ */
+uintptr_t dotlottie_webgpu_get_device(void);
+
+/**
+ * Get the WebGPU instance handle
+ *
+ * # Returns
+ * Handle to the instance
+ */
+uintptr_t dotlottie_webgpu_get_instance(void);
+
+/**
+ * Create a WebGPU surface for a canvas
+ *
+ * # Arguments
+ * * `canvas_selector` - CSS selector for the canvas element (e.g., "#canvas")
+ *
+ * # Returns
+ * Handle to the surface (0 on failure)
+ */
+uintptr_t dotlottie_webgpu_get_surface(const char *canvas_selector);
+
+/**
+ * Clean up WebGPU resources
+ */
+void dotlottie_webgpu_cleanup(void);
+
+/**
+ * Release a WebGPU instance
+ *
+ * # Arguments
+ * * `instance` - Handle to the instance to release
+ */
+void dotlottie_wgpu_instance_release(uintptr_t instance);
+
+/**
+ * Release a WebGPU adapter
+ *
+ * # Arguments
+ * * `adapter` - Handle to the adapter to release
+ */
+void dotlottie_wgpu_adapter_release(uintptr_t adapter);
+
+/**
+ * Release a WebGPU device
+ *
+ * # Arguments
+ * * `device` - Handle to the device to release
+ */
+void dotlottie_wgpu_device_release(uintptr_t device);
+
+/**
+ * Release a WebGPU surface
+ *
+ * # Arguments
+ * * `surface` - Handle to the surface to release
+ */
+void dotlottie_wgpu_surface_release(uintptr_t surface);
 
 #ifdef __cplusplus
 }  // extern "C"
