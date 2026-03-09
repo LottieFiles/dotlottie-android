@@ -9,7 +9,6 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -20,7 +19,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 enum class DotLottiePlayerState {
     PLAYING,
@@ -161,92 +159,6 @@ class DotLottieController {
                         .toMutableList()
             }
 
-            // For the users' observers
-            dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onCustomEvent(message: String) {
-                    stateMachineListeners.forEach { it.onCustomEvent(message) }
-                }
-
-                override fun onError(message: String) {
-                    stateMachineListeners.forEach { it.onError(message) }
-                }
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onStart() {
-                    stateMachineListeners.forEach { it.onStart() }
-                }
-
-                override fun onStateEntered(enteringState: String) {
-                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-                }
-
-                override fun onStateExit(leavingState: String) {
-                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-                }
-
-                override fun onStop() {
-                    stateMachineListeners.forEach { it.onStop() }
-                }
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onStringInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onTransition(previousState: String, newState: String) {
-                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-                }
-
-                override fun onInputFired(inputName: String) {
-                    stateMachineListeners.forEach { it.onInputFired(inputName) }
-                }
-            })
-
-            // For internal observer
-            dlplayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
-                override fun onMessage(message: String) {
-                    if (message.startsWith("OpenUrl: ")) {
-                        val url = message.substringAfter("OpenUrl: ")
-                        onOpenUrl?.invoke(url)
-                    }
-                }
-            })
         }
         return result
     }

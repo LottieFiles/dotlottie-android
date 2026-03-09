@@ -19,13 +19,11 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.dotlottie.dlplayer.Pointer
 import androidx.core.graphics.createBitmap
-import com.dotlottie.dlplayer.StateMachineInternalObserver
 import com.dotlottie.dlplayer.DotLottiePlayerEvent
 import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +54,7 @@ class DotLottieDrawable(
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+    private var stateMachineIsActive = false
 
     var freeze: Boolean = false
         set(value) {
@@ -100,13 +99,18 @@ class DotLottieDrawable(
 
             // Non-blocking: skip if previous render still in progress
             if (!renderMutex.tryLock()) {
-                if (player.isPlaying()) {
+                if (player.isPlaying() || stateMachineIsActive) {
                     choreographer.postFrameCallback(this)
                 }
                 return
             }
 
-            val ticked = player.tick()
+            // stateMachineTick() calls player tick() internally (player is borrowed by state machine)
+            val ticked = if (stateMachineIsActive) {
+                player.stateMachineTick()
+            } else {
+                player.tick()
+            }
 
             // Poll and dispatch events on main thread
             pollAndDispatchPlayerEvents()
@@ -140,7 +144,7 @@ class DotLottieDrawable(
                 }
             }
 
-            if (player.isPlaying()) {
+            if (player.isPlaying() || stateMachineIsActive) {
                 choreographer.postFrameCallback(this)
             }
 
@@ -435,102 +439,20 @@ class DotLottieDrawable(
         val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
         if (result) {
+            stateMachineIsActive = true
             if (dlPlayer != null) {
                 stateMachineGestureListeners =
                     dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
                         .toMutableList()
             }
 
-            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onCustomEvent(message: String) {
-                    stateMachineListeners.forEach { it.onCustomEvent(message) }
-                }
-
-                override fun onError(message: String) {
-                    stateMachineListeners.forEach { it.onError(message) }
-                }
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onStart() {
-                    stateMachineListeners.forEach { it.onStart() }
-                }
-
-                override fun onStateEntered(enteringState: String) {
-                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-                }
-
-                override fun onStateExit(leavingState: String) {
-                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-                }
-
-                override fun onStop() {
-                    stateMachineListeners.forEach { it.onStop() }
-                }
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onStringInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onTransition(previousState: String, newState: String) {
-                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-                }
-
-                override fun onInputFired(inputName: String) {
-                    stateMachineListeners.forEach { it.onInputFired(inputName) }
-                }
-            })
-
-            dlPlayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
-                override fun onMessage(message: String) {
-                    if (message.startsWith("OpenUrl: ")) {
-                        val url = message.substringAfter("OpenUrl: ")
-                        onOpenUrl?.invoke(url)
-                    }
-                }
-            })
             scheduleFrame()
         }
         return result
     }
 
     fun stateMachineStop(): Boolean {
+        stateMachineIsActive = false
         val result = dlPlayer?.stateMachineStop() ?: false
         choreographer.removeFrameCallback(frameCallback)
         invalidateSelf()

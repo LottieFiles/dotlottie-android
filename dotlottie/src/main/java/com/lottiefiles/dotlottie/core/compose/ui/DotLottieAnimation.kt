@@ -57,6 +57,7 @@ import com.dotlottie.dlplayer.Config as DLConfig
 
 private const val BYTES_PER_PIXEL = 4
 
+@InternalDotLottieApi
 private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
     var event = dlPlayer.pollEvent()
     while (event != null) {
@@ -237,7 +238,12 @@ fun DotLottieAnimation(
                     return
                 }
 
-                val ticked = dlPlayer.tick()
+                // stateMachineTick() calls player tick() internally (player is borrowed by state machine)
+                val ticked = if (rController.stateMachineIsActive) {
+                    dlPlayer.stateMachineTick()
+                } else {
+                    dlPlayer.tick()
+                }
 
                 // Poll and dispatch player events to controller listeners
                 pollPlayerEvents(dlPlayer, rController)
