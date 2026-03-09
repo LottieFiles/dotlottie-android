@@ -336,7 +336,7 @@ class DotLottiePlayer {
         val jsonStr = JNI.nativeManifest(nativePtr) ?: return Manifest(
             activeAnimationId = null, animations = null, author = null,
             description = null, generator = null, keywords = null,
-            revision = null, themes = null, states = null, version = null,
+            revision = null, themes = null, stateMachines = null, version = null,
             customData = null
         )
 
@@ -366,20 +366,16 @@ class DotLottiePlayer {
                 }
             } else null
 
-            val statesJson = json.optJSONArray("states")
-            val states = if (statesJson != null) {
-                (0 until statesJson.length()).map { i ->
-                    statesJson.getString(i)
+            val stateMachinesJson = json.optJSONArray("stateMachines")
+            val stateMachines = if (stateMachinesJson != null) {
+                (0 until stateMachinesJson.length()).map { i ->
+                    val sm = stateMachinesJson.getJSONObject(i)
+                    Manifest.StateMachine(
+                        id = sm.optString("id", ""),
+                        name = sm.optString("name", null)
+                    )
                 }
-            } else {
-                val stateMachinesJson = json.optJSONArray("stateMachines")
-                if (stateMachinesJson != null) {
-                    (0 until stateMachinesJson.length()).map { i ->
-                        val sm = stateMachinesJson.getJSONObject(i)
-                        sm.optString("id", "")
-                    }
-                } else null
-            }
+            } else null
 
             Manifest(
                 activeAnimationId = json.optString("activeAnimationId", null),
@@ -390,7 +386,7 @@ class DotLottiePlayer {
                 keywords = json.optString("keywords", null),
                 revision = json.optString("revision", null)?.toUIntOrNull(),
                 themes = themes,
-                states = states,
+                stateMachines = stateMachines,
                 version = json.optString("version", null),
                 customData = null
             )
@@ -398,7 +394,7 @@ class DotLottiePlayer {
             Manifest(
                 activeAnimationId = null, animations = null, author = null,
                 description = null, generator = null, keywords = null,
-                revision = null, themes = null, states = null, version = null,
+                revision = null, themes = null, stateMachines = null, version = null,
                 customData = null
             )
         }

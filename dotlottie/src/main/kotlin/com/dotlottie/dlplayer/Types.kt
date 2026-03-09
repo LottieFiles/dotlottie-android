@@ -63,7 +63,7 @@ data class Manifest(
     val keywords: String?,
     val revision: UInt?,
     val themes: List<Theme>?,
-    val states: List<String>?,
+    val stateMachines: List<StateMachine>?,
     val version: String?,
     val customData: Map<String, String>?
 ) {

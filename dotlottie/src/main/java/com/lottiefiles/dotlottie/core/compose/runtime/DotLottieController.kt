@@ -152,6 +152,8 @@ class DotLottieController {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
+            // Handles states that are in paused state
+            _frameUpdateRequested.value++
 
             if (dlplayer != null) {
                 stateMachineGestureListeners =

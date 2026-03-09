@@ -290,10 +290,10 @@ class ProgrammaticExampleActivity : ComponentActivity() {
                     manifest?.let {
                         Log.d(TAG, "   Manifest:")
                         Log.d(TAG, "      Version: ${it.version}")
-                        it.states?.let { states ->
-                            Log.d(TAG, "      State Machines: ${states.size}")
-                            states.forEach { state ->
-                                Log.d(TAG, "         - $state")
+                        it.stateMachines?.let { stateMachines ->
+                            Log.d(TAG, "      State Machines: ${stateMachines.size}")
+                            stateMachines.forEach { sm ->
+                                Log.d(TAG, "         - ${sm.id}")
                             }
                         }
                     }
@@ -413,7 +413,7 @@ class ProgrammaticExampleActivity : ComponentActivity() {
             mode = Mode.FORWARD,
             useFrameInterpolation = true,
 //            stateMachineId = "starRating",  // Enable state machine
-            threads = 6u
+            // threads = 6u
         )
 
         // Alternative configurations you can try:

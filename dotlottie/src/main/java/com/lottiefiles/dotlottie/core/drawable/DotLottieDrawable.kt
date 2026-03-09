@@ -253,6 +253,13 @@ class DotLottieDrawable(
                 DotLottiePlayer(config)
             }
             setupBufferAndLoad()
+
+            // Load and start state machine if configured
+            if (config.stateMachineId.isNotEmpty()) {
+                stateMachineLoad(config.stateMachineId)
+                stateMachineStart()
+            }
+
             scheduleFrame(forceUpdate = true)
         } catch (e: Throwable) {
             dotLottieEventListener.forEach { it.onLoadError(e) }

@@ -345,11 +345,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
                 mLottieDrawable?.callback = this@DotLottieAnimation
 
-                if (config.stateMachineId.isNotEmpty()) {
-                    mLottieDrawable?.stateMachineLoad(config.stateMachineId)
-                    mLottieDrawable?.stateMachineStart()
-                }
-
                 withContext(Dispatchers.Main) {
                     requestLayout()
                     invalidate()
@@ -403,13 +398,6 @@ class DotLottieAnimation @JvmOverloads constructor(
                         threads = attributes.threads
                     )
                     mLottieDrawable?.callback = this@DotLottieAnimation
-
-                    attributes.stateMachineId?.let {
-                        if (it.isNotEmpty()) {
-                            mLottieDrawable?.stateMachineLoad(attributes.stateMachineId!!)
-                            mLottieDrawable?.stateMachineStart()
-                        }
-                    }
 
                     withContext(Dispatchers.Main) {
                         requestLayout()
