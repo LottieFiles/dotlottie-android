@@ -365,10 +365,6 @@ class DotLottieView @JvmOverloads constructor(
         return dotLottieAnimation.stateMachineGetBooleanInput(key)
     }
 
-    fun stateMachineGetInputs(): List<String>? {
-        return dotLottieAnimation.stateMachineGetInputs()
-    }
-
     fun stateMachineCurrentState(): String? {
         return dotLottieAnimation.stateMachineCurrentState()
     }

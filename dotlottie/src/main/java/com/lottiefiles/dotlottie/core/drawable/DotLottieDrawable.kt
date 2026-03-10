@@ -90,6 +90,7 @@ class DotLottieDrawable(
     private val choreographer by lazy(LazyThreadSafetyMode.NONE) { Choreographer.getInstance() }
     private val renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val renderMutex = Mutex()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val singleThreadDispatcher = Dispatchers.Default.limitedParallelism(1)
     private var forceUpdateBitmap = false
@@ -335,7 +336,8 @@ class DotLottieDrawable(
                 nativeBuffer = Pointer(nativeBufferAddress)
                 player.setSwTarget(nativeBufferAddress, width.toUInt(), height.toUInt())
                 player.resize(width.toUInt(), height.toUInt())
-                bufferBytes = nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
+                bufferBytes =
+                    nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
 
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                     oldBitmap?.recycle()
@@ -611,30 +613,38 @@ class DotLottieDrawable(
                 is DotLottiePlayerEvent.Load -> {
                     dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
                 }
+
                 is DotLottiePlayerEvent.LoadError -> {
                     dotLottieEventListener.forEach { listener ->
                         listener.onLoadError()
                         listener.onLoadError(Throwable("Load error occurred"))
                     }
                 }
+
                 is DotLottiePlayerEvent.Play -> {
                     dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
                 }
+
                 is DotLottiePlayerEvent.Pause -> {
                     dotLottieEventListener.forEach(DotLottieEventListener::onPause)
                 }
+
                 is DotLottiePlayerEvent.Stop -> {
                     dotLottieEventListener.forEach(DotLottieEventListener::onStop)
                 }
+
                 is DotLottiePlayerEvent.Frame -> {
                     dotLottieEventListener.forEach { it.onFrame(e.frameNo) }
                 }
+
                 is DotLottiePlayerEvent.Render -> {
                     dotLottieEventListener.forEach { it.onRender(e.frameNo) }
                 }
+
                 is DotLottiePlayerEvent.Loop -> {
                     dotLottieEventListener.forEach { it.onLoop(e.loopCount.toInt()) }
                 }
+
                 is DotLottiePlayerEvent.Complete -> {
                     dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
                 }
@@ -652,33 +662,61 @@ class DotLottieDrawable(
                 is StateMachinePlayerEvent.Start -> {
                     stateMachineListeners.forEach { it.onStart() }
                 }
+
                 is StateMachinePlayerEvent.Stop -> {
                     stateMachineListeners.forEach { it.onStop() }
                 }
+
                 is StateMachinePlayerEvent.Transition -> {
                     stateMachineListeners.forEach { it.onTransition(e.previousState, e.newState) }
                 }
+
                 is StateMachinePlayerEvent.StateEntered -> {
                     stateMachineListeners.forEach { it.onStateEntered(e.state) }
                 }
+
                 is StateMachinePlayerEvent.StateExit -> {
                     stateMachineListeners.forEach { it.onStateExit(e.state) }
                 }
+
                 is StateMachinePlayerEvent.CustomEvent -> {
                     stateMachineListeners.forEach { it.onCustomEvent(e.message) }
                 }
+
                 is StateMachinePlayerEvent.Error -> {
                     stateMachineListeners.forEach { it.onError(e.message) }
                 }
+
                 is StateMachinePlayerEvent.StringInputChange -> {
-                    stateMachineListeners.forEach { it.onStringInputValueChange(e.name, e.oldValue, e.newValue) }
+                    stateMachineListeners.forEach {
+                        it.onStringInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
                 }
+
                 is StateMachinePlayerEvent.NumericInputChange -> {
-                    stateMachineListeners.forEach { it.onNumericInputValueChange(e.name, e.oldValue, e.newValue) }
+                    stateMachineListeners.forEach {
+                        it.onNumericInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
                 }
+
                 is StateMachinePlayerEvent.BooleanInputChange -> {
-                    stateMachineListeners.forEach { it.onBooleanInputValueChange(e.name, e.oldValue, e.newValue) }
+                    stateMachineListeners.forEach {
+                        it.onBooleanInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
                 }
+
                 is StateMachinePlayerEvent.InputFired -> {
                     stateMachineListeners.forEach { it.onInputFired(e.name) }
                 }

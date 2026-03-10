@@ -67,6 +67,7 @@ private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieCon
                 controller.updateState(DotLottiePlayerState.LOADED)
                 controller.eventListeners.forEach(DotLottieEventListener::onLoad)
             }
+
             is DotLottiePlayerEvent.LoadError -> {
                 controller.updateState(DotLottiePlayerState.ERROR)
                 controller.eventListeners.forEach { listener ->
@@ -74,27 +75,34 @@ private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieCon
                     listener.onLoadError(Throwable("Load error occurred"))
                 }
             }
+
             is DotLottiePlayerEvent.Play -> {
                 controller.updateState(DotLottiePlayerState.PLAYING)
                 controller.eventListeners.forEach(DotLottieEventListener::onPlay)
             }
+
             is DotLottiePlayerEvent.Pause -> {
                 controller.updateState(DotLottiePlayerState.PAUSED)
                 controller.eventListeners.forEach(DotLottieEventListener::onPause)
             }
+
             is DotLottiePlayerEvent.Stop -> {
                 controller.updateState(DotLottiePlayerState.STOPPED)
                 controller.eventListeners.forEach(DotLottieEventListener::onStop)
             }
+
             is DotLottiePlayerEvent.Frame -> {
                 controller.eventListeners.forEach { it.onFrame(e.frameNo) }
             }
+
             is DotLottiePlayerEvent.Render -> {
                 controller.eventListeners.forEach { it.onRender(e.frameNo) }
             }
+
             is DotLottiePlayerEvent.Loop -> {
                 controller.eventListeners.forEach { it.onLoop(e.loopCount.toInt()) }
             }
+
             is DotLottiePlayerEvent.Complete -> {
                 controller.updateState(DotLottiePlayerState.COMPLETED)
                 controller.eventListeners.forEach(DotLottieEventListener::onComplete)
@@ -112,33 +120,66 @@ private fun pollStateMachineEvents(dlPlayer: DotLottiePlayer, controller: DotLot
             is StateMachinePlayerEvent.Start -> {
                 controller.stateMachineListeners.forEach { it.onStart() }
             }
+
             is StateMachinePlayerEvent.Stop -> {
                 controller.stateMachineListeners.forEach { it.onStop() }
             }
+
             is StateMachinePlayerEvent.Transition -> {
-                controller.stateMachineListeners.forEach { it.onTransition(e.previousState, e.newState) }
+                controller.stateMachineListeners.forEach {
+                    it.onTransition(
+                        e.previousState,
+                        e.newState
+                    )
+                }
             }
+
             is StateMachinePlayerEvent.StateEntered -> {
                 controller.stateMachineListeners.forEach { it.onStateEntered(e.state) }
             }
+
             is StateMachinePlayerEvent.StateExit -> {
                 controller.stateMachineListeners.forEach { it.onStateExit(e.state) }
             }
+
             is StateMachinePlayerEvent.CustomEvent -> {
                 controller.stateMachineListeners.forEach { it.onCustomEvent(e.message) }
             }
+
             is StateMachinePlayerEvent.Error -> {
                 controller.stateMachineListeners.forEach { it.onError(e.message) }
             }
+
             is StateMachinePlayerEvent.StringInputChange -> {
-                controller.stateMachineListeners.forEach { it.onStringInputValueChange(e.name, e.oldValue, e.newValue) }
+                controller.stateMachineListeners.forEach {
+                    it.onStringInputValueChange(
+                        e.name,
+                        e.oldValue,
+                        e.newValue
+                    )
+                }
             }
+
             is StateMachinePlayerEvent.NumericInputChange -> {
-                controller.stateMachineListeners.forEach { it.onNumericInputValueChange(e.name, e.oldValue, e.newValue) }
+                controller.stateMachineListeners.forEach {
+                    it.onNumericInputValueChange(
+                        e.name,
+                        e.oldValue,
+                        e.newValue
+                    )
+                }
             }
+
             is StateMachinePlayerEvent.BooleanInputChange -> {
-                controller.stateMachineListeners.forEach { it.onBooleanInputValueChange(e.name, e.oldValue, e.newValue) }
+                controller.stateMachineListeners.forEach {
+                    it.onBooleanInputValueChange(
+                        e.name,
+                        e.oldValue,
+                        e.newValue
+                    )
+                }
             }
+
             is StateMachinePlayerEvent.InputFired -> {
                 controller.stateMachineListeners.forEach { it.onInputFired(e.name) }
             }
@@ -427,7 +468,8 @@ fun DotLottieAnimation(
             // Skip if already at the correct size (avoids destroying the buffer init() just populated)
             val currentBmp = bitmap
             if (currentBmp != null && !currentBmp.isRecycled
-                && currentBmp.width == _width.toInt() && currentBmp.height == _height.toInt()) {
+                && currentBmp.width == _width.toInt() && currentBmp.height == _height.toInt()
+            ) {
                 return@LaunchedEffect
             }
             // Wait for any pending render to complete
