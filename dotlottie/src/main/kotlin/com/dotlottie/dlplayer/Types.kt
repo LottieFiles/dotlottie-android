@@ -155,10 +155,12 @@ data class LayerBoundingBox(
     val y4: Float
 )
 
-/**
- * Deprecated function for backward compatibility - theme to lottie slots
- */
-@Deprecated("No longer needed with C API")
-fun transformThemeToLottieSlots(themeData: String, animationId: String): String {
-    return ""
-}
+
+typealias ManifestAnimation = Manifest.Animation
+typealias ManifestTheme = Manifest.Theme
+typealias ManifestStateMachine = Manifest.StateMachine
+
+data class ManifestInitial(
+    val animation: String?,
+    val stateMachine: String?
+)

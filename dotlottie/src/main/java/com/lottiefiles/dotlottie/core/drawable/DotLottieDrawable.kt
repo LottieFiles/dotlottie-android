@@ -57,6 +57,7 @@ class DotLottieDrawable(
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
     private var stateMachineIsActive = false
+    private var onOpenUrlCallback: ((url: String) -> Unit)? = null
 
     var freeze: Boolean = false
         set(value) {
@@ -503,6 +504,7 @@ class DotLottieDrawable(
 
         if (result) {
             stateMachineIsActive = true
+            onOpenUrlCallback = onOpenUrl
             if (dlPlayer != null) {
                 stateMachineGestureListeners =
                     dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
@@ -516,6 +518,7 @@ class DotLottieDrawable(
 
     fun stateMachineStop(): Boolean {
         stateMachineIsActive = false
+        onOpenUrlCallback = null
         val result = dlPlayer?.stateMachineStop() ?: false
         choreographer.removeFrameCallback(frameCallback)
         invalidateSelf()
@@ -580,7 +583,9 @@ class DotLottieDrawable(
         return dlPlayer?.stateMachineGetBooleanInput(key)
     }
 
+    @Deprecated("stateMachineGetInputs is not supported")
     fun stateMachineGetInputs(): List<String>? {
+        @Suppress("DEPRECATION")
         return dlPlayer?.stateMachineGetInputs()
     }
 
@@ -689,7 +694,15 @@ class DotLottieDrawable(
         // Poll internal events
         var internalEvent = player.stateMachinePollInternalEvent()
         while (internalEvent != null) {
-            // Internal events currently dispatch to onOpenUrl via the stateMachineStart callback
+            if (internalEvent.startsWith("OpenUrl: ")) {
+                val payload = internalEvent.substringAfter("OpenUrl: ")
+                val url = if (payload.contains(" | Target: ")) {
+                    payload.substringBefore(" | Target: ")
+                } else {
+                    payload
+                }
+                onOpenUrlCallback?.invoke(url)
+            }
             internalEvent = player.stateMachinePollInternalEvent()
         }
     }

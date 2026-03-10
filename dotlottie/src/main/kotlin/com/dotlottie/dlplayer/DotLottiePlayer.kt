@@ -595,33 +595,7 @@ class DotLottiePlayer {
     fun stateMachineLoad(id: String) = loadStateMachine(id)
     fun stateMachineLoadData(data: String) = loadStateMachineData(data)
 
-    // ==================== Observer Pattern (via polling) ====================
-
-    @Deprecated("Use pollEvent() instead", ReplaceWith("pollEvent()"))
-    fun subscribe(observer: Observer) {
-        // No-op: Use pollEvent() in render loop
-    }
-
-    @Deprecated("Use pollEvent() instead")
-    fun unsubscribe(observer: Observer) {
-        // No-op
-    }
-
-    @Deprecated("Use stateMachinePollEvent() instead", ReplaceWith("stateMachinePollEvent()"))
-    fun stateMachineSubscribe(observer: StateMachineObserver) {
-        // No-op: Use stateMachinePollEvent() in render loop
-    }
-
-    @Deprecated("Use stateMachinePollEvent() instead")
-    fun stateMachineUnsubscribe(observer: StateMachineObserver) {
-        // No-op
-    }
-
-    @Deprecated("Use stateMachinePollInternalEvent() instead", ReplaceWith("stateMachinePollInternalEvent()"))
-    fun stateMachineInternalSubscribe(observer: StateMachineInternalObserver) {
-        // No-op: Use stateMachinePollInternalEvent() in render loop
-    }
-
+    @Deprecated("stateMachineGetInputs is not supported", ReplaceWith("emptyList()"))
     fun stateMachineGetInputs(): List<String> {
         return emptyList()
     }

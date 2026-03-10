@@ -53,6 +53,8 @@ class DotLottieController {
         private set
     var eventListeners = mutableListOf<DotLottieEventListener>()
         private set
+    var onOpenUrlCallback: ((url: String) -> Unit)? = null
+        private set
 
     val isPlaying: Boolean
         get() = dlplayer?.isPlaying() ?: false
@@ -154,6 +156,7 @@ class DotLottieController {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
+            onOpenUrlCallback = onOpenUrl
             // Handles states that are in paused state
             _frameUpdateRequested.value++
 
@@ -169,6 +172,7 @@ class DotLottieController {
 
     fun stateMachineStop(): Boolean {
         stateMachineIsActive = false
+        onOpenUrlCallback = null
         return dlplayer?.stateMachineStop() ?: false
     }
 
@@ -222,7 +226,9 @@ class DotLottieController {
         return dlplayer?.stateMachineGetBooleanInput(key)
     }
 
+    @Deprecated("stateMachineGetInputs is not supported")
     fun stateMachineGetInputs(): List<String>? {
+        @Suppress("DEPRECATION")
         return dlplayer?.stateMachineGetInputs()
     }
 

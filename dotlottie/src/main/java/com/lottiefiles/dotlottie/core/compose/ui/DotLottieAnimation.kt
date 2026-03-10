@@ -148,6 +148,15 @@ private fun pollStateMachineEvents(dlPlayer: DotLottiePlayer, controller: DotLot
     // Poll internal events
     var internalEvent = dlPlayer.stateMachinePollInternalEvent()
     while (internalEvent != null) {
+        if (internalEvent.startsWith("OpenUrl: ")) {
+            val payload = internalEvent.substringAfter("OpenUrl: ")
+            val url = if (payload.contains(" | Target: ")) {
+                payload.substringBefore(" | Target: ")
+            } else {
+                payload
+            }
+            controller.onOpenUrlCallback?.invoke(url)
+        }
         internalEvent = dlPlayer.stateMachinePollInternalEvent()
     }
 }
