@@ -120,6 +120,8 @@ class DotLottieDrawable(
             pollAndDispatchPlayerEvents()
             pollAndDispatchStateMachineEvents()
 
+            var lockHandedToCoroutine = false
+
             if ((ticked || forceUpdateBitmap) && !bmp.isRecycled) {
                 val shouldResetFlag = !ticked && forceUpdateBitmap
 
@@ -127,23 +129,24 @@ class DotLottieDrawable(
                 val capturedBytes = bytes
                 val capturedBmp = bmp
 
+                // Hand lock ownership to the coroutine — it will unlock in its finally block.
+                // This prevents a resize from freeing the buffer between unlock and coroutine start.
+                lockHandedToCoroutine = true
                 renderScope.launch(singleThreadDispatcher) {
-                    renderMutex.withLock {
-                        try {
-                            if (!capturedBmp.isRecycled) {
-                                capturedBytes.rewind()
-                                capturedBmp.copyPixelsFromBuffer(capturedBytes)
+                    try {
+                        if (!capturedBmp.isRecycled) {
+                            capturedBytes.rewind()
+                            capturedBmp.copyPixelsFromBuffer(capturedBytes)
 
-                                withContext(Dispatchers.Main) {
-                                    if (shouldResetFlag) {
-                                        forceUpdateBitmap = false
-                                    }
-                                    invalidateSelf()
+                            withContext(Dispatchers.Main) {
+                                if (shouldResetFlag) {
+                                    forceUpdateBitmap = false
                                 }
+                                invalidateSelf()
                             }
-                        } catch (_: Exception) {
-                            // Buffer may have been freed during resize
                         }
+                    } finally {
+                        renderMutex.unlock()
                     }
                 }
             }
@@ -152,7 +155,9 @@ class DotLottieDrawable(
                 choreographer.postFrameCallback(this)
             }
 
-            renderMutex.unlock()
+            if (!lockHandedToCoroutine) {
+                renderMutex.unlock()
+            }
         }
     }
 

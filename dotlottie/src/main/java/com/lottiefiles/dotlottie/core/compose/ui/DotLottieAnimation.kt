@@ -2,7 +2,6 @@ package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
 import android.os.Build
-import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -300,6 +299,8 @@ fun DotLottieAnimation(
                 // Poll and dispatch state machine events to controller listeners
                 pollStateMachineEvents(dlPlayer, rController)
 
+                var lockHandedToCoroutine = false
+
                 if (ticked || forceUpdateBitmap) {
                     val shouldResetFlag = !ticked && forceUpdateBitmap
 
@@ -307,33 +308,32 @@ fun DotLottieAnimation(
                     val bytes = bufferBytes
                     val bmp = bitmap
 
+                    lockHandedToCoroutine = true
                     renderScope.launch(singleThreadDispatcher) {
-                        renderMutex.withLock {
-                            try {
-                                ensureActive()
+                        try {
+                            ensureActive()
 
-                                bytes?.let { b ->
-                                    bmp?.let { targetBitmap ->
-                                        if (!targetBitmap.isRecycled) {
-                                            withContext(Dispatchers.Default) {
-                                                b.rewind()
-                                                targetBitmap.copyPixelsFromBuffer(b)
-                                            }
+                            bytes?.let { b ->
+                                bmp?.let { targetBitmap ->
+                                    if (!targetBitmap.isRecycled) {
+                                        withContext(Dispatchers.Default) {
+                                            b.rewind()
+                                            targetBitmap.copyPixelsFromBuffer(b)
+                                        }
 
-                                            withContext(Dispatchers.Main) {
-                                                if (isActive && !targetBitmap.isRecycled) {
-                                                    imageBitmap = targetBitmap.asImageBitmap()
-                                                    if (shouldResetFlag) {
-                                                        forceUpdateBitmap = false
-                                                    }
+                                        withContext(Dispatchers.Main) {
+                                            if (isActive && !targetBitmap.isRecycled) {
+                                                imageBitmap = targetBitmap.asImageBitmap()
+                                                if (shouldResetFlag) {
+                                                    forceUpdateBitmap = false
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            } catch (e: Exception) {
-                                Log.e("DotLottieAnimation", "Error during background render", e)
                             }
+                        } finally {
+                            renderMutex.unlock()
                         }
                     }
                 }
@@ -342,7 +342,9 @@ fun DotLottieAnimation(
                     choreographer.postFrameCallback(this)
                 }
 
-                renderMutex.unlock()
+                if (!lockHandedToCoroutine) {
+                    renderMutex.unlock()
+                }
             }
         }
     }
