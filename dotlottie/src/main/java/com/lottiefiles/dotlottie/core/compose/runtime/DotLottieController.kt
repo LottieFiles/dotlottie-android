@@ -226,12 +226,6 @@ class DotLottieController {
         return dlplayer?.stateMachineGetBooleanInput(key)
     }
 
-    @Deprecated("stateMachineGetInputs is not supported")
-    fun stateMachineGetInputs(): List<String>? {
-        @Suppress("DEPRECATION")
-        return dlplayer?.stateMachineGetInputs()
-    }
-
     fun stateMachineCurrentState(): String? {
         return dlplayer?.stateMachineCurrentState()
     }

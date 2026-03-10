@@ -631,12 +631,6 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.stateMachineGetBooleanInput(key)
     }
 
-    @Deprecated("stateMachineGetInputs is not supported")
-    fun stateMachineGetInputs(): List<String>? {
-        @Suppress("DEPRECATION")
-        return mLottieDrawable?.stateMachineGetInputs()
-    }
-
     fun stateMachineFireEvent(event: String) {
         mLottieDrawable?.stateMachineFireEvent(event)
     }

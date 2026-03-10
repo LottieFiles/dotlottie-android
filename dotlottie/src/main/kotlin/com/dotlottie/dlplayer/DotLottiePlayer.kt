@@ -595,11 +595,6 @@ class DotLottiePlayer {
     fun stateMachineLoad(id: String) = loadStateMachine(id)
     fun stateMachineLoadData(data: String) = loadStateMachineData(data)
 
-    @Deprecated("stateMachineGetInputs is not supported", ReplaceWith("emptyList()"))
-    fun stateMachineGetInputs(): List<String> {
-        return emptyList()
-    }
-
     // ==================== Lifecycle ====================
 
     fun destroy() {

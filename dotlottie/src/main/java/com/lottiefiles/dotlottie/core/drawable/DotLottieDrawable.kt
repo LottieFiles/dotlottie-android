@@ -583,12 +583,6 @@ class DotLottieDrawable(
         return dlPlayer?.stateMachineGetBooleanInput(key)
     }
 
-    @Deprecated("stateMachineGetInputs is not supported")
-    fun stateMachineGetInputs(): List<String>? {
-        @Suppress("DEPRECATION")
-        return dlPlayer?.stateMachineGetInputs()
-    }
-
     fun stateMachineCurrentState(): String? {
         return dlPlayer?.stateMachineCurrentState()
     }
