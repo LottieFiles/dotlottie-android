@@ -408,6 +408,10 @@ class DotLottieDrawable(
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         dlPlayer?.setTheme(themeId)
         scheduleFrame(forceUpdate = true)
     }

@@ -200,6 +200,10 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         mLottieDrawable?.setTheme(themeId)
     }
 

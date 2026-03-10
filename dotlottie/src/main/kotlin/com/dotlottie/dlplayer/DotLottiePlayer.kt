@@ -60,6 +60,12 @@ class DotLottiePlayer {
             config.layout.align[0],
             config.layout.align[1]
         )
+
+        if (config.themeId.isNotEmpty()) {
+            JNI.nativeSetTheme(nativePtr, config.themeId)
+        } else {
+            JNI.nativeResetTheme(nativePtr)
+        }
     }
 
     // ==================== Loading ====================

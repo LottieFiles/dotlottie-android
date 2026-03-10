@@ -337,6 +337,10 @@ class DotLottieController {
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         dlplayer?.setTheme(themeId)
     }
 
