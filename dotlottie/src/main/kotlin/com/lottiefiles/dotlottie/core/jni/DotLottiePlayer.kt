@@ -230,6 +230,23 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeSetTextSlot(ptr: Long, slotId: String, text: String): Int
 
+    @JvmStatic
+    external fun nativeSetVectorSlot(ptr: Long, slotId: String, x: Float, y: Float): Int
+
+    @JvmStatic
+    external fun nativeSetPositionSlot(ptr: Long, slotId: String, x: Float, y: Float): Int
+
+    @JvmStatic
+    external fun nativeSetImageSlotPath(ptr: Long, slotId: String, path: String): Int
+
+    @JvmStatic
+    external fun nativeSetImageSlotDataUrl(ptr: Long, slotId: String, dataUrl: String): Int
+
+    // ==================== Layer Bounds ====================
+
+    @JvmStatic
+    external fun nativeGetLayerBounds(ptr: Long, layerName: String): FloatArray?
+
     // ==================== Viewport ====================
 
     @JvmStatic

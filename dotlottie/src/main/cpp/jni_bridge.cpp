@@ -113,6 +113,18 @@ static jint nativeSetScalarSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                                 jfloat value);
 static jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                               jstring text);
+static jint nativeSetVectorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                                jfloat x, jfloat y);
+static jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr,
+                                  jstring slotId, jfloat x, jfloat y);
+static jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr,
+                                   jstring slotId, jstring path);
+static jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr,
+                                      jstring slotId, jstring dataUrl);
+
+// Layer bounds
+static jfloatArray nativeGetLayerBounds(JNIEnv *env, jclass, jlong ptr,
+                                        jstring layerName);
 
 // Viewport
 static jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y,
@@ -716,6 +728,67 @@ jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   return static_cast<jint>(result);
 }
 
+jint nativeSetVectorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                         jfloat x, jfloat y) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  auto result = dotlottie_set_vector_slot(player, cSlotId, x, y);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return static_cast<jint>(result);
+}
+
+jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                           jfloat x, jfloat y) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  auto result = dotlottie_set_position_slot(player, cSlotId, x, y);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return static_cast<jint>(result);
+}
+
+jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                            jstring path) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  const char *cPath = env->GetStringUTFChars(path, nullptr);
+  auto result = dotlottie_set_image_slot_path(player, cSlotId, cPath);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  env->ReleaseStringUTFChars(path, cPath);
+  return static_cast<jint>(result);
+}
+
+jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                               jstring dataUrl) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  const char *cDataUrl = env->GetStringUTFChars(dataUrl, nullptr);
+  auto result = dotlottie_set_image_slot_data_url(player, cSlotId, cDataUrl);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  env->ReleaseStringUTFChars(dataUrl, cDataUrl);
+  return static_cast<jint>(result);
+}
+
+// ==================== Layer Bounds ====================
+
+jfloatArray nativeGetLayerBounds(JNIEnv *env, jclass, jlong ptr,
+                                 jstring layerName) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  const char *cName = env->GetStringUTFChars(layerName, nullptr);
+  dotlottieLayerBoundingBox bbox;
+  auto res = dotlottie_get_layer_bounds(player, cName, &bbox);
+  env->ReleaseStringUTFChars(layerName, cName);
+
+  if (res != dotlottieDotLottieResult::Success) {
+    return nullptr;
+  }
+
+  jfloatArray result = env->NewFloatArray(8);
+  jfloat values[8] = {bbox.x1, bbox.y1, bbox.x2, bbox.y2,
+                      bbox.x3, bbox.y3, bbox.x4, bbox.y4};
+  env->SetFloatArrayRegion(result, 0, 8, values);
+  return result;
+}
+
 // ==================== Viewport ====================
 
 jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y, jint w,
@@ -766,7 +839,7 @@ jlong nativeStateMachineLoad(JNIEnv *env, jclass, jlong playerPtr,
                              jstring stateMachineId) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
   const char *cId = env->GetStringUTFChars(stateMachineId, nullptr);
-  dotlottieStateMachineEngine *sm = dotlottie_state_machine_load(player, cId);
+  dotlottieDotLottieStateMachine *sm = dotlottie_state_machine_load(player, cId);
   env->ReleaseStringUTFChars(stateMachineId, cId);
   return reinterpret_cast<jlong>(sm);
 }
@@ -775,14 +848,14 @@ jlong nativeStateMachineLoadData(JNIEnv *env, jclass, jlong playerPtr,
                                  jstring data) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
   const char *cData = env->GetStringUTFChars(data, nullptr);
-  dotlottieStateMachineEngine *sm =
+  dotlottieDotLottieStateMachine *sm =
       dotlottie_state_machine_load_data(player, cData);
   env->ReleaseStringUTFChars(data, cData);
   return reinterpret_cast<jlong>(sm);
 }
 
 void nativeStateMachineRelease(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   if (sm != nullptr) {
     dotlottie_state_machine_release(sm);
   }
@@ -791,7 +864,7 @@ void nativeStateMachineRelease(JNIEnv *env, jclass, jlong smPtr) {
 jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr,
                              jstring whitelist,
                              jboolean requireUserInteraction) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cWhitelist = nullptr;
   if (whitelist != nullptr) {
     cWhitelist = env->GetStringUTFChars(whitelist, nullptr);
@@ -805,18 +878,18 @@ jint nativeStateMachineStart(JNIEnv *env, jclass, jlong smPtr,
 }
 
 jint nativeStateMachineStop(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   return static_cast<jint>(dotlottie_state_machine_stop(sm));
 }
 
 jint nativeStateMachineTick(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   return static_cast<jint>(dotlottie_state_machine_tick(sm));
 }
 
 jint nativeStateMachineSetNumericInput(JNIEnv *env, jclass, jlong smPtr,
                                        jstring key, jfloat value) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   auto result = dotlottie_state_machine_set_numeric_input(sm, cKey, value);
   env->ReleaseStringUTFChars(key, cKey);
@@ -825,7 +898,7 @@ jint nativeStateMachineSetNumericInput(JNIEnv *env, jclass, jlong smPtr,
 
 jint nativeStateMachineSetStringInput(JNIEnv *env, jclass, jlong smPtr,
                                       jstring key, jstring value) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   const char *cValue = env->GetStringUTFChars(value, nullptr);
   auto result = dotlottie_state_machine_set_string_input(sm, cKey, cValue);
@@ -836,7 +909,7 @@ jint nativeStateMachineSetStringInput(JNIEnv *env, jclass, jlong smPtr,
 
 jint nativeStateMachineSetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
                                        jstring key, jboolean value) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   auto result =
       dotlottie_state_machine_set_boolean_input(sm, cKey, value == JNI_TRUE);
@@ -846,7 +919,7 @@ jint nativeStateMachineSetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
 
 jfloat nativeStateMachineGetNumericInput(JNIEnv *env, jclass, jlong smPtr,
                                          jstring key) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   float result = 0.0f;
   dotlottie_state_machine_get_numeric_input(sm, cKey, &result);
@@ -856,7 +929,7 @@ jfloat nativeStateMachineGetNumericInput(JNIEnv *env, jclass, jlong smPtr,
 
 jstring nativeStateMachineGetStringInput(JNIEnv *env, jclass, jlong smPtr,
                                          jstring key) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
 
   uintptr_t size = 0;
@@ -880,7 +953,7 @@ jstring nativeStateMachineGetStringInput(JNIEnv *env, jclass, jlong smPtr,
 
 jboolean nativeStateMachineGetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
                                            jstring key) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cKey = env->GetStringUTFChars(key, nullptr);
   bool result = false;
   dotlottie_state_machine_get_boolean_input(sm, cKey, &result);
@@ -889,7 +962,7 @@ jboolean nativeStateMachineGetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
 }
 
 jstring nativeStateMachineCurrentState(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   uintptr_t size = 0;
   auto res = dotlottie_state_machine_current_state(sm, nullptr, &size);
   if (res != dotlottieDotLottieResult::Success || size == 0) {
@@ -906,7 +979,7 @@ jstring nativeStateMachineCurrentState(JNIEnv *env, jclass, jlong smPtr) {
 }
 
 jstring nativeStateMachineStatus(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   uintptr_t size = 0;
   auto res = dotlottie_state_machine_status(sm, nullptr, &size);
   if (res != dotlottieDotLottieResult::Success || size == 0) {
@@ -924,7 +997,7 @@ jstring nativeStateMachineStatus(JNIEnv *env, jclass, jlong smPtr) {
 
 jint nativeStateMachineFireEvent(JNIEnv *env, jclass, jlong smPtr,
                                  jstring eventName) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   const char *cName = env->GetStringUTFChars(eventName, nullptr);
   auto result = dotlottie_state_machine_fire_event(sm, cName);
   env->ReleaseStringUTFChars(eventName, cName);
@@ -933,7 +1006,7 @@ jint nativeStateMachineFireEvent(JNIEnv *env, jclass, jlong smPtr,
 
 jint nativeStateMachinePostEvent(JNIEnv *env, jclass, jlong smPtr,
                                  jint eventTag, jfloat x, jfloat y) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   dotlottieDotLottieEvent event;
   event.tag = static_cast<dotlottieDotLottieEvent_Tag>(eventTag);
 
@@ -970,7 +1043,7 @@ jint nativeStateMachinePostEvent(JNIEnv *env, jclass, jlong smPtr,
 }
 
 jint nativeStateMachineFrameworkSetup(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   uint16_t result = 0;
   dotlottie_state_machine_framework_setup(sm, &result);
   return static_cast<jint>(result);
@@ -978,7 +1051,7 @@ jint nativeStateMachineFrameworkSetup(JNIEnv *env, jclass, jlong smPtr) {
 
 // Poll state machine events — pointer-based data union
 jobject nativeStateMachinePollEvent(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   dotlottieStateMachineEvent event;
 
   int32_t result = dotlottie_state_machine_poll_event(sm, &event);
@@ -1075,7 +1148,7 @@ jobject nativeStateMachinePollEvent(JNIEnv *env, jclass, jlong smPtr) {
 }
 
 jstring nativeStateMachinePollInternalEvent(JNIEnv *env, jclass, jlong smPtr) {
-  auto *sm = reinterpret_cast<dotlottieStateMachineEngine *>(smPtr);
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
   dotlottieStateMachineInternalEvent event;
 
   int32_t result = dotlottie_state_machine_poll_internal_event(sm, &event);
@@ -1222,6 +1295,20 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeSetScalarSlot},
     {"nativeSetTextSlot", "(JLjava/lang/String;Ljava/lang/String;)I",
      (void *)nativeSetTextSlot},
+    {"nativeSetVectorSlot", "(JLjava/lang/String;FF)I",
+     (void *)nativeSetVectorSlot},
+    {"nativeSetPositionSlot", "(JLjava/lang/String;FF)I",
+     (void *)nativeSetPositionSlot},
+    {"nativeSetImageSlotPath",
+     "(JLjava/lang/String;Ljava/lang/String;)I",
+     (void *)nativeSetImageSlotPath},
+    {"nativeSetImageSlotDataUrl",
+     "(JLjava/lang/String;Ljava/lang/String;)I",
+     (void *)nativeSetImageSlotDataUrl},
+
+    // Layer bounds
+    {"nativeGetLayerBounds", "(JLjava/lang/String;)[F",
+     (void *)nativeGetLayerBounds},
 
     // Viewport
     {"nativeSetViewport", "(JIIII)I", (void *)nativeSetViewport},

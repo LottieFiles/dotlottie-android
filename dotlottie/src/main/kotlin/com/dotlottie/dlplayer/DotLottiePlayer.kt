@@ -270,6 +270,36 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    fun setVectorSlot(slotId: String, x: Float, y: Float): Boolean {
+        val result = JNI.nativeSetVectorSlot(nativePtr, slotId, x, y)
+        return result == 0
+    }
+
+    fun setPositionSlot(slotId: String, x: Float, y: Float): Boolean {
+        val result = JNI.nativeSetPositionSlot(nativePtr, slotId, x, y)
+        return result == 0
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        val result = JNI.nativeSetImageSlotPath(nativePtr, slotId, path)
+        return result == 0
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        val result = JNI.nativeSetImageSlotDataUrl(nativePtr, slotId, dataUrl)
+        return result == 0
+    }
+
+    // ==================== Layer Bounds ====================
+
+    fun getLayerBounds(layerName: String): LayerBoundingBox? {
+        val arr = JNI.nativeGetLayerBounds(nativePtr, layerName) ?: return null
+        return LayerBoundingBox(
+            x1 = arr[0], y1 = arr[1], x2 = arr[2], y2 = arr[3],
+            x3 = arr[4], y3 = arr[5], x4 = arr[6], y4 = arr[7]
+        )
+    }
+
     // ==================== Viewport ====================
 
     fun setViewport(x: Int, y: Int, w: Int, h: Int): Boolean {
