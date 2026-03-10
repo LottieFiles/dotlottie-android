@@ -1,5 +1,8 @@
 package com.dotlottie.dlplayer
 
+import android.graphics.Color
+import android.graphics.PointF
+import androidx.annotation.ColorInt
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as JNI
 import org.json.JSONObject
 import org.json.JSONArray
@@ -255,7 +258,10 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun setColorSlot(slotId: String, r: Float, g: Float, b: Float): Boolean {
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        val r = Color.red(color) / 255f
+        val g = Color.green(color) / 255f
+        val b = Color.blue(color) / 255f
         val result = JNI.nativeSetColorSlot(nativePtr, slotId, r, g, b)
         return result == 0
     }
@@ -270,13 +276,13 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun setVectorSlot(slotId: String, x: Float, y: Float): Boolean {
-        val result = JNI.nativeSetVectorSlot(nativePtr, slotId, x, y)
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        val result = JNI.nativeSetVectorSlot(nativePtr, slotId, vector.x, vector.y)
         return result == 0
     }
 
-    fun setPositionSlot(slotId: String, x: Float, y: Float): Boolean {
-        val result = JNI.nativeSetPositionSlot(nativePtr, slotId, x, y)
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        val result = JNI.nativeSetPositionSlot(nativePtr, slotId, position.x, position.y)
         return result == 0
     }
 

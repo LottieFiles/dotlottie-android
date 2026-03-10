@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
+import android.graphics.PointF
+import androidx.annotation.ColorInt
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
@@ -348,6 +350,42 @@ class DotLottieController {
 
     fun setSlots(slots: String) {
         dlplayer?.setSlots(slots)
+    }
+
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        return dlplayer?.setColorSlot(slotId, color) ?: false
+    }
+
+    fun setScalarSlot(slotId: String, value: Float): Boolean {
+        return dlplayer?.setScalarSlot(slotId, value) ?: false
+    }
+
+    fun setTextSlot(slotId: String, text: String): Boolean {
+        return dlplayer?.setTextSlot(slotId, text) ?: false
+    }
+
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        return dlplayer?.setVectorSlot(slotId, vector) ?: false
+    }
+
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        return dlplayer?.setPositionSlot(slotId, position) ?: false
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        return dlplayer?.setImageSlotPath(slotId, path) ?: false
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        return dlplayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    }
+
+    fun clearSlots(): Boolean {
+        return dlplayer?.clearSlots() ?: false
+    }
+
+    fun clearSlot(slotId: String): Boolean {
+        return dlplayer?.clearSlot(slotId) ?: false
     }
 
     fun setPlayMode(mode: Mode) {

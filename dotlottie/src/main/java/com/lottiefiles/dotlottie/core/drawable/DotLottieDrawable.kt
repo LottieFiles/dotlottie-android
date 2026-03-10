@@ -5,10 +5,12 @@ import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PixelFormat
+import android.graphics.PointF
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.Choreographer
+import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
@@ -414,6 +416,60 @@ class DotLottieDrawable(
     fun setSlots(slots: String) {
         dlPlayer?.setSlots(slots)
         scheduleFrame(forceUpdate = true)
+    }
+
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        val result = dlPlayer?.setColorSlot(slotId, color) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setScalarSlot(slotId: String, value: Float): Boolean {
+        val result = dlPlayer?.setScalarSlot(slotId, value) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setTextSlot(slotId: String, text: String): Boolean {
+        val result = dlPlayer?.setTextSlot(slotId, text) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        val result = dlPlayer?.setVectorSlot(slotId, vector) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        val result = dlPlayer?.setPositionSlot(slotId, position) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        val result = dlPlayer?.setImageSlotPath(slotId, path) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        val result = dlPlayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun clearSlots(): Boolean {
+        val result = dlPlayer?.clearSlots() ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun clearSlot(slotId: String): Boolean {
+        val result = dlPlayer?.clearSlot(slotId) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
     }
 
     fun manifest(): Manifest? {
