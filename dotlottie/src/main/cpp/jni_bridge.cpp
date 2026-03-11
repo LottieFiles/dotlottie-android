@@ -224,7 +224,6 @@ jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads) {
 }
 
 // Helper: apply all config properties to a player in a single C++ scope.
-// This batches what would otherwise be 11 separate JNI crossings into one.
 static void applyConfigToPlayer(JNIEnv *env,
                                 dotlottieDotLottiePlayer *player, jint mode,
                                 jfloat speed, jboolean loop, jint loopCount,
