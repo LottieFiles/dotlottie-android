@@ -19,9 +19,14 @@
             android:theme="@style/Theme.Example">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".MultiInstanceStressTest"
+            android:exported="true"
+            android:label="DotLottie Stress Test"
+            android:theme="@style/Theme.Example">
         </activity>
     </application>
 

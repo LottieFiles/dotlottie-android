@@ -23,49 +23,34 @@ class DotLottiePlayer {
 
     constructor(config: Config) {
         this.currentConfig = config
-        nativePtr = JNI.nativeNewPlayer(0)
-        applyConfig(config)
+        nativePtr = createPlayerWithConfig(0, config)
     }
 
     private constructor(config: Config, threads: UInt) {
         this.currentConfig = config
-        nativePtr = JNI.nativeNewPlayer(threads.toInt())
-        applyConfig(config)
+        nativePtr = createPlayerWithConfig(threads.toInt(), config)
     }
 
-    private fun applyConfig(config: Config) {
-        JNI.nativeSetMode(nativePtr, config.mode.value)
-        JNI.nativeSetSpeed(nativePtr, config.speed)
-        JNI.nativeSetLoop(nativePtr, config.loopAnimation)
-        JNI.nativeSetLoopCount(nativePtr, config.loopCount.toInt())
-        JNI.nativeSetAutoplay(nativePtr, config.autoplay)
-        JNI.nativeSetUseFrameInterpolation(nativePtr, config.useFrameInterpolation)
-        JNI.nativeSetBackgroundColor(nativePtr, config.backgroundColor.toInt())
-
-        if (config.segment.size >= 2) {
-            JNI.nativeSetSegment(nativePtr, config.segment[0], config.segment[1])
-        } else {
-            JNI.nativeClearSegment(nativePtr)
-        }
-
-        if (config.marker.isNotEmpty()) {
-            JNI.nativeSetMarker(nativePtr, config.marker)
-        } else {
-            JNI.nativeSetMarker(nativePtr, null)
-        }
-
-        JNI.nativeSetLayout(
-            nativePtr,
+    private fun createPlayerWithConfig(threads: Int, config: Config): Long {
+        val hasSegment = config.segment.size >= 2
+        return JNI.nativeNewPlayerWithConfig(
+            threads,
+            config.mode.value,
+            config.speed,
+            config.loopAnimation,
+            config.loopCount.toInt(),
+            config.autoplay,
+            config.useFrameInterpolation,
+            config.backgroundColor.toInt(),
+            hasSegment,
+            if (hasSegment) config.segment[0] else 0f,
+            if (hasSegment) config.segment[1] else 0f,
+            config.marker.ifEmpty { null },
             config.layout.fit.value,
             config.layout.align[0],
-            config.layout.align[1]
+            config.layout.align[1],
+            config.themeId.ifEmpty { null }
         )
-
-        if (config.themeId.isNotEmpty()) {
-            JNI.nativeSetTheme(nativePtr, config.themeId)
-        } else {
-            JNI.nativeResetTheme(nativePtr)
-        }
     }
 
     // ==================== Loading ====================
@@ -369,7 +354,25 @@ class DotLottiePlayer {
 
     fun setConfig(config: Config) {
         this.currentConfig = config
-        applyConfig(config)
+        val hasSegment = config.segment.size >= 2
+        JNI.nativeApplyConfig(
+            nativePtr,
+            config.mode.value,
+            config.speed,
+            config.loopAnimation,
+            config.loopCount.toInt(),
+            config.autoplay,
+            config.useFrameInterpolation,
+            config.backgroundColor.toInt(),
+            hasSegment,
+            if (hasSegment) config.segment[0] else 0f,
+            if (hasSegment) config.segment[1] else 0f,
+            config.marker.ifEmpty { null },
+            config.layout.fit.value,
+            config.layout.align[0],
+            config.layout.align[1],
+            config.themeId.ifEmpty { null }
+        )
     }
 
     // ==================== Manifest & Markers ====================
