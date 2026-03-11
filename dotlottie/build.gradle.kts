@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.github.LottieFiles"
-version = "0.13.0"
+version = "0.13.1"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
