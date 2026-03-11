@@ -5,12 +5,12 @@ import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PixelFormat
+import android.graphics.PointF
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
+import android.view.Choreographer
+import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.dotlottie.dlplayer.DotLottiePlayer
@@ -20,25 +20,24 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
-import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.OpenUrlPolicy
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
-import com.sun.jna.Pointer
+import com.dotlottie.dlplayer.Pointer
 import androidx.core.graphics.createBitmap
-import com.dotlottie.dlplayer.StateMachineInternalObserver
+import com.dotlottie.dlplayer.DotLottiePlayerEvent
+import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -52,48 +51,124 @@ class DotLottieDrawable(
 ) : Drawable(), Animatable {
 
     private var nativeBuffer: Pointer? = null
+    private var nativeBufferAddress: Long = 0
+    private var bufferBytes: java.nio.ByteBuffer? = null
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
-
-    private val renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private val renderMutex = Mutex()
+    private var stateMachineIsActive = false
+    private var onOpenUrlCallback: ((url: String) -> Unit)? = null
 
     var freeze: Boolean = false
         set(value) {
+            val player = dlPlayer ?: return
             if (value) {
                 dotLottieEventListener.forEach(DotLottieEventListener::onFreeze)
-                mHandler.removeCallbacks(mNextFrameRunnable)
-                dlPlayer!!.pause()
+                choreographer.removeFrameCallback(frameCallback)
+                player.pause()
             } else {
                 dotLottieEventListener.forEach(DotLottieEventListener::onUnFreeze)
-                dlPlayer!!.play()
-                invalidateSelf()
+                player.play()
+                scheduleFrame()
             }
             field = value
         }
 
     var duration: Float = 0.0f
-        get() = dlPlayer!!.duration()
+        get() = dlPlayer?.duration() ?: 0f
 
     var loopCount: UInt = 0u
-        get() = dlPlayer!!.loopCount()
+        get() = dlPlayer?.loopCount() ?: 0u
 
     val segment: Pair<Float, Float>?
         get() {
-            if (dlPlayer!!.config().segment.isEmpty()) return null
-            return Pair(dlPlayer!!.config().segment[0], dlPlayer!!.config().segment[1])
+            val seg = dlPlayer?.config()?.segment ?: return null
+            if (seg.isEmpty()) return null
+            return Pair(seg[0], seg[1])
         }
 
-    // TODO: Implement repeatCount
+    private val choreographer by lazy(LazyThreadSafetyMode.NONE) { Choreographer.getInstance() }
+    private val renderScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val renderMutex = Mutex()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val singleThreadDispatcher = Dispatchers.Default.limitedParallelism(1)
+    private var forceUpdateBitmap = false
+
+    private val frameCallback = object : Choreographer.FrameCallback {
+        override fun doFrame(frameTimeNanos: Long) {
+            val player = dlPlayer ?: return
+            val bytes = bufferBytes ?: return
+            val bmp = bitmapBuffer ?: return
+
+            // Non-blocking: skip if previous render still in progress
+            if (!renderMutex.tryLock()) {
+                if (player.isPlaying() || stateMachineIsActive) {
+                    choreographer.postFrameCallback(this)
+                }
+                return
+            }
+
+            // stateMachineTick() calls player tick() internally (player is borrowed by state machine)
+            val ticked = if (stateMachineIsActive) {
+                player.stateMachineTick()
+            } else {
+                player.tick()
+            }
+
+            // Poll and dispatch events on main thread
+            pollAndDispatchPlayerEvents()
+            pollAndDispatchStateMachineEvents()
+
+            var lockHandedToCoroutine = false
+
+            if ((ticked || forceUpdateBitmap) && !bmp.isRecycled) {
+                val shouldResetFlag = !ticked && forceUpdateBitmap
+
+                // Capture references for background thread
+                val capturedBytes = bytes
+                val capturedBmp = bmp
+
+                // Hand lock ownership to the coroutine — it will unlock in its finally block.
+                // This prevents a resize from freeing the buffer between unlock and coroutine start.
+                lockHandedToCoroutine = true
+                renderScope.launch(singleThreadDispatcher) {
+                    try {
+                        if (!capturedBmp.isRecycled) {
+                            capturedBytes.rewind()
+                            capturedBmp.copyPixelsFromBuffer(capturedBytes)
+
+                            withContext(Dispatchers.Main) {
+                                if (shouldResetFlag) {
+                                    forceUpdateBitmap = false
+                                }
+                                invalidateSelf()
+                            }
+                        }
+                    } finally {
+                        renderMutex.unlock()
+                    }
+                }
+            }
+
+            if (player.isPlaying() || stateMachineIsActive) {
+                choreographer.postFrameCallback(this)
+            }
+
+            if (!lockHandedToCoroutine) {
+                renderMutex.unlock()
+            }
+        }
+    }
 
     /**
-     * Animation handler used to schedule updates for this animation.
+     * Schedule a frame callback to tick + render on the next vsync.
+     * @param forceUpdate If true, forces a buffer copy even if tick() reports no new frame.
      */
-    private val mHandler = Handler(Looper.getMainLooper())
-    private val mNextFrameRunnable = Runnable {
-        invalidateSelf()
+    private fun scheduleFrame(forceUpdate: Boolean = false) {
+        if (forceUpdate) forceUpdateBitmap = true
+        choreographer.postFrameCallback(frameCallback)
     }
 
     override fun setAlpha(alpha: Int) {}
@@ -111,46 +186,45 @@ class DotLottieDrawable(
     }
 
     var useFrameInterpolation: Boolean
-        get() = dlPlayer!!.config().useFrameInterpolation
+        get() = dlPlayer?.config()?.useFrameInterpolation ?: false
         set(value) {
             config.useFrameInterpolation = value
-            dlPlayer!!.setConfig(config)
+            dlPlayer?.setConfig(config)
         }
 
     val playMode: Mode
-        get() = dlPlayer!!.config().mode
+        get() = dlPlayer?.config()?.mode ?: Mode.FORWARD
     val totalFrame: Float
-        get() = dlPlayer!!.totalFrames()
-
+        get() = dlPlayer?.totalFrames() ?: 0f
 
     val autoplay: Boolean
-        get() = dlPlayer!!.config().autoplay
+        get() = dlPlayer?.config()?.autoplay ?: false
 
     val currentFrame: Float
-        get() = dlPlayer!!.currentFrame()
+        get() = dlPlayer?.currentFrame() ?: 0f
 
     var loop: Boolean
-        get() = dlPlayer!!.config().loopAnimation
+        get() = dlPlayer?.config()?.loopAnimation ?: false
         set(value) {
             config.loopAnimation = value
-            dlPlayer!!.setConfig(config)
+            dlPlayer?.setConfig(config)
         }
 
     var marker: String
-        get() = dlPlayer!!.config().marker
+        get() = dlPlayer?.config()?.marker ?: ""
         set(value) {
             config.marker = value
-            dlPlayer!!.setConfig(config)
+            dlPlayer?.setConfig(config)
         }
 
     val markers: List<Marker>
-        get() = dlPlayer!!.markers()
+        get() = dlPlayer?.markers() ?: emptyList()
 
     var layout: Layout
-        get() = dlPlayer!!.config().layout
+        get() = dlPlayer?.config()?.layout ?: config.layout
         set(value) {
             config.layout = value
-            dlPlayer!!.setConfig(config)
+            dlPlayer?.setConfig(config)
         }
 
     val activeThemeId: String
@@ -161,96 +235,62 @@ class DotLottieDrawable(
 
     @get:FloatRange(from = 0.0)
     var speed: Float
-        get() = dlPlayer!!.config().speed
+        get() = dlPlayer?.config()?.speed ?: 1f
         set(speed) {
             config.speed = speed
-            dlPlayer!!.setConfig(config)
+            dlPlayer?.setConfig(config)
         }
 
     val isLoaded: Boolean
-        get() = dlPlayer!!.isLoaded()
+        get() = dlPlayer?.isLoaded() ?: false
 
 
-    init {
+    private var initialized = false
+
+    /**
+     * Initialize the native player and load the animation.
+     * MUST be called on the main thread (ThorVG has thread affinity for rendering).
+     */
+    private fun ensureInitialized() {
+        if (initialized) return
+        if (width <= 0 || height <= 0) return
+
         try {
-            initialize()
+            dlPlayer = if (threads != null) {
+                DotLottiePlayer.withThreads(config, threads)
+            } else {
+                DotLottiePlayer(config)
+            }
+            setupBufferAndLoad()
+
+            // Load and start state machine if configured
+            if (config.stateMachineId.isNotEmpty()) {
+                stateMachineLoad(config.stateMachineId)
+                stateMachineStart()
+            }
+
+            initialized = true
+            scheduleFrame(forceUpdate = true)
         } catch (e: Throwable) {
+            // Clean up partially initialized state so retry is possible
+            dlPlayer?.destroy()
+            dlPlayer = null
             dotLottieEventListener.forEach { it.onLoadError(e) }
         }
     }
 
-    private fun subscribe() {
-        val observer = object : Observer {
-            override fun onComplete() {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
-                }, 0)
-            }
+    private fun setupBufferAndLoad() {
+        val player = dlPlayer ?: return
 
-            override fun onFrame(frameNo: Float) {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach { it.onFrame(frameNo) }
-                }, 0)
-            }
+        // 1. Allocate caller-managed buffer and register SW target (required before load)
+        nativeBufferAddress = player.allocateBuffer(width, height)
+        nativeBuffer = Pointer(nativeBufferAddress)
+        player.setSwTarget(nativeBufferAddress, width.toUInt(), height.toUInt())
 
-            override fun onPause() {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach(DotLottieEventListener::onPause)
-                }, 0)
-            }
-
-            override fun onStop() {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach(DotLottieEventListener::onStop)
-                }, 0)
-            }
-
-            override fun onPlay() {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
-                }, 0)
-            }
-
-            override fun onLoad() {
-                // Update buffer pointer when animation loads
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
-                }, 0)
-            }
-
-            override fun onLoop(loopCount: UInt) {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach { it.onLoop(loopCount.toInt()) }
-                }, 0)
-            }
-
-            override fun onRender(frameNo: Float) {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach { it.onRender(frameNo) }
-                }, 0)
-            }
-
-            override fun onLoadError() {
-                mHandler.postDelayed({
-                    dotLottieEventListener.forEach { listener ->
-                        listener.onLoadError()
-                        listener.onLoadError(Throwable("Load error occurred"))
-                    }
-                }, 0)
-            }
-        }
-        dlPlayer?.subscribe(observer)
-    }
-
-    private fun initialize() {
-        dlPlayer = if (threads != null) {
-            DotLottiePlayer.withThreads(config, threads)
-        } else {
-            DotLottiePlayer(config)
-        }
+        // 2. Load animation
         when (animationData) {
             is DotLottieContent.Json -> {
-                dlPlayer!!.loadAnimationData(
+                player.loadAnimationData(
                     animationData.jsonString,
                     width.toUInt(),
                     height.toUInt()
@@ -258,26 +298,31 @@ class DotLottieDrawable(
             }
 
             is DotLottieContent.Binary -> {
-                dlPlayer!!.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
+                player.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
             }
         }
+
         bitmapBuffer = createBitmap(width, height)
-        nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
-        this.subscribe()
-        // Initial Load event
-        if (dlPlayer!!.isLoaded()) {
-            mHandler.postDelayed({
-                dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
-            }, 0)
-        }
+        bufferBytes = nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
     }
 
     fun release() {
+        choreographer.removeFrameCallback(frameCallback)
         renderScope.cancel()
-        dlPlayer!!.destroy()
+        // Wait for any in-flight render to complete before freeing native resources
+        runBlocking {
+            renderMutex.withLock {
+                val player = dlPlayer ?: return@runBlocking
+                if (nativeBufferAddress != 0L) {
+                    player.freeBuffer(nativeBufferAddress)
+                    nativeBufferAddress = 0
+                    nativeBuffer = null
+                }
+                player.destroy()
+                dlPlayer = null
+            }
+        }
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
-        // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
-        // On API 26+ bitmap memory is in native heap and GC handles it safely.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             bitmapBuffer?.recycle()
         }
@@ -288,30 +333,44 @@ class DotLottieDrawable(
         width = w
         height = h
 
-        // Wait for any pending render to complete
-        // Using runBlocking here because resize needs to be synchronous
-        runBlocking {
+        // If not yet initialized, just store dimensions — ensureInitialized() will use them
+        val player = dlPlayer ?: return
+
+        // Coordinate with render loop via mutex
+        renderScope.launch(Dispatchers.Main) {
             renderMutex.withLock {
                 val oldBitmap = bitmapBuffer
                 bitmapBuffer = createBitmap(width, height)
-                dlPlayer!!.resize(width.toUInt(), height.toUInt())
-                nativeBuffer = Pointer(dlPlayer!!.bufferPtr().toLong())
-                // Only recycle on pre-Oreo (API < 26) where bitmap memory is in Java heap.
-                // On API 26+ bitmap memory is in native heap and GC handles it safely.
+
+                // Free old buffer, allocate new, set SW target BEFORE resize
+                if (nativeBufferAddress != 0L) {
+                    player.freeBuffer(nativeBufferAddress)
+                }
+                nativeBufferAddress = player.allocateBuffer(width, height)
+                nativeBuffer = Pointer(nativeBufferAddress)
+                player.setSwTarget(nativeBufferAddress, width.toUInt(), height.toUInt())
+                player.resize(width.toUInt(), height.toUInt())
+                bufferBytes =
+                    nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
+
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                     oldBitmap?.recycle()
                 }
+            }
+
+            if (!player.isPlaying()) {
+                scheduleFrame(forceUpdate = true)
             }
         }
     }
 
     override fun isRunning(): Boolean {
-        return dlPlayer!!.isPlaying()
+        return dlPlayer?.isPlaying() ?: false
     }
 
     fun play() {
-        dlPlayer!!.play()
-        invalidateSelf()
+        dlPlayer?.play()
+        scheduleFrame()
     }
 
     override fun start() {
@@ -320,32 +379,32 @@ class DotLottieDrawable(
 
     fun setPlayMode(playMode: Mode) {
         config.mode = playMode
-        dlPlayer!!.setConfig(config)
+        dlPlayer?.setConfig(config)
     }
 
     override fun stop() {
-        dlPlayer!!.stop()
-        mHandler.removeCallbacks(mNextFrameRunnable)
+        dlPlayer?.stop()
+        choreographer.removeFrameCallback(frameCallback)
         invalidateSelf()
     }
 
     fun isPaused(): Boolean {
-        return dlPlayer!!.isPaused()
+        return dlPlayer?.isPaused() ?: false
     }
 
     fun isStopped(): Boolean {
-        return dlPlayer!!.isStopped()
+        return dlPlayer?.isStopped() ?: true
     }
 
     fun setCurrentFrame(frame: Float) {
-        dlPlayer!!.setFrame(frame)
-        invalidateSelf()
+        dlPlayer?.setFrame(frame)
+        scheduleFrame(forceUpdate = true)
     }
 
     fun setSegment(first: Float, second: Float) {
         config.segment = listOf(first, second)
-        dlPlayer!!.setConfig(config)
-        invalidateSelf()
+        dlPlayer?.setConfig(config)
+        scheduleFrame(forceUpdate = true)
     }
 
     fun loadAnimation(
@@ -353,13 +412,17 @@ class DotLottieDrawable(
     ) {
         val result = dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
         if (result == true) {
-            invalidateSelf()
+            scheduleFrame(forceUpdate = true)
         }
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         dlPlayer?.setTheme(themeId)
-        invalidateSelf()
+        scheduleFrame(forceUpdate = true)
     }
 
     fun setThemeData(themeData: String) {
@@ -368,12 +431,66 @@ class DotLottieDrawable(
 
     fun resetTheme() {
         dlPlayer?.resetTheme()
-        invalidateSelf()
+        scheduleFrame(forceUpdate = true)
     }
 
     fun setSlots(slots: String) {
         dlPlayer?.setSlots(slots)
-        invalidateSelf()
+        scheduleFrame(forceUpdate = true)
+    }
+
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        val result = dlPlayer?.setColorSlot(slotId, color) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setScalarSlot(slotId: String, value: Float): Boolean {
+        val result = dlPlayer?.setScalarSlot(slotId, value) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setTextSlot(slotId: String, text: String): Boolean {
+        val result = dlPlayer?.setTextSlot(slotId, text) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        val result = dlPlayer?.setVectorSlot(slotId, vector) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        val result = dlPlayer?.setPositionSlot(slotId, position) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        val result = dlPlayer?.setImageSlotPath(slotId, path) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        val result = dlPlayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun clearSlots(): Boolean {
+        val result = dlPlayer?.clearSlots() ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun clearSlot(slotId: String): Boolean {
+        val result = dlPlayer?.clearSlot(slotId) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
     }
 
     fun manifest(): Manifest? {
@@ -395,8 +512,8 @@ class DotLottieDrawable(
     }
 
     fun pause() {
-        dlPlayer!!.pause()
-        mHandler.removeCallbacks(mNextFrameRunnable)
+        dlPlayer?.pause()
+        choreographer.removeFrameCallback(frameCallback)
     }
 
     fun stateMachineStart(
@@ -405,114 +522,33 @@ class DotLottieDrawable(
     ): Boolean {
         val result = dlPlayer?.stateMachineStart(openUrl) ?: false
 
-        // Start render loop
         if (result) {
+            stateMachineIsActive = true
+            onOpenUrlCallback = onOpenUrl
             if (dlPlayer != null) {
                 stateMachineGestureListeners =
                     dlPlayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
                         .toMutableList()
             }
 
-            dlPlayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onCustomEvent(message: String) {
-                    stateMachineListeners.forEach { it.onCustomEvent(message) }
-                }
-
-                override fun onError(message: String) {
-                    stateMachineListeners.forEach { it.onError(message) }
-                }
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onStart() {
-                    stateMachineListeners.forEach { it.onStart() }
-                }
-
-                override fun onStateEntered(enteringState: String) {
-                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-                }
-
-                override fun onStateExit(leavingState: String) {
-                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-                }
-
-                override fun onStop() {
-                    stateMachineListeners.forEach { it.onStop() }
-                }
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onStringInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onTransition(previousState: String, newState: String) {
-                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-                }
-
-                override fun onInputFired(inputName: String) {
-                    stateMachineListeners.forEach { it.onInputFired(inputName) }
-                }
-            })
-
-            // For internal observer
-            dlPlayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
-                override fun onMessage(message: String) {
-                    if (message.startsWith("OpenUrl: ")) {
-                        val url = message.substringAfter("OpenUrl: ")
-                        onOpenUrl?.invoke(url)
-                    }
-                }
-            })
-            invalidateSelf()
+            scheduleFrame()
         }
         return result
     }
 
     fun stateMachineStop(): Boolean {
+        stateMachineIsActive = false
+        onOpenUrlCallback = null
         val result = dlPlayer?.stateMachineStop() ?: false
+        choreographer.removeFrameCallback(frameCallback)
         invalidateSelf()
-        return result;
+        return result
     }
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
         val result = dlPlayer?.stateMachineLoad(stateMachineId) ?: false
         if (result) {
-            invalidateSelf()
+            scheduleFrame()
         }
         return result
     }
@@ -520,16 +556,12 @@ class DotLottieDrawable(
     fun stateMachineLoadData(data: String): Boolean {
         val result = dlPlayer?.stateMachineLoadData(data) ?: false
         if (result) {
-            invalidateSelf()
+            scheduleFrame()
         }
         return result
     }
 
-    /**
-     * Internal function to notify the state machine of gesture input.
-     */
     fun stateMachinePostEvent(event: Event, force: Boolean = false) {
-        // Extract the event name before the parenthesis
         val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
 
         if (force) {
@@ -571,10 +603,6 @@ class DotLottieDrawable(
         return dlPlayer?.stateMachineGetBooleanInput(key)
     }
 
-    fun stateMachineGetInputs(): List<String>? {
-        return dlPlayer?.stateMachineGetInputs()
-    }
-
     fun stateMachineCurrentState(): String? {
         return dlPlayer?.stateMachineCurrentState()
     }
@@ -584,63 +612,148 @@ class DotLottieDrawable(
     }
 
     override fun draw(canvas: Canvas) {
-        if (bitmapBuffer == null || dlPlayer == null) return
-
-        // Skip if previous render is still in progress (non-blocking check)
-        if (!renderMutex.tryLock()) {
-            // Still draw the current bitmap
-            bitmapBuffer?.let { bmp ->
-                if (!bmp.isRecycled) {
-                    canvas.drawBitmap(bmp, 0f, 0f, Paint())
-                }
-            }
-            if (dlPlayer!!.isPlaying()) {
-                mHandler.postDelayed(mNextFrameRunnable, 0)
-            }
-            return
-        }
-        renderMutex.unlock()
-
-        val ticked = dlPlayer!!.tick()
-
-        if (ticked) {
-            val bufferBytes =
-                nativeBuffer!!.getByteBuffer(0, dlPlayer!!.bufferLen().toLong() * BYTES_PER_PIXEL)
-            val targetBitmap = bitmapBuffer
-
-            renderScope.launch {
-                renderMutex.withLock {
-                    try {
-                        ensureActive()
-
-                        targetBitmap?.let { bmp ->
-                            if (!bmp.isRecycled) {
-                                withContext(Dispatchers.Default) {
-                                    bufferBytes.rewind()
-                                    bmp.copyPixelsFromBuffer(bufferBytes)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error during background render", e)
-                    } finally {
-                        // Invalidate on main thread
-                        withContext(Dispatchers.Main) {
-                            invalidateSelf()
-                        }
-                    }
-                }
-            }
-        }
+        // Lazy init on main thread (ThorVG requires thread affinity)
+        ensureInitialized()
 
         bitmapBuffer?.let { bmp ->
             if (!bmp.isRecycled) {
                 canvas.drawBitmap(bmp, 0f, 0f, Paint())
             }
         }
+    }
 
-        if (dlPlayer!!.isPlaying()) {
-            mHandler.postDelayed(mNextFrameRunnable, 0)
+    private fun pollAndDispatchPlayerEvents() {
+        val player = dlPlayer ?: return
+        var event = player.pollEvent()
+        while (event != null) {
+            val e = event
+            when (e) {
+                is DotLottiePlayerEvent.Load -> {
+                    dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
+                }
+
+                is DotLottiePlayerEvent.LoadError -> {
+                    dotLottieEventListener.forEach { listener ->
+                        listener.onLoadError()
+                        listener.onLoadError(Throwable("Load error occurred"))
+                    }
+                }
+
+                is DotLottiePlayerEvent.Play -> {
+                    dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
+                }
+
+                is DotLottiePlayerEvent.Pause -> {
+                    dotLottieEventListener.forEach(DotLottieEventListener::onPause)
+                }
+
+                is DotLottiePlayerEvent.Stop -> {
+                    dotLottieEventListener.forEach(DotLottieEventListener::onStop)
+                }
+
+                is DotLottiePlayerEvent.Frame -> {
+                    dotLottieEventListener.forEach { it.onFrame(e.frameNo) }
+                }
+
+                is DotLottiePlayerEvent.Render -> {
+                    dotLottieEventListener.forEach { it.onRender(e.frameNo) }
+                }
+
+                is DotLottiePlayerEvent.Loop -> {
+                    dotLottieEventListener.forEach { it.onLoop(e.loopCount.toInt()) }
+                }
+
+                is DotLottiePlayerEvent.Complete -> {
+                    dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
+                }
+            }
+            event = player.pollEvent()
+        }
+    }
+
+    private fun pollAndDispatchStateMachineEvents() {
+        val player = dlPlayer ?: return
+        var smEvent = player.stateMachinePollEvent()
+        while (smEvent != null) {
+            val e = smEvent
+            when (e) {
+                is StateMachinePlayerEvent.Start -> {
+                    stateMachineListeners.forEach { it.onStart() }
+                }
+
+                is StateMachinePlayerEvent.Stop -> {
+                    stateMachineListeners.forEach { it.onStop() }
+                }
+
+                is StateMachinePlayerEvent.Transition -> {
+                    stateMachineListeners.forEach { it.onTransition(e.previousState, e.newState) }
+                }
+
+                is StateMachinePlayerEvent.StateEntered -> {
+                    stateMachineListeners.forEach { it.onStateEntered(e.state) }
+                }
+
+                is StateMachinePlayerEvent.StateExit -> {
+                    stateMachineListeners.forEach { it.onStateExit(e.state) }
+                }
+
+                is StateMachinePlayerEvent.CustomEvent -> {
+                    stateMachineListeners.forEach { it.onCustomEvent(e.message) }
+                }
+
+                is StateMachinePlayerEvent.Error -> {
+                    stateMachineListeners.forEach { it.onError(e.message) }
+                }
+
+                is StateMachinePlayerEvent.StringInputChange -> {
+                    stateMachineListeners.forEach {
+                        it.onStringInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
+                }
+
+                is StateMachinePlayerEvent.NumericInputChange -> {
+                    stateMachineListeners.forEach {
+                        it.onNumericInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
+                }
+
+                is StateMachinePlayerEvent.BooleanInputChange -> {
+                    stateMachineListeners.forEach {
+                        it.onBooleanInputValueChange(
+                            e.name,
+                            e.oldValue,
+                            e.newValue
+                        )
+                    }
+                }
+
+                is StateMachinePlayerEvent.InputFired -> {
+                    stateMachineListeners.forEach { it.onInputFired(e.name) }
+                }
+            }
+            smEvent = player.stateMachinePollEvent()
+        }
+        // Poll internal events
+        var internalEvent = player.stateMachinePollInternalEvent()
+        while (internalEvent != null) {
+            if (internalEvent.startsWith("OpenUrl: ")) {
+                val payload = internalEvent.substringAfter("OpenUrl: ")
+                val url = if (payload.contains(" | Target: ")) {
+                    payload.substringBefore(" | Target: ")
+                } else {
+                    payload
+                }
+                onOpenUrlCallback?.invoke(url)
+            }
+            internalEvent = player.stateMachinePollInternalEvent()
         }
     }
 
@@ -648,9 +761,6 @@ class DotLottieDrawable(
 
         private const val TAG = "DotLottieDrawable"
 
-        /**
-         * Internal constants
-         */
         private const val LOTTIE_INFO_FRAME_COUNT = 0
         private const val LOTTIE_INFO_DURATION = 1
         private const val LOTTIE_INFO_COUNT = 2

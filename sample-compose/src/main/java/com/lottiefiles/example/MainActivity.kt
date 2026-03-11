@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,14 +59,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-//                    DefaultAnimationDemo()
+                    // DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
 //                    ThemeDataExample()
 //                    LayoutExample()
-                    ThreadCountExample()
+//                    ThreadCountExample()
 //                    StateMachineExample()
+                   StateMachine()
                 }
             }
         }
@@ -138,8 +140,8 @@ fun DefaultAnimationDemo() {
                             eventListeners = listOf(events),
 //                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
 //                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
-                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
-//                                        source = DotLottieSource.Asset("swinging.json"),
+//                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
+                                        source = DotLottieSource.Asset("swinging.json"),
                             modifier = Modifier
                                 .background(Color.LightGray)
                                 .size(200.dp),
@@ -609,5 +611,46 @@ fun ThreadCountExample() {
                 .size(300.dp)
                 .border(BorderStroke(1.dp, Color.Gray)),
         )
+    }
+}
+
+@Composable
+fun StateMachine() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        repeat(1) { index ->
+            DotLottieAnimation(
+               source = DotLottieSource.Url("https://asset-cdn.lottiefiles.dev/0d541c4f-dfd4-4415-876a-a59e558b605c/YKooNpfjkG.lottie"),
+                // stateMachineId = "StateMachine1",
+                // source = DotLottieSource.Asset("check.json"),
+                autoplay = true,
+                loop = true,
+                eventListeners = listOf(object : DotLottieEventListener {
+                    override fun onLoadError(error: Throwable) {
+                        Log.i("DotLottie", "LoadError: $error")
+                    }
+                    override fun onFrame(frame: Float) {
+                        Log.i("DotLottie", "Frame: $frame")
+                    }
+                    override fun onLoadError() {
+                        Log.i("DotLottie", "Error")
+                    }
+                    override fun onLoad() {
+                        Log.i("DotLottie", "Loaded")
+                    }
+                }),
+                layout = LayoutUtil.createLayout(Fit.FIT_WIDTH, LayoutUtil.Alignment.Center),
+                modifier = Modifier
+                    .background(Color.LightGray)
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(bottom = 8.dp)
+            )
+        }
     }
 }

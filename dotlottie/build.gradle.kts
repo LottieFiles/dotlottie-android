@@ -5,21 +5,48 @@ plugins {
 }
 
 group = "com.github.LottieFiles"
-version = "0.12.7"
+version = "0.13.0"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
     compileSdk = 35
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         minSdk = 21
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        // CMake configuration
+        externalNativeBuild {
+            cmake {
+                cppFlags += "-std=c++17"
+                arguments += listOf("-DANDROID_STL=c++_shared")
+            }
+        }
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+        }
+    }
+
+    // CMake build configuration
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs("src/main/jniLibs")
+        }
     }
 
     packaging {
         jniLibs {
-            pickFirsts += listOf("**/libjnidispatch.so")
+            pickFirsts += listOf("**/libc++_shared.so")
         }
     }
 
@@ -30,6 +57,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            packaging {
+                jniLibs {
+                    // Keep debug symbols
+                    keepDebugSymbols += listOf("**/*.so")
+                }
+            }
         }
     }
     compileOptions {
@@ -64,7 +99,6 @@ publishing {
 }
 
 dependencies {
-    implementation("net.java.dev.jna:jna:5.17.0@aar")
     implementation(libs.core.ktx)
     // JitPack Compose
     implementation(libs.androidx.ui) {

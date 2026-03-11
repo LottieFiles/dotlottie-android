@@ -1,7 +1,7 @@
 package com.lottiefiles.dotlottie.core.compose.runtime
 
-import android.os.Handler
-import android.os.Looper
+import android.graphics.PointF
+import androidx.annotation.ColorInt
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
@@ -10,9 +10,7 @@ import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
-import com.dotlottie.dlplayer.Observer
 import com.dotlottie.dlplayer.OpenUrlPolicy
-import com.dotlottie.dlplayer.StateMachineObserver
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -23,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import com.dotlottie.dlplayer.StateMachineInternalObserver
 
 enum class DotLottiePlayerState {
     PLAYING,
@@ -37,9 +34,7 @@ enum class DotLottiePlayerState {
 
 class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
-    private var observer: Observer? = null
     private var config: Config = createDefaultConfig()
-    private val handler = Handler(Looper.getMainLooper())
 
     private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
     val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
@@ -57,6 +52,8 @@ class DotLottieController {
     var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
         private set
     var eventListeners = mutableListOf<DotLottieEventListener>()
+        private set
+    var onOpenUrlCallback: ((url: String) -> Unit)? = null
         private set
 
     val isPlaying: Boolean
@@ -125,91 +122,31 @@ class DotLottieController {
         _bufferNeedsUpdate.value = false
     }
 
+    @InternalDotLottieApi
+    fun updateState(state: DotLottiePlayerState) {
+        _currentState.update { state }
+    }
+
     // Signal to trigger bitmap update after setFrame() when not playing
     private val _frameUpdateRequested = MutableStateFlow(0L)
     val frameUpdateRequested: StateFlow<Long> = _frameUpdateRequested.asStateFlow()
 
     fun play() {
         dlplayer?.play()
+        _currentState.update { DotLottiePlayerState.PLAYING }
         shouldPlayOnInit = true
     }
 
     fun pause() {
         dlplayer?.pause()
+        _currentState.update { DotLottiePlayerState.PAUSED }
         shouldPlayOnInit = false
     }
 
     fun stop() {
         dlplayer?.stop()
+        _currentState.update { DotLottiePlayerState.STOPPED }
         shouldPlayOnInit = false
-    }
-
-    private fun subscribe() {
-        observer = object : Observer {
-            override fun onComplete() {
-                _currentState.update { DotLottiePlayerState.COMPLETED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onComplete)
-                }, 0)
-            }
-
-            override fun onFrame(frameNo: Float) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onFrame(frameNo) }
-                }, 0)
-            }
-
-            override fun onPause() {
-                _currentState.update { DotLottiePlayerState.PAUSED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onPause)
-                }, 0)
-            }
-
-            override fun onStop() {
-                _currentState.update { DotLottiePlayerState.STOPPED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onStop)
-                }, 0)
-            }
-
-            override fun onPlay() {
-                _currentState.update { DotLottiePlayerState.PLAYING }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onPlay)
-                }, 0)
-            }
-
-            override fun onLoad() {
-                _currentState.update { DotLottiePlayerState.LOADED }
-                handler.postDelayed({
-                    eventListeners.forEach(DotLottieEventListener::onLoad)
-                }, 0)
-            }
-
-            override fun onLoop(loopCount: UInt) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onLoop(loopCount.toInt()) }
-                }, 0)
-            }
-
-            override fun onRender(frameNo: Float) {
-                handler.postDelayed({
-                    eventListeners.forEach { it.onRender(frameNo) }
-                }, 0)
-            }
-
-            override fun onLoadError() {
-                _currentState.update { DotLottiePlayerState.ERROR }
-                handler.postDelayed({
-                    eventListeners.forEach { listener ->
-                        listener.onLoadError()
-                        listener.onLoadError(Throwable("Load error occurred"))
-                    }
-                }, 0)
-            }
-        }
-        dlplayer?.subscribe(observer!!)
     }
 
     fun stateMachineStart(
@@ -219,6 +156,9 @@ class DotLottieController {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
             stateMachineIsActive = true
+            onOpenUrlCallback = onOpenUrl
+            // Handles states that are in paused state
+            _frameUpdateRequested.value++
 
             if (dlplayer != null) {
                 stateMachineGestureListeners =
@@ -226,98 +166,13 @@ class DotLottieController {
                         .toMutableList()
             }
 
-            // For the users' observers
-            dlplayer?.stateMachineSubscribe(object : StateMachineObserver {
-                override fun onBooleanInputValueChange(
-                    inputName: String,
-                    oldValue: Boolean,
-                    newValue: Boolean
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onCustomEvent(message: String) {
-                    stateMachineListeners.forEach { it.onCustomEvent(message) }
-                }
-
-                override fun onError(message: String) {
-                    stateMachineListeners.forEach { it.onError(message) }
-                }
-
-                override fun onNumericInputValueChange(
-                    inputName: String,
-                    oldValue: Float,
-                    newValue: Float
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onStart() {
-                    stateMachineListeners.forEach { it.onStart() }
-                }
-
-                override fun onStateEntered(enteringState: String) {
-                    stateMachineListeners.forEach { it.onStateEntered(enteringState) }
-                }
-
-                override fun onStateExit(leavingState: String) {
-                    stateMachineListeners.forEach { it.onStateExit(leavingState) }
-                }
-
-                override fun onStop() {
-                    stateMachineListeners.forEach { it.onStop() }
-                }
-
-                override fun onStringInputValueChange(
-                    inputName: String,
-                    oldValue: String,
-                    newValue: String
-                ) {
-                    stateMachineListeners.forEach {
-                        it.onStringInputValueChange(
-                            inputName,
-                            oldValue,
-                            newValue
-                        )
-                    }
-                }
-
-                override fun onTransition(previousState: String, newState: String) {
-                    stateMachineListeners.forEach { it.onTransition(previousState, newState) }
-                }
-
-                override fun onInputFired(inputName: String) {
-                    stateMachineListeners.forEach { it.onInputFired(inputName) }
-                }
-            })
-
-            // For internal observer
-            dlplayer?.stateMachineInternalSubscribe(object : StateMachineInternalObserver {
-                override fun onMessage(message: String) {
-                    if (message.startsWith("OpenUrl: ")) {
-                        val url = message.substringAfter("OpenUrl: ")
-                        onOpenUrl?.invoke(url)
-                    }
-                }
-            })
         }
         return result
     }
 
     fun stateMachineStop(): Boolean {
         stateMachineIsActive = false
+        onOpenUrlCallback = null
         return dlplayer?.stateMachineStop() ?: false
     }
 
@@ -371,10 +226,6 @@ class DotLottieController {
         return dlplayer?.stateMachineGetBooleanInput(key)
     }
 
-    fun stateMachineGetInputs(): List<String>? {
-        return dlplayer?.stateMachineGetInputs()
-    }
-
     fun stateMachineCurrentState(): String? {
         return dlplayer?.stateMachineCurrentState()
     }
@@ -392,7 +243,6 @@ class DotLottieController {
         dlplayer?.destroy()
         dlplayer = player
         this.config = config
-        subscribe()
     }
 
     @InternalDotLottieApi
@@ -439,12 +289,14 @@ class DotLottieController {
 
     fun freeze() {
         dlplayer?.pause()
+        _currentState.update { DotLottiePlayerState.PAUSED }
         shouldPlayOnInit = false
         eventListeners.forEach(DotLottieEventListener::onFreeze)
     }
 
     fun unFreeze() {
         dlplayer?.play()
+        _currentState.update { DotLottiePlayerState.PLAYING }
         shouldPlayOnInit = true
         eventListeners.forEach(DotLottieEventListener::onUnFreeze)
     }
@@ -485,6 +337,10 @@ class DotLottieController {
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         dlplayer?.setTheme(themeId)
     }
 
@@ -498,6 +354,42 @@ class DotLottieController {
 
     fun setSlots(slots: String) {
         dlplayer?.setSlots(slots)
+    }
+
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        return dlplayer?.setColorSlot(slotId, color) ?: false
+    }
+
+    fun setScalarSlot(slotId: String, value: Float): Boolean {
+        return dlplayer?.setScalarSlot(slotId, value) ?: false
+    }
+
+    fun setTextSlot(slotId: String, text: String): Boolean {
+        return dlplayer?.setTextSlot(slotId, text) ?: false
+    }
+
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        return dlplayer?.setVectorSlot(slotId, vector) ?: false
+    }
+
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        return dlplayer?.setPositionSlot(slotId, position) ?: false
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        return dlplayer?.setImageSlotPath(slotId, path) ?: false
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        return dlplayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    }
+
+    fun clearSlots(): Boolean {
+        return dlplayer?.clearSlots() ?: false
+    }
+
+    fun clearSlot(slotId: String): Boolean {
+        return dlplayer?.clearSlot(slotId) ?: false
     }
 
     fun setPlayMode(mode: Mode) {

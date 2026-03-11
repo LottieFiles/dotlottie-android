@@ -1,0 +1,2 @@
+dlplayer-version=0.1.54-a479c4e
+api-type=c-api

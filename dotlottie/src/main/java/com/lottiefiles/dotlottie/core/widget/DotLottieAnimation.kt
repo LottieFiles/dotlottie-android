@@ -3,11 +3,13 @@ package com.lottiefiles.dotlottie.core.widget
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.PointF
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewTreeObserver
+import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Fit
@@ -198,6 +200,10 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun setTheme(themeId: String) {
+        if (themeId.isEmpty()) {
+            resetTheme()
+            return
+        }
         mLottieDrawable?.setTheme(themeId)
     }
 
@@ -211,6 +217,42 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setSlots(slots: String) {
         mLottieDrawable?.setSlots(slots)
+    }
+
+    fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
+        return mLottieDrawable?.setColorSlot(slotId, color) ?: false
+    }
+
+    fun setScalarSlot(slotId: String, value: Float): Boolean {
+        return mLottieDrawable?.setScalarSlot(slotId, value) ?: false
+    }
+
+    fun setTextSlot(slotId: String, text: String): Boolean {
+        return mLottieDrawable?.setTextSlot(slotId, text) ?: false
+    }
+
+    fun setVectorSlot(slotId: String, vector: PointF): Boolean {
+        return mLottieDrawable?.setVectorSlot(slotId, vector) ?: false
+    }
+
+    fun setPositionSlot(slotId: String, position: PointF): Boolean {
+        return mLottieDrawable?.setPositionSlot(slotId, position) ?: false
+    }
+
+    fun setImageSlotPath(slotId: String, path: String): Boolean {
+        return mLottieDrawable?.setImageSlotPath(slotId, path) ?: false
+    }
+
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
+        return mLottieDrawable?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    }
+
+    fun clearSlots(): Boolean {
+        return mLottieDrawable?.clearSlots() ?: false
+    }
+
+    fun clearSlot(slotId: String): Boolean {
+        return mLottieDrawable?.clearSlot(slotId) ?: false
     }
 
     fun play() {
@@ -345,11 +387,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
                 mLottieDrawable?.callback = this@DotLottieAnimation
 
-                if (config.stateMachineId.isNotEmpty()) {
-                    mLottieDrawable?.stateMachineLoad(config.stateMachineId)
-                    mLottieDrawable?.stateMachineStart()
-                }
-
                 withContext(Dispatchers.Main) {
                     requestLayout()
                     invalidate()
@@ -403,13 +440,6 @@ class DotLottieAnimation @JvmOverloads constructor(
                         threads = attributes.threads
                     )
                     mLottieDrawable?.callback = this@DotLottieAnimation
-
-                    attributes.stateMachineId?.let {
-                        if (it.isNotEmpty()) {
-                            mLottieDrawable?.stateMachineLoad(attributes.stateMachineId!!)
-                            mLottieDrawable?.stateMachineStart()
-                        }
-                    }
 
                     withContext(Dispatchers.Main) {
                         requestLayout()
@@ -603,10 +633,6 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun stateMachineGetBooleanInput(key: String): Boolean? {
         return mLottieDrawable?.stateMachineGetBooleanInput(key)
-    }
-
-    fun stateMachineGetInputs(): List<String>? {
-        return mLottieDrawable?.stateMachineGetInputs()
     }
 
     fun stateMachineFireEvent(event: String) {
