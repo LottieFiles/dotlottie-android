@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 import java.nio.ByteBuffer
 import kotlin.math.pow
 import com.dotlottie.dlplayer.Config as DLConfig
@@ -355,36 +356,39 @@ fun DotLottieAnimation(
         }
     }
 
-    fun init(animationData: DotLottieContent, layoutSize: Size) {
+    suspend fun init(animationData: DotLottieContent, layoutSize: Size) {
         runCatching {
             val height = layoutSize.height.toUInt()
             val width = layoutSize.width.toUInt()
             val isLoaded = dlPlayer.isLoaded()
             rController.resize(height, width)
 
-            // Allocate caller-managed buffer and register SW target
-            if (nativeBufferAddress != 0L) {
-                dlPlayer.freeBuffer(nativeBufferAddress)
-            }
-            nativeBufferAddress = dlPlayer.allocateBuffer(width.toInt(), height.toInt())
-            nativeBuffer = Pointer(nativeBufferAddress)
-            dlPlayer.setSwTarget(nativeBufferAddress, width, height)
+            // Coordinate with render loop to prevent use-after-free during buffer realloc
+            renderMutex.withLock {
+                // Allocate caller-managed buffer and register SW target
+                if (nativeBufferAddress != 0L) {
+                    dlPlayer.freeBuffer(nativeBufferAddress)
+                }
+                nativeBufferAddress = dlPlayer.allocateBuffer(width.toInt(), height.toInt())
+                nativeBuffer = Pointer(nativeBufferAddress)
+                dlPlayer.setSwTarget(nativeBufferAddress, width, height)
 
-            when (animationData) {
-                is DotLottieContent.Json -> {
-                    dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                when (animationData) {
+                    is DotLottieContent.Json -> {
+                        dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                    }
+
+                    is DotLottieContent.Binary -> {
+                        dlPlayer.loadDotlottieData(animationData.data, width, height)
+                    }
                 }
 
-                is DotLottieContent.Binary -> {
-                    dlPlayer.loadDotlottieData(animationData.data, width, height)
-                }
+                // Set local buffer
+                bufferBytes =
+                    nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
+                bitmap = createBitmap(width.toInt(), height.toInt())
+                imageBitmap = bitmap!!.asImageBitmap()
             }
-
-            // Set local buffer
-            bufferBytes =
-                nativeBuffer!!.getByteBuffer(0, dlPlayer.bufferLen().toLong() * BYTES_PER_PIXEL)
-            bitmap = createBitmap(width.toInt(), height.toInt())
-            imageBitmap = bitmap!!.asImageBitmap()
 
             if (!isLoaded) {
                 rController.init()
@@ -509,12 +513,16 @@ fun DotLottieAnimation(
             frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
             renderScope.cancel()
-            // Free native buffer before destroying player
-            if (nativeBufferAddress != 0L) {
-                dlPlayer.freeBuffer(nativeBufferAddress)
-                nativeBufferAddress = 0
+            // Wait for any in-flight render to complete before freeing native resources
+            runBlocking {
+                renderMutex.withLock {
+                    if (nativeBufferAddress != 0L) {
+                        dlPlayer.freeBuffer(nativeBufferAddress)
+                        nativeBufferAddress = 0
+                    }
+                    dlPlayer.destroy()
+                }
             }
-            dlPlayer.destroy()
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 bitmap?.recycle()
             }

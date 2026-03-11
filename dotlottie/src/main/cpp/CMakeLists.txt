@@ -24,7 +24,8 @@ add_library(
 target_link_options(
     dlplayer
     PRIVATE
-    -Wl,--hash-style=sysv
+    -Wl,--hash-style=both
+    -Wl,-z,max-page-size=16384
 )
 
 # Link dependencies

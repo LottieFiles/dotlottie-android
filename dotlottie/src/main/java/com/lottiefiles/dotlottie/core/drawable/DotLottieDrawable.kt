@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runBlocking
 
 private const val BYTES_PER_PIXEL = 4
 
@@ -253,7 +254,6 @@ class DotLottieDrawable(
     private fun ensureInitialized() {
         if (initialized) return
         if (width <= 0 || height <= 0) return
-        initialized = true
 
         try {
             dlPlayer = if (threads != null) {
@@ -269,8 +269,12 @@ class DotLottieDrawable(
                 stateMachineStart()
             }
 
+            initialized = true
             scheduleFrame(forceUpdate = true)
         } catch (e: Throwable) {
+            // Clean up partially initialized state so retry is possible
+            dlPlayer?.destroy()
+            dlPlayer = null
             dotLottieEventListener.forEach { it.onLoadError(e) }
         }
     }
@@ -305,14 +309,19 @@ class DotLottieDrawable(
     fun release() {
         choreographer.removeFrameCallback(frameCallback)
         renderScope.cancel()
-        val player = dlPlayer ?: return
-        if (nativeBufferAddress != 0L) {
-            player.freeBuffer(nativeBufferAddress)
-            nativeBufferAddress = 0
-            nativeBuffer = null
+        // Wait for any in-flight render to complete before freeing native resources
+        runBlocking {
+            renderMutex.withLock {
+                val player = dlPlayer ?: return@runBlocking
+                if (nativeBufferAddress != 0L) {
+                    player.freeBuffer(nativeBufferAddress)
+                    nativeBufferAddress = 0
+                    nativeBuffer = null
+                }
+                player.destroy()
+                dlPlayer = null
+            }
         }
-        player.destroy()
-        dlPlayer = null
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             bitmapBuffer?.recycle()
