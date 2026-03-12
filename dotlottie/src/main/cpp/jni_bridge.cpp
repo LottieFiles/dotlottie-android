@@ -11,6 +11,9 @@
 // Forward declare all JNI functions
 extern "C" {
 
+// Android context initialization (required for audio support)
+static void nativeInitAndroid(JNIEnv *env, jclass, jobject context);
+
 // Player lifecycle
 static jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads);
 static jint nativeDestroy(JNIEnv *env, jclass, jlong ptr);
@@ -196,6 +199,43 @@ static jstring sizeQueryString(JNIEnv *env, Func func, void *obj) {
   jstring result = env->NewStringUTF(buf);
   free(buf);
   return result;
+}
+
+// ==================== Android Context Initialization ====================
+
+void nativeInitAndroid(JNIEnv *env, jclass, jobject context) {
+#ifdef DOTLOTTIE_AUDIO
+  static bool initialized = false;
+  if (initialized) return;
+
+  JavaVM *vm = nullptr;
+  if (env->GetJavaVM(&vm) != JNI_OK || vm == nullptr) {
+    LOGE("nativeInitAndroid: failed to get JavaVM");
+    return;
+  }
+
+  // Use application context to avoid leaking the Activity
+  jclass ctxCls = env->GetObjectClass(context);
+  jmethodID getAppCtx = env->GetMethodID(ctxCls, "getApplicationContext",
+                                          "()Landroid/content/Context;");
+  env->DeleteLocalRef(ctxCls);
+
+  jobject appCtx = (getAppCtx != nullptr)
+                       ? env->CallObjectMethod(context, getAppCtx)
+                       : nullptr;
+  jobject globalCtx = env->NewGlobalRef(appCtx != nullptr ? appCtx : context);
+  if (appCtx != nullptr) env->DeleteLocalRef(appCtx);
+
+  if (globalCtx == nullptr) {
+    LOGE("nativeInitAndroid: failed to create global ref for context");
+    return;
+  }
+
+  dotlottie_init_android(reinterpret_cast<void *>(vm),
+                          reinterpret_cast<void *>(globalCtx));
+  initialized = true;
+  LOGI("nativeInitAndroid: Android context initialized for audio support");
+#endif // DOTLOTTIE_AUDIO
 }
 
 // ==================== Player Lifecycle ====================
@@ -1197,6 +1237,10 @@ jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
 // ==================== JNI Method Tables ====================
 
 static JNINativeMethod playerMethods[] = {
+    // Android context initialization
+    {"nativeInitAndroid", "(Landroid/content/Context;)V",
+     (void *)nativeInitAndroid},
+
     // Player lifecycle
     {"nativeNewPlayer", "(I)J", (void *)nativeNewPlayer},
     {"nativeDestroy", "(J)I", (void *)nativeDestroy},

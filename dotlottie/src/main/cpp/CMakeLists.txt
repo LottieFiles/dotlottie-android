@@ -28,6 +28,11 @@ target_link_options(
     -Wl,-z,max-page-size=16384
 )
 
+# Propagate audio feature flag to the C++ preprocessor
+if(DOTLOTTIE_AUDIO)
+    target_compile_definitions(dlplayer PRIVATE DOTLOTTIE_AUDIO)
+endif()
+
 # Link dependencies
 target_link_libraries(
     dlplayer

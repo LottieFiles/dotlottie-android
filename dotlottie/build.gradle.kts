@@ -7,6 +7,9 @@ plugins {
 group = "com.github.LottieFiles"
 version = "0.13.0"
 
+// Set dotlottie.audio=true in gradle.properties to enable audio support.
+val audioEnabled = project.findProperty("dotlottie.audio")?.toString()?.toBoolean() ?: false
+
 android {
     namespace = "com.lottiefiles.dotlottie.core"
     compileSdk = 35
@@ -17,11 +20,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
+        buildConfigField("boolean", "DOTLOTTIE_AUDIO", "$audioEnabled")
+
         // CMake configuration
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
-                arguments += listOf("-DANDROID_STL=c++_shared")
+                val cmakeArgs = mutableListOf("-DANDROID_STL=c++_shared")
+                if (audioEnabled) cmakeArgs += "-DDOTLOTTIE_AUDIO=1"
+                arguments += cmakeArgs
             }
         }
 
@@ -76,6 +83,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"

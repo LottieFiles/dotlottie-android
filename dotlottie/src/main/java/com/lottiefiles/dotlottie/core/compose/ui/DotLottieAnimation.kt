@@ -1,5 +1,6 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
+import com.lottiefiles.dotlottie.core.BuildConfig
 import android.graphics.Bitmap
 import android.os.Build
 import android.view.Choreographer
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Event
+import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as JNI
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
@@ -223,6 +225,9 @@ fun DotLottieAnimation(
     loopCount: UInt = 0u,
 ) {
     val context = LocalContext.current
+
+    // Initialize Android context for audio support (idempotent, no-op when audio disabled)
+    if (BuildConfig.DOTLOTTIE_AUDIO) JNI.nativeInitAndroid(context)
 
     val rController = remember { controller ?: DotLottieController() }
 
