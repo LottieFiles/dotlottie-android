@@ -37,9 +37,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.runBlocking
 
 private const val BYTES_PER_PIXEL = 4
+private val drawableCleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 class DotLottieDrawable(
     private val animationData: DotLottieContent,
@@ -309,24 +309,31 @@ class DotLottieDrawable(
     fun release() {
         choreographer.removeFrameCallback(frameCallback)
         renderScope.cancel()
-        // Wait for any in-flight render to complete before freeing native resources
-        runBlocking {
-            renderMutex.withLock {
-                val player = dlPlayer ?: return@runBlocking
-                if (nativeBufferAddress != 0L) {
-                    player.freeBuffer(nativeBufferAddress)
-                    nativeBufferAddress = 0
-                    nativeBuffer = null
+        // Capture references for background cleanup, then null out instance fields
+        val capturedPlayer = dlPlayer
+        val capturedBufferAddress = nativeBufferAddress
+        val capturedBitmap = bitmapBuffer
+        val capturedMutex = renderMutex
+        dlPlayer = null
+        nativeBufferAddress = 0
+        nativeBuffer = null
+        bitmapBuffer = null
+        // Fire listeners synchronously before async cleanup
+        dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
+        // Free native resources on a background thread to avoid blocking the main thread
+        if (capturedPlayer != null) {
+            drawableCleanupScope.launch {
+                capturedMutex.withLock {
+                    if (capturedBufferAddress != 0L) {
+                        capturedPlayer.freeBuffer(capturedBufferAddress)
+                    }
+                    capturedPlayer.destroy()
                 }
-                player.destroy()
-                dlPlayer = null
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    capturedBitmap?.recycle()
+                }
             }
         }
-        dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            bitmapBuffer?.recycle()
-        }
-        bitmapBuffer = null
     }
 
     fun resize(w: Int, h: Int) {

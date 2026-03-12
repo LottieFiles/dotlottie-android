@@ -50,12 +50,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import java.nio.ByteBuffer
 import kotlin.math.pow
 import com.dotlottie.dlplayer.Config as DLConfig
 
 private const val BYTES_PER_PIXEL = 4
+private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 @InternalDotLottieApi
 private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
@@ -513,18 +515,22 @@ fun DotLottieAnimation(
             frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
             renderScope.cancel()
-            // Wait for any in-flight render to complete before freeing native resources
-            runBlocking {
-                renderMutex.withLock {
-                    if (nativeBufferAddress != 0L) {
-                        dlPlayer.freeBuffer(nativeBufferAddress)
-                        nativeBufferAddress = 0
+            // Capture references for background cleanup
+            val capturedPlayer = dlPlayer
+            val capturedBufferAddress = nativeBufferAddress
+            val capturedBitmap = bitmap
+            val capturedMutex = renderMutex
+            // Free native resources on a background thread to avoid blocking the main thread
+            cleanupScope.launch {
+                capturedMutex.withLock {
+                    if (capturedBufferAddress != 0L) {
+                        capturedPlayer.freeBuffer(capturedBufferAddress)
                     }
-                    dlPlayer.destroy()
+                    capturedPlayer.destroy()
                 }
-            }
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                bitmap?.recycle()
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    capturedBitmap?.recycle()
+                }
             }
         }
     }

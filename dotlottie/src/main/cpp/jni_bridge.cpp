@@ -13,6 +13,23 @@ extern "C" {
 
 // Player lifecycle
 static jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads);
+static jlong nativeNewPlayerWithConfig(JNIEnv *env, jclass, jint threads,
+                                       jint mode, jfloat speed, jboolean loop,
+                                       jint loopCount, jboolean autoplay,
+                                       jboolean useFrameInterpolation,
+                                       jint backgroundColor,
+                                       jboolean hasSegment, jfloat segmentStart,
+                                       jfloat segmentEnd, jstring marker,
+                                       jint fit, jfloat alignX, jfloat alignY,
+                                       jstring themeId);
+static jint nativeApplyConfig(JNIEnv *env, jclass, jlong ptr, jint mode,
+                              jfloat speed, jboolean loop, jint loopCount,
+                              jboolean autoplay,
+                              jboolean useFrameInterpolation,
+                              jint backgroundColor, jboolean hasSegment,
+                              jfloat segmentStart, jfloat segmentEnd,
+                              jstring marker, jint fit, jfloat alignX,
+                              jfloat alignY, jstring themeId);
 static jint nativeDestroy(JNIEnv *env, jclass, jlong ptr);
 
 // Loading
@@ -204,6 +221,92 @@ jlong nativeNewPlayer(JNIEnv *env, jclass, jint threads) {
   dotlottieDotLottiePlayer *player =
       dotlottie_new_player(static_cast<uint32_t>(threads));
   return reinterpret_cast<jlong>(player);
+}
+
+// Helper: apply all config properties to a player in a single C++ scope.
+static void applyConfigToPlayer(JNIEnv *env,
+                                dotlottieDotLottiePlayer *player, jint mode,
+                                jfloat speed, jboolean loop, jint loopCount,
+                                jboolean autoplay,
+                                jboolean useFrameInterpolation,
+                                jint backgroundColor, jboolean hasSegment,
+                                jfloat segmentStart, jfloat segmentEnd,
+                                jstring marker, jint fit, jfloat alignX,
+                                jfloat alignY, jstring themeId) {
+  dotlottie_set_mode(player, static_cast<dotlottieMode>(mode));
+  dotlottie_set_speed(player, speed);
+  dotlottie_set_loop(player, loop == JNI_TRUE);
+  dotlottie_set_loop_count(player, static_cast<uint32_t>(loopCount));
+  dotlottie_set_autoplay(player, autoplay == JNI_TRUE);
+  dotlottie_set_use_frame_interpolation(player,
+                                        useFrameInterpolation == JNI_TRUE);
+  dotlottie_set_background_color(player, static_cast<uint32_t>(backgroundColor));
+
+  if (hasSegment == JNI_TRUE) {
+    float segment[2] = {segmentStart, segmentEnd};
+    dotlottie_set_segment(player, &segment);
+  } else {
+    dotlottie_set_segment(player, nullptr);
+  }
+
+  if (marker != nullptr) {
+    const char *cMarker = env->GetStringUTFChars(marker, nullptr);
+    dotlottie_set_marker(player, cMarker);
+    env->ReleaseStringUTFChars(marker, cMarker);
+  } else {
+    dotlottie_set_marker(player, nullptr);
+  }
+
+  dotlottieLayout layout;
+  layout.fit = static_cast<dotlottieFit>(fit);
+  layout.align[0] = alignX;
+  layout.align[1] = alignY;
+  dotlottie_set_layout(player, layout);
+
+  if (themeId != nullptr) {
+    const char *cThemeId = env->GetStringUTFChars(themeId, nullptr);
+    if (strlen(cThemeId) > 0) {
+      dotlottie_set_theme(player, cThemeId);
+    } else {
+      dotlottie_reset_theme(player);
+    }
+    env->ReleaseStringUTFChars(themeId, cThemeId);
+  } else {
+    dotlottie_reset_theme(player);
+  }
+}
+
+jlong nativeNewPlayerWithConfig(JNIEnv *env, jclass, jint threads, jint mode,
+                                jfloat speed, jboolean loop, jint loopCount,
+                                jboolean autoplay,
+                                jboolean useFrameInterpolation,
+                                jint backgroundColor, jboolean hasSegment,
+                                jfloat segmentStart, jfloat segmentEnd,
+                                jstring marker, jint fit, jfloat alignX,
+                                jfloat alignY, jstring themeId) {
+  dotlottieDotLottiePlayer *player =
+      dotlottie_new_player(static_cast<uint32_t>(threads));
+  if (player != nullptr) {
+    applyConfigToPlayer(env, player, mode, speed, loop, loopCount, autoplay,
+                        useFrameInterpolation, backgroundColor, hasSegment,
+                        segmentStart, segmentEnd, marker, fit, alignX, alignY,
+                        themeId);
+  }
+  return reinterpret_cast<jlong>(player);
+}
+
+jint nativeApplyConfig(JNIEnv *env, jclass, jlong ptr, jint mode, jfloat speed,
+                       jboolean loop, jint loopCount, jboolean autoplay,
+                       jboolean useFrameInterpolation, jint backgroundColor,
+                       jboolean hasSegment, jfloat segmentStart,
+                       jfloat segmentEnd, jstring marker, jint fit,
+                       jfloat alignX, jfloat alignY, jstring themeId) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(ptr);
+  applyConfigToPlayer(env, player, mode, speed, loop, loopCount, autoplay,
+                      useFrameInterpolation, backgroundColor, hasSegment,
+                      segmentStart, segmentEnd, marker, fit, alignX, alignY,
+                      themeId);
+  return 0;
 }
 
 jint nativeDestroy(JNIEnv *env, jclass, jlong ptr) {
@@ -1199,6 +1302,12 @@ jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
 static JNINativeMethod playerMethods[] = {
     // Player lifecycle
     {"nativeNewPlayer", "(I)J", (void *)nativeNewPlayer},
+    {"nativeNewPlayerWithConfig",
+     "(IIFZIZZIZFFLjava/lang/String;IFFLjava/lang/String;)J",
+     (void *)nativeNewPlayerWithConfig},
+    {"nativeApplyConfig",
+     "(JIFZIZZIZFFLjava/lang/String;IFFLjava/lang/String;)I",
+     (void *)nativeApplyConfig},
     {"nativeDestroy", "(J)I", (void *)nativeDestroy},
 
     // Loading

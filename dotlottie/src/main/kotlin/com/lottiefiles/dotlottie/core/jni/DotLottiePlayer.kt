@@ -19,6 +19,24 @@ object DotLottiePlayer {
     external fun nativeNewPlayer(threads: Int): Long
 
     @JvmStatic
+    external fun nativeNewPlayerWithConfig(
+        threads: Int, mode: Int, speed: Float, loop: Boolean, loopCount: Int,
+        autoplay: Boolean, useFrameInterpolation: Boolean, backgroundColor: Int,
+        hasSegment: Boolean, segmentStart: Float, segmentEnd: Float,
+        marker: String?, fit: Int, alignX: Float, alignY: Float,
+        themeId: String?
+    ): Long
+
+    @JvmStatic
+    external fun nativeApplyConfig(
+        ptr: Long, mode: Int, speed: Float, loop: Boolean, loopCount: Int,
+        autoplay: Boolean, useFrameInterpolation: Boolean, backgroundColor: Int,
+        hasSegment: Boolean, segmentStart: Float, segmentEnd: Float,
+        marker: String?, fit: Int, alignX: Float, alignY: Float,
+        themeId: String?
+    ): Int
+
+    @JvmStatic
     external fun nativeDestroy(ptr: Long): Int
 
     // ==================== Loading ====================
