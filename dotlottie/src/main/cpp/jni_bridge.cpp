@@ -1,4 +1,5 @@
 #include "dotlottie_player.h"
+#include <android/bitmap.h>
 #include <android/log.h>
 #include <jni.h>
 #include <stdlib.h>
@@ -185,6 +186,13 @@ static jstring nativeStateMachinePollInternalEvent(JNIEnv *env, jclass,
                                                    jlong smPtr);
 static jstring nativeGetStateMachine(JNIEnv *env, jclass, jlong playerPtr,
                                      jstring id);
+
+// Bitmap pixel access
+static jlong nativeLockBitmapPixels(JNIEnv *env, jclass, jobject bitmap);
+static void nativeUnlockBitmapPixels(JNIEnv *env, jclass, jobject bitmap);
+static void nativeFlushBitmapPixels(JNIEnv *env, jclass, jobject bitmap);
+static void nativeCopyBufferToBitmap(JNIEnv *env, jclass, jlong bufferPtr,
+                                     jobject bitmap, jint sizeBytes);
 
 // Pointer helper
 static jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address,
@@ -1288,6 +1296,41 @@ jstring nativeGetStateMachine(JNIEnv *env, jclass, jlong playerPtr,
   return result;
 }
 
+// ==================== Bitmap Pixel Access ====================
+
+jlong nativeLockBitmapPixels(JNIEnv *env, jclass, jobject bitmap) {
+  void *pixels = nullptr;
+  int ret = AndroidBitmap_lockPixels(env, bitmap, &pixels);
+  if (ret != ANDROID_BITMAP_RESULT_SUCCESS || pixels == nullptr) {
+    return 0;
+  }
+  return reinterpret_cast<jlong>(pixels);
+}
+
+void nativeUnlockBitmapPixels(JNIEnv *env, jclass, jobject bitmap) {
+  AndroidBitmap_unlockPixels(env, bitmap);
+}
+
+void nativeFlushBitmapPixels(JNIEnv *env, jclass, jobject bitmap) {
+  // Unlock bumps Bitmap generation ID (notifyPixelsChanged), then re-lock
+  // keeps the pixel pointer valid for the next render — single JNI crossing.
+  AndroidBitmap_unlockPixels(env, bitmap);
+  AndroidBitmap_lockPixels(env, bitmap, nullptr);
+}
+
+void nativeCopyBufferToBitmap(JNIEnv *env, jclass, jlong bufferPtr,
+                              jobject bitmap, jint sizeBytes) {
+  if (bufferPtr == 0) return;
+  void *pixels = nullptr;
+  int ret = AndroidBitmap_lockPixels(env, bitmap, &pixels);
+  if (ret == ANDROID_BITMAP_RESULT_SUCCESS && pixels != nullptr) {
+    memcpy(pixels, reinterpret_cast<void *>(bufferPtr), sizeBytes);
+    // unlockPixels calls notifyPixelsChanged() internally, which bumps the
+    // Bitmap generation ID so the GPU re-uploads the texture.
+    AndroidBitmap_unlockPixels(env, bitmap);
+  }
+}
+
 // ==================== Pointer Helper ====================
 
 jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
@@ -1350,6 +1393,16 @@ static JNINativeMethod playerMethods[] = {
     {"nativeAllocateBuffer", "(II)J", (void *)nativeAllocateBuffer},
     {"nativeFreeBuffer", "(J)V", (void *)nativeFreeBuffer},
     {"nativeSetSwTarget", "(JJII)I", (void *)nativeSetSwTarget},
+
+    // Bitmap pixel access
+    {"nativeLockBitmapPixels", "(Landroid/graphics/Bitmap;)J",
+     (void *)nativeLockBitmapPixels},
+    {"nativeUnlockBitmapPixels", "(Landroid/graphics/Bitmap;)V",
+     (void *)nativeUnlockBitmapPixels},
+    {"nativeFlushBitmapPixels", "(Landroid/graphics/Bitmap;)V",
+     (void *)nativeFlushBitmapPixels},
+    {"nativeCopyBufferToBitmap", "(JLandroid/graphics/Bitmap;I)V",
+     (void *)nativeCopyBufferToBitmap},
 
     // Config setters
     {"nativeSetMode", "(JI)I", (void *)nativeSetMode},

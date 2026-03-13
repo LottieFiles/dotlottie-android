@@ -33,5 +33,6 @@ target_link_libraries(
     dlplayer
     -ldotlottie_player
     android
+    jnigraphics
     log
 )
