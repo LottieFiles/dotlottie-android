@@ -258,6 +258,7 @@ fun DotLottieAnimation(
     }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var drawVersion by remember { mutableIntStateOf(0) }
+    val drawDstRect = remember { android.graphics.RectF() }
     val choreographer = remember { Choreographer.getInstance() }
     val currentState by rController.currentState.collectAsState()
     val _width by rController.height.collectAsState()
@@ -370,6 +371,7 @@ fun DotLottieAnimation(
                 }
 
                 bitmap = newBitmap
+                drawDstRect.set(0f, 0f, layoutSize.width, layoutSize.height)
                 drawVersion++
             }
 
@@ -528,7 +530,7 @@ fun DotLottieAnimation(
                 val bmp = bitmap
                 if (bmp != null && !bmp.isRecycled) {
                     drawIntoCanvas { canvas ->
-                        canvas.nativeCanvas.drawBitmap(bmp, 0f, 0f, null)
+                        canvas.nativeCanvas.drawBitmap(bmp, null, drawDstRect, null)
                     }
                 }
             }
