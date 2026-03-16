@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // DefaultAnimationDemo()
+                     DefaultAnimationDemo()
 //                    AnimationWithReactiveProps()
 //                    MarkerExample()
 //                    ThemeExample()
@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
 //                    LayoutExample()
 //                    ThreadCountExample()
 //                    StateMachineExample()
-                   StateMachine()
+//                   StateMachine()
                 }
             }
         }
@@ -141,7 +141,7 @@ fun DefaultAnimationDemo() {
 //                                        source = DotLottieSource.Url("https://lottiefiles-mobile-templates.s3.amazonaws.com/ar-stickers/swag_sticker_piggy.lottie"),
 //                            source = DotLottieSource.Url("https://lottie.host/5525262b-4e57-4f0a-8103-cfdaa7c8969e/VCYIkooYX8.json"),
 //                            source = DotLottieSource.Url("https://lottie.host/294b684d-d6b4-4116-ab35-85ef566d4379/VkGHcqcMUI.lottie"),
-                                        source = DotLottieSource.Asset("swinging.json"),
+                                        source = DotLottieSource.Asset("with_audio.json"),
                             modifier = Modifier
                                 .background(Color.LightGray)
                                 .size(200.dp),

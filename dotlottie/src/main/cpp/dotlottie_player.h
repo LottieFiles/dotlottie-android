@@ -24,73 +24,76 @@ typedef struct dotlottieDotLottieConfig DotLottieConfig;
 #define dotlottieMAX_EVENTS 256
 
 typedef enum dotlottieDotLottieResult {
-  Success = 0,
-  Error = 1,
-  InvalidParameter = 2,
-  ManifestNotAvailable = 3,
-  AnimationNotLoaded = 4,
-  InsufficientCondition = 5,
-  FeatureNotEnabled = 6,
+    Success = 0,
+    Error = 1,
+    InvalidParameter = 2,
+    ManifestNotAvailable = 3,
+    AnimationNotLoaded = 4,
+    InsufficientCondition = 5,
+    FeatureNotEnabled = 6,
 } dotlottieDotLottieResult;
 
 typedef enum dotlottieMode {
-  Forward,
-  Reverse,
-  Bounce,
-  ReverseBounce,
+    Forward,
+    Reverse,
+    Bounce,
+    ReverseBounce,
 } dotlottieMode;
 
 typedef enum dotlottieFit {
-  Contain,
-  Fill,
-  Cover,
-  FitWidth,
-  FitHeight,
-  None,
+    Contain,
+    Fill,
+    Cover,
+    FitWidth,
+    FitHeight,
+    None,
 } dotlottieFit;
 
 typedef enum dotlottiePlaybackStatus {
-  Playing = 0,
-  Paused = 1,
-  Stopped = 2,
+    Playing = 0,
+    Paused = 1,
+    Stopped = 2,
 } dotlottiePlaybackStatus;
 
 typedef enum dotlottieColorSpace {
-  ABGR8888,
-  ABGR8888S,
-  ARGB8888,
-  ARGB8888S,
+    ABGR8888,
+    ABGR8888S,
+    ARGB8888,
+    ARGB8888S,
 } dotlottieColorSpace;
 
 typedef enum dotlottieDotLottieWgpuTargetType {
-  Surface = 0,
-  Texture = 1,
+    Surface = 0,
+    Texture = 1,
 } dotlottieDotLottieWgpuTargetType;
 
 typedef enum dotlottieDotLottiePlayerEventType {
-  Load = 0,
-  LoadError = 1,
-  Play = 2,
-  Pause = 3,
-  Stop = 4,
-  Frame = 5,
-  Render = 6,
-  Loop = 7,
-  Complete = 8,
+    Load = 0,
+    LoadError = 1,
+    Play = 2,
+    Pause = 3,
+    Stop = 4,
+    Frame = 5,
+    Render = 6,
+    Loop = 7,
+    Complete = 8,
+    AudioPlay = 9,
+    AudioPause = 10,
+    AudioStop = 11,
 } dotlottieDotLottiePlayerEventType;
 
 typedef enum dotlottieStateMachineEventType {
-  StateMachineStart = 0,
-  StateMachineStop = 1,
-  StateMachineTransition = 2,
-  StateMachineStateEntered = 3,
-  StateMachineStateExit = 4,
-  StateMachineCustomEvent = 5,
-  StateMachineError = 6,
-  StateMachineStringInputChange = 7,
-  StateMachineNumericInputChange = 8,
-  StateMachineBooleanInputChange = 9,
-  StateMachineInputFired = 10,
+    StateMachineStart = 0,
+    StateMachineStop = 1,
+    StateMachineTransition = 2,
+    StateMachineStateEntered = 3,
+    StateMachineStateExit = 4,
+    StateMachineCustomEvent = 5,
+    StateMachineError = 6,
+    StateMachineStringInputChange = 7,
+    StateMachineNumericInputChange = 8,
+    StateMachineBooleanInputChange = 9,
+    StateMachineInputFired = 10,
 } dotlottieStateMachineEventType;
 
 typedef struct dotlottieDotLottiePlayer dotlottieDotLottiePlayer;
@@ -104,151 +107,152 @@ typedef struct dotlottieDotLottiePlayer dotlottieDotLottiePlayer;
 typedef struct dotlottieDotLottieStateMachine dotlottieDotLottieStateMachine;
 
 typedef struct dotlottieLayout {
-  enum dotlottieFit fit;
-  float align[2];
+    enum dotlottieFit fit;
+    float align[2];
 } dotlottieLayout;
 
 typedef struct dotlottieLayerBoundingBox {
-  float x1;
-  float y1;
-  float x2;
-  float y2;
-  float x3;
-  float y3;
-  float x4;
-  float y4;
+    float x1;
+    float y1;
+    float x2;
+    float y2;
+    float x3;
+    float y3;
+    float x4;
+    float y4;
 } dotlottieLayerBoundingBox;
 
 typedef union dotlottieDotLottiePlayerEventData {
-  float frame_no;
-  uint32_t loop_count;
+    float frame_no;
+    uint32_t loop_count;
+    char audio_id[64];
 } dotlottieDotLottiePlayerEventData;
 
 typedef struct dotlottieDotLottiePlayerEvent {
-  enum dotlottieDotLottiePlayerEventType event_type;
-  union dotlottieDotLottiePlayerEventData data;
+    enum dotlottieDotLottiePlayerEventType event_type;
+    union dotlottieDotLottiePlayerEventData data;
 } dotlottieDotLottiePlayerEvent;
 
 typedef enum dotlottieDotLottieEvent_Tag {
-  PointerDown,
-  PointerUp,
-  PointerMove,
-  PointerEnter,
-  PointerExit,
-  Click,
-  OnComplete,
-  OnLoopComplete,
+    PointerDown,
+    PointerUp,
+    PointerMove,
+    PointerEnter,
+    PointerExit,
+    Click,
+    OnComplete,
+    OnLoopComplete,
 } dotlottieDotLottieEvent_Tag;
 
 typedef struct dotlottiePointerDown_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottiePointerDown_Body;
 
 typedef struct dotlottiePointerUp_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottiePointerUp_Body;
 
 typedef struct dotlottiePointerMove_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottiePointerMove_Body;
 
 typedef struct dotlottiePointerEnter_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottiePointerEnter_Body;
 
 typedef struct dotlottiePointerExit_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottiePointerExit_Body;
 
 typedef struct dotlottieClick_Body {
-  float x;
-  float y;
+    float x;
+    float y;
 } dotlottieClick_Body;
 
 typedef struct dotlottieDotLottieEvent {
-  dotlottieDotLottieEvent_Tag tag;
-  union {
-    dotlottiePointerDown_Body pointer_down;
-    dotlottiePointerUp_Body pointer_up;
-    dotlottiePointerMove_Body pointer_move;
-    dotlottiePointerEnter_Body pointer_enter;
-    dotlottiePointerExit_Body pointer_exit;
-    dotlottieClick_Body click;
-  };
+    dotlottieDotLottieEvent_Tag tag;
+    union {
+        dotlottiePointerDown_Body pointer_down;
+        dotlottiePointerUp_Body pointer_up;
+        dotlottiePointerMove_Body pointer_move;
+        dotlottiePointerEnter_Body pointer_enter;
+        dotlottiePointerExit_Body pointer_exit;
+        dotlottieClick_Body click;
+    };
 } dotlottieDotLottieEvent;
 
 /**
  * Transition event data with pointers to state names
  */
 typedef struct dotlottieStateMachineTransitionData {
-  const char *previous_state;
-  const char *new_state;
+    const char *previous_state;
+    const char *new_state;
 } dotlottieStateMachineTransitionData;
 
 /**
  * State event data (for StateEntered/StateExit)
  */
 typedef struct dotlottieStateMachineStateData {
-  const char *state;
+    const char *state;
 } dotlottieStateMachineStateData;
 
 /**
  * Message event data (for CustomEvent/Error)
  */
 typedef struct dotlottieStateMachineMessageData {
-  const char *message;
+    const char *message;
 } dotlottieStateMachineMessageData;
 
 /**
  * String input change event data
  */
 typedef struct dotlottieStateMachineStringInputData {
-  const char *name;
-  const char *old_value;
-  const char *new_value;
+    const char *name;
+    const char *old_value;
+    const char *new_value;
 } dotlottieStateMachineStringInputData;
 
 /**
  * Numeric input change event data
  */
 typedef struct dotlottieStateMachineNumericInputData {
-  const char *name;
-  float old_value;
-  float new_value;
+    const char *name;
+    float old_value;
+    float new_value;
 } dotlottieStateMachineNumericInputData;
 
 /**
  * Boolean input change event data
  */
 typedef struct dotlottieStateMachineBooleanInputData {
-  const char *name;
-  bool old_value;
-  bool new_value;
+    const char *name;
+    bool old_value;
+    bool new_value;
 } dotlottieStateMachineBooleanInputData;
 
 /**
  * Input fired event data
  */
 typedef struct dotlottieStateMachineInputFiredData {
-  const char *name;
+    const char *name;
 } dotlottieStateMachineInputFiredData;
 
 /**
  * Union of all possible state machine event data types
  */
 typedef union dotlottieStateMachineEventData {
-  struct dotlottieStateMachineTransitionData transition;
-  struct dotlottieStateMachineStateData state;
-  struct dotlottieStateMachineMessageData message;
-  struct dotlottieStateMachineStringInputData string_input;
-  struct dotlottieStateMachineNumericInputData numeric_input;
-  struct dotlottieStateMachineBooleanInputData boolean_input;
-  struct dotlottieStateMachineInputFiredData input_fired;
+    struct dotlottieStateMachineTransitionData transition;
+    struct dotlottieStateMachineStateData state;
+    struct dotlottieStateMachineMessageData message;
+    struct dotlottieStateMachineStringInputData string_input;
+    struct dotlottieStateMachineNumericInputData numeric_input;
+    struct dotlottieStateMachineBooleanInputData boolean_input;
+    struct dotlottieStateMachineInputFiredData input_fired;
 } dotlottieStateMachineEventData;
 
 /**
@@ -256,8 +260,8 @@ typedef union dotlottieStateMachineEventData {
  * String pointers are valid until the next poll call.
  */
 typedef struct dotlottieStateMachineEvent {
-  enum dotlottieStateMachineEventType event_type;
-  union dotlottieStateMachineEventData data;
+    enum dotlottieStateMachineEventType event_type;
+    union dotlottieStateMachineEventData data;
 } dotlottieStateMachineEvent;
 
 /**
@@ -265,14 +269,12 @@ typedef struct dotlottieStateMachineEvent {
  * The message pointer is valid until the next poll call.
  */
 typedef struct dotlottieStateMachineInternalEvent {
-  const char *message;
+    const char *message;
 } dotlottieStateMachineInternalEvent;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-extern double emscripten_get_now(void);
 
 struct dotlottieDotLottiePlayer *dotlottie_new_player(uint32_t threads);
 
@@ -1150,6 +1152,18 @@ enum dotlottieDotLottieResult dotlottie_get_state_machine(struct dotlottieDotLot
                                                           uintptr_t *size_out);
 
 /**
+ * Initialise the Android JVM context required by cpal/rodio for audio output.
+ *
+ * Must be called once before loading any animation that contains audio.
+ * Safe to call multiple times — subsequent calls are ignored by ndk-context.
+ *
+ * # Arguments
+ * * `vm`  - pointer to the `JavaVM` struct (cast from `JavaVM*`)
+ * * `ctx` - JNI global reference to an `android.content.Context` object
+ */
+void dotlottie_init_android(void *vm, void *ctx);
+
+/**
  * Create WebGPU context from Metal layer (macOS/iOS only)
  *
  * # Arguments
@@ -1204,124 +1218,6 @@ void dotlottie_free_wgpu_context(void *context);
  * context must be a valid pointer from dotlottie_create_wgpu_context_from_metal_layer
  */
 void dotlottie_wgpu_context_present(const void *context);
-
-/**
- * Create a WebGL context for a canvas selector
- *
- * # Arguments
- * * `selector` - CSS selector for the canvas element (e.g., "#myCanvas")
- *
- * # Returns
- * A handle (uintptr_t) to the WebGL context, or 0 on failure
- */
-uintptr_t dotlottie_webgl_context_create(const char *selector);
-
-/**
- * Make a WebGL context current
- *
- * # Returns
- * 0 on success, non-zero on failure
- */
-int32_t dotlottie_webgl_context_make_current(uintptr_t context);
-
-/**
- * Check if a WebGL context is lost
- *
- * # Returns
- * 1 if context is lost, 0 otherwise
- */
-int32_t dotlottie_webgl_is_context_lost(uintptr_t context);
-
-/**
- * Destroy a WebGL context
- */
-void dotlottie_webgl_context_destroy(uintptr_t context);
-
-extern uintptr_t emscripten_webgpu_get_device(void);
-
-extern uintptr_t wgpuCreateInstance(const void *descriptor);
-
-extern uintptr_t wgpuInstanceCreateSurface(uintptr_t instance, const void *descriptor);
-
-extern void wgpuInstanceRelease(uintptr_t instance);
-
-extern void wgpuAdapterRelease(uintptr_t adapter);
-
-extern void wgpuDeviceRelease(uintptr_t device);
-
-extern void wgpuSurfaceRelease(uintptr_t surface);
-
-/**
- * Get the WebGPU adapter handle
- *
- * # Returns
- * Handle to the adapter, or 0 if not available
- */
-uintptr_t dotlottie_webgpu_get_adapter(void);
-
-/**
- * Get the WebGPU device handle
- *
- * # Returns
- * Handle to the device, or fallback to emscripten's device
- */
-uintptr_t dotlottie_webgpu_get_device(void);
-
-/**
- * Get the WebGPU instance handle
- *
- * # Returns
- * Handle to the instance
- */
-uintptr_t dotlottie_webgpu_get_instance(void);
-
-/**
- * Create a WebGPU surface for a canvas
- *
- * # Arguments
- * * `canvas_selector` - CSS selector for the canvas element (e.g., "#canvas")
- *
- * # Returns
- * Handle to the surface (0 on failure)
- */
-uintptr_t dotlottie_webgpu_get_surface(const char *canvas_selector);
-
-/**
- * Clean up WebGPU resources
- */
-void dotlottie_webgpu_cleanup(void);
-
-/**
- * Release a WebGPU instance
- *
- * # Arguments
- * * `instance` - Handle to the instance to release
- */
-void dotlottie_wgpu_instance_release(uintptr_t instance);
-
-/**
- * Release a WebGPU adapter
- *
- * # Arguments
- * * `adapter` - Handle to the adapter to release
- */
-void dotlottie_wgpu_adapter_release(uintptr_t adapter);
-
-/**
- * Release a WebGPU device
- *
- * # Arguments
- * * `device` - Handle to the device to release
- */
-void dotlottie_wgpu_device_release(uintptr_t device);
-
-/**
- * Release a WebGPU surface
- *
- * # Arguments
- * * `surface` - Handle to the surface to release
- */
-void dotlottie_wgpu_surface_release(uintptr_t surface);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.jni
 
+import android.content.Context
+
 /**
  * JNI interface to the native DotLottie player.
  * This class uses RegisterNatives() to map Kotlin native methods directly to C API functions.
@@ -12,6 +14,16 @@ object DotLottiePlayer {
         // Then load JNI bridge
         System.loadLibrary("dlplayer")
     }
+
+    // ==================== Android Context Initialization ====================
+
+    /**
+     * Initialize the Android context required for audio support.
+     * Must be called once before loading any animation that contains audio.
+     * Safe to call multiple times.
+     */
+    @JvmStatic
+    external fun nativeInitAndroid(context: Context)
 
     // ==================== Player Lifecycle ====================
 

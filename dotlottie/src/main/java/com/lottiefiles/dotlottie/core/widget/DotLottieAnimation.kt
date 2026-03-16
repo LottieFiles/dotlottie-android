@@ -1,5 +1,6 @@
 package com.lottiefiles.dotlottie.core.widget
 
+import com.lottiefiles.dotlottie.core.BuildConfig
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -30,6 +31,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.isUrl
+import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as JNI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,6 +63,11 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val defStyleAttr: Int = 0,
     private val defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
+
+    init {
+        // Initialize Android context for audio support (idempotent, no-op when audio disabled)
+        if (BuildConfig.DOTLOTTIE_AUDIO) JNI.nativeInitAndroid(context)
+    }
 
     private var width: Int = 0
     private var height: Int = 0
