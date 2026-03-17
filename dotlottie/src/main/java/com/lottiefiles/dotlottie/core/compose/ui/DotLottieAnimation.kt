@@ -524,9 +524,6 @@ fun DotLottieAnimation(
                 }
             }
             .drawBehind {
-                // Read drawVersion so Compose invalidates this draw scope when it changes.
-                // This avoids creating a new ImageBitmap/SkImage per frame, which would
-                // allocate a new GPU texture each time and leak graphics memory.
                 @Suppress("UNUSED_EXPRESSION")
                 drawVersion
                 val bmp = bitmap
