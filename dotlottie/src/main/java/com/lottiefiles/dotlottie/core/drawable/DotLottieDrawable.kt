@@ -276,6 +276,7 @@ class DotLottieDrawable(
         // 1. Create bitmap and lock its pixels as the render target (zero-copy)
         val newBitmap = createBitmap(width, height)
         val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+        if (pixelPtr == 0L) return
         player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
 
         // 2. Load animation
@@ -336,6 +337,7 @@ class DotLottieDrawable(
                 // Create new bitmap, lock its pixels as the render target
                 val newBitmap = createBitmap(width, height)
                 val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+                if (pixelPtr == 0L) return@withLock
                 player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
                 player.resize(width.toUInt(), height.toUInt())
                 bitmapBuffer = newBitmap

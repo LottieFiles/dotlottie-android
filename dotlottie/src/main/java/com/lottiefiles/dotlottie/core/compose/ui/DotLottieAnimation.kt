@@ -358,6 +358,7 @@ fun DotLottieAnimation(
                 // Create bitmap and lock its pixels as the render target
                 val newBitmap = createBitmap(width.toInt(), height.toInt())
                 val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+                if (pixelPtr == 0L) return@withLock
                 dlPlayer.setSwTarget(pixelPtr, width, height)
 
                 when (animationData) {
@@ -468,6 +469,7 @@ fun DotLottieAnimation(
                 val oldBitmap = bitmap
                 val newBitmap = createBitmap(_width.toInt(), _height.toInt())
                 val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+                if (pixelPtr == 0L) return@withLock
                 dlPlayer.resize(_width, _height)
                 dlPlayer.setSwTarget(pixelPtr, _width, _height)
                 bitmap = newBitmap
@@ -589,5 +591,8 @@ fun DotLottieAnimation(
                     } while (position.pressed)
                 }
             }
-    )
+    ) {
+        @Suppress("UNUSED_EXPRESSION")
+        drawVersion
+    }
 }
