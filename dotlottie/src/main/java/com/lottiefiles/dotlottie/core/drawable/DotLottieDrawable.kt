@@ -24,8 +24,8 @@ import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
-import com.dotlottie.dlplayer.Pointer
 import androidx.core.graphics.createBitmap
+import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as DotLottieJNI
 import com.dotlottie.dlplayer.DotLottiePlayerEvent
 import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +38,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-private const val BYTES_PER_PIXEL = 4
 private val drawableCleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 class DotLottieDrawable(
@@ -50,11 +49,9 @@ class DotLottieDrawable(
     private val threads: UInt? = null
 ) : Drawable(), Animatable {
 
-    private var nativeBuffer: Pointer? = null
-    private var nativeBufferAddress: Long = 0
-    private var bufferBytes: java.nio.ByteBuffer? = null
     private var bitmapBuffer: Bitmap? = null
     private var dlPlayer: DotLottiePlayer? = null
+    private val drawPaint = Paint()
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
     private var stateMachineIsActive = false
@@ -99,7 +96,6 @@ class DotLottieDrawable(
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
             val player = dlPlayer ?: return
-            val bytes = bufferBytes ?: return
             val bmp = bitmapBuffer ?: return
 
             // Non-blocking: skip if previous render still in progress
@@ -125,19 +121,14 @@ class DotLottieDrawable(
 
             if ((ticked || forceUpdateBitmap) && !bmp.isRecycled) {
                 val shouldResetFlag = !ticked && forceUpdateBitmap
-
-                // Capture references for background thread
-                val capturedBytes = bytes
                 val capturedBmp = bmp
 
                 // Hand lock ownership to the coroutine — it will unlock in its finally block.
-                // This prevents a resize from freeing the buffer between unlock and coroutine start.
                 lockHandedToCoroutine = true
                 renderScope.launch(singleThreadDispatcher) {
                     try {
                         if (!capturedBmp.isRecycled) {
-                            capturedBytes.rewind()
-                            capturedBmp.copyPixelsFromBuffer(capturedBytes)
+                            DotLottieJNI.nativeFlushBitmapPixels(capturedBmp)
 
                             withContext(Dispatchers.Main) {
                                 if (shouldResetFlag) {
@@ -282,10 +273,11 @@ class DotLottieDrawable(
     private fun setupBufferAndLoad() {
         val player = dlPlayer ?: return
 
-        // 1. Allocate caller-managed buffer and register SW target (required before load)
-        nativeBufferAddress = player.allocateBuffer(width, height)
-        nativeBuffer = Pointer(nativeBufferAddress)
-        player.setSwTarget(nativeBufferAddress, width.toUInt(), height.toUInt())
+        // 1. Create bitmap and lock its pixels as the render target (zero-copy)
+        val newBitmap = createBitmap(width, height)
+        val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+        if (pixelPtr == 0L) return
+        player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
 
         // 2. Load animation
         when (animationData) {
@@ -302,8 +294,7 @@ class DotLottieDrawable(
             }
         }
 
-        bitmapBuffer = createBitmap(width, height)
-        bufferBytes = nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
+        bitmapBuffer = newBitmap
     }
 
     fun release() {
@@ -311,12 +302,9 @@ class DotLottieDrawable(
         renderScope.cancel()
         // Capture references for background cleanup, then null out instance fields
         val capturedPlayer = dlPlayer
-        val capturedBufferAddress = nativeBufferAddress
         val capturedBitmap = bitmapBuffer
         val capturedMutex = renderMutex
         dlPlayer = null
-        nativeBufferAddress = 0
-        nativeBuffer = null
         bitmapBuffer = null
         // Fire listeners synchronously before async cleanup
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
@@ -324,9 +312,7 @@ class DotLottieDrawable(
         if (capturedPlayer != null) {
             drawableCleanupScope.launch {
                 capturedMutex.withLock {
-                    if (capturedBufferAddress != 0L) {
-                        capturedPlayer.freeBuffer(capturedBufferAddress)
-                    }
+                    capturedBitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
                     capturedPlayer.destroy()
                 }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -347,21 +333,21 @@ class DotLottieDrawable(
         renderScope.launch(Dispatchers.Main) {
             renderMutex.withLock {
                 val oldBitmap = bitmapBuffer
-                bitmapBuffer = createBitmap(width, height)
 
-                // Free old buffer, allocate new, set SW target BEFORE resize
-                if (nativeBufferAddress != 0L) {
-                    player.freeBuffer(nativeBufferAddress)
-                }
-                nativeBufferAddress = player.allocateBuffer(width, height)
-                nativeBuffer = Pointer(nativeBufferAddress)
-                player.setSwTarget(nativeBufferAddress, width.toUInt(), height.toUInt())
+                // Create new bitmap, lock its pixels as the render target
+                val newBitmap = createBitmap(width, height)
+                val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+                if (pixelPtr == 0L) return@withLock
+                player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
                 player.resize(width.toUInt(), height.toUInt())
-                bufferBytes =
-                    nativeBuffer!!.getByteBuffer(0, player.bufferLen().toLong() * BYTES_PER_PIXEL)
+                bitmapBuffer = newBitmap
 
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                    oldBitmap?.recycle()
+                // Unlock and recycle old bitmap
+                oldBitmap?.let {
+                    DotLottieJNI.nativeUnlockBitmapPixels(it)
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                        it.recycle()
+                    }
                 }
             }
 
@@ -624,7 +610,7 @@ class DotLottieDrawable(
 
         bitmapBuffer?.let { bmp ->
             if (!bmp.isRecycled) {
-                canvas.drawBitmap(bmp, 0f, 0f, Paint())
+                canvas.drawBitmap(bmp, 0f, 0f, drawPaint)
             }
         }
     }

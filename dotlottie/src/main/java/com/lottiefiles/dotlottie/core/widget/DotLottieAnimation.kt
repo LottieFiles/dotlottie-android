@@ -283,6 +283,10 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     init {
+        // Use software rendering to avoid HWUI GPU texture cache accumulation.
+        // Since we're drawing a CPU-rendered bitmap, hardware acceleration adds no
+        // benefit — it just uploads the bitmap to a GPU texture each frame.
+        setLayerType(LAYER_TYPE_SOFTWARE, null)
         retrieveAttributes()
         waitForLayout()
     }

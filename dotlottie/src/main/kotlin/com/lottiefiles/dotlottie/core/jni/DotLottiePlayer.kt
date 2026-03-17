@@ -1,5 +1,7 @@
 package com.lottiefiles.dotlottie.core.jni
 
+import android.graphics.Bitmap
+
 /**
  * JNI interface to the native DotLottie player.
  * This class uses RegisterNatives() to map Kotlin native methods directly to C API functions.
@@ -132,6 +134,22 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeSetSwTarget(playerPtr: Long, bufferPtr: Long, width: Int, height: Int): Int
+
+    // ==================== Bitmap Pixel Access ====================
+
+    @JvmStatic
+    external fun nativeLockBitmapPixels(bitmap: Bitmap): Long
+
+    @JvmStatic
+    external fun nativeUnlockBitmapPixels(bitmap: Bitmap)
+
+    /** Unlock + re-lock in one JNI call: bumps generation ID so the GPU re-uploads the texture. */
+    @JvmStatic
+    external fun nativeFlushBitmapPixels(bitmap: Bitmap)
+
+    /** Lock bitmap, memcpy from buffer, unlock — single JNI call for the copy + generation ID bump. */
+    @JvmStatic
+    external fun nativeCopyBufferToBitmap(bufferPtr: Long, bitmap: Bitmap, sizeBytes: Int)
 
     // ==================== Config Setters ====================
 
@@ -287,7 +305,11 @@ object DotLottiePlayer {
     external fun nativeStateMachineRelease(smPtr: Long)
 
     @JvmStatic
-    external fun nativeStateMachineStart(smPtr: Long, whitelist: String?, requireUserInteraction: Boolean): Int
+    external fun nativeStateMachineStart(
+        smPtr: Long,
+        whitelist: String?,
+        requireUserInteraction: Boolean
+    ): Int
 
     @JvmStatic
     external fun nativeStateMachineStop(smPtr: Long): Int
