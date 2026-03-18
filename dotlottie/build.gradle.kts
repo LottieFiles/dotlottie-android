@@ -2,6 +2,38 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     `maven-publish`
+    id("com.lottiefiles.dotlottie-rust")
+}
+
+dotlottieRust {
+    // ─── Master switch ────────────────────────────────────────────────────────
+    // false (default) → use the pre-built .so files already in jniLibs/
+    // true            → compile dotlottie-rs from source (requires Rust + NDK)
+    buildFromSource = false
+
+    // ─── Optional: trim features for a smaller binary ─────────────────────────
+    // The three core features (tvg, tvg-sw, c_api) are always included by the
+    // plugin and cannot be removed. Remove any of the lines below to disable
+    // that feature in the compiled library.
+    //
+     features = listOf(
+         "dotlottie",            // .lottie zip container support
+         "state-machines",       // state machine support (requires dotlottie)
+         "theming",              // theming support (requires dotlottie)
+         "tvg-webp",             // WebP image support
+         "tvg-png",              // PNG image support
+         "tvg-jpg",              // JPEG image support
+         "tvg-ttf",              // TrueType font support
+         "tvg-lottie-expressions", // Lottie expression evaluation
+         "tvg-threads",          // multi-threaded rendering
+     )
+
+    // ─── Optional: build only specific CPU architectures ──────────────────────
+    // Default builds all four. Use this to speed up dev builds:
+    // abis = listOf("arm64-v8a", "x86_64")
+
+    // ─── Optional: Android API level (default: 21 = Android 5.0) ─────────────
+    // apiLevel = 21
 }
 
 group = "com.github.LottieFiles"

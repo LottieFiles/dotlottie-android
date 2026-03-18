@@ -410,6 +410,78 @@ dotLottieAnimationView.addEventListener(eventListener)
 dotLottieAnimationView.addStateMachineEventListener(stateMachineListener)
 ```
 
+## Building from Source with Custom Flags
+
+This repo includes a Gradle plugin that lets you compile [dotlottie-rs](https://github.com/LottieFiles/dotlottie-rs) directly from source with custom Rust feature flags. This is useful when you need a trimmed-down binary (smaller APK) or want to enable or disable specific capabilities.
+
+### Prerequisites
+
+- [Rust toolchain](https://rustup.rs) with `cargo` on your `PATH`
+- Android NDK (the version declared in `dotlottie/build.gradle.kts` under `ndkVersion`)
+- The `deps/dotlottie-rs` submodule initialized:
+  ```bash
+  git submodule update --init --recursive
+  ```
+
+### Configuration
+
+Open `dotlottie/build.gradle.kts` and configure the `dotlottieRust` block:
+
+```kotlin
+dotlottieRust {
+    // Enable building from source (default: false — uses pre-built .so files)
+    buildFromSource = true
+
+    // Select which optional features to include.
+    // The three core features (tvg, tvg-sw, c_api) are always included and cannot be removed.
+    // Remove any line below to disable that feature and reduce binary size.
+    features = listOf(
+        "dotlottie",              // .lottie zip container support
+        "state-machines",         // state machine support (requires dotlottie)
+        "theming",                // theming support (requires dotlottie)
+        "tvg-webp",               // WebP image support
+        "tvg-png",                // PNG image support
+        "tvg-jpg",                // JPEG image support
+        "tvg-ttf",                // TrueType font support
+        "tvg-lottie-expressions", // Lottie expression evaluation
+        "tvg-threads",            // multi-threaded rendering
+    )
+
+    // Build only specific CPU architectures (default: all four).
+    // Speeds up dev builds significantly:
+    // abis = listOf("arm64-v8a", "x86_64")
+
+    // Android API level (default: 21 = Android 5.0)
+    // apiLevel = 21
+}
+```
+
+### Running the Build
+
+With `buildFromSource = true`, the Rust library is compiled automatically before every Android build. To compile it in isolation:
+
+```bash
+./gradlew :dotlottie:buildDotLottieRs
+```
+
+Built `.so` files are written to `dotlottie/src/main/jniLibs/` and the C header to `dotlottie/src/main/cpp/dotlottie_player.h`.
+
+### Feature Reference
+
+| Feature | Description | Default |
+|---|---|---|
+| `dotlottie` | `.lottie` zip container parsing | included |
+| `state-machines` | Interactive state machine support | included |
+| `theming` | Dynamic theming for `.lottie` files | included |
+| `tvg-webp` | WebP image decoding | included |
+| `tvg-png` | PNG image decoding | included |
+| `tvg-jpg` | JPEG image decoding | included |
+| `tvg-ttf` | TrueType font rendering | included |
+| `tvg-lottie-expressions` | Lottie expression evaluation | included |
+| `tvg-threads` | Multi-threaded rendering | included |
+
+> **Note:** `tvg`, `tvg-sw`, and `c_api` are always compiled in and cannot be removed.
+
 ## Contributing
 
 We welcome contributions! Please see our [`CONTRIBUTING.md`](CONTRIBUTING.md) file for guidelines on how to report issues, request features, and submit pull requests.
