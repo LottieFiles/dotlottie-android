@@ -35,4 +35,6 @@ target_link_libraries(
     android
     jnigraphics
     log
+    EGL
+    GLESv2
 )

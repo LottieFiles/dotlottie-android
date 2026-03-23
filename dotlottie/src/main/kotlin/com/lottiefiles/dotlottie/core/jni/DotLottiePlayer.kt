@@ -1,6 +1,7 @@
 package com.lottiefiles.dotlottie.core.jni
 
 import android.graphics.Bitmap
+import android.hardware.HardwareBuffer
 
 /**
  * JNI interface to the native DotLottie player.
@@ -134,6 +135,9 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeSetSwTarget(playerPtr: Long, bufferPtr: Long, width: Int, height: Int): Int
+
+    @JvmStatic
+    external fun nativeSetGlTarget(playerPtr: Long, framebufferId: Int, width: Int, height: Int): Int
 
     // ==================== Bitmap Pixel Access ====================
 
@@ -358,4 +362,15 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeGetStateMachine(playerPtr: Long, id: String): String?
+
+    // ==================== HardwareBuffer FBO ====================
+
+    @JvmStatic
+    external fun nativeCreateFboFromHardwareBuffer(hwBuffer: HardwareBuffer): IntArray?
+
+    @JvmStatic
+    external fun nativeDestroyFboResources(fboId: Int, textureId: Int, eglImagePtr: Long)
+
+    @JvmStatic
+    external fun nativeGlFinish()
 }

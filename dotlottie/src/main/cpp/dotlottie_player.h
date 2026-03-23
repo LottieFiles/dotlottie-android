@@ -272,8 +272,6 @@ typedef struct dotlottieStateMachineInternalEvent {
 extern "C" {
 #endif // __cplusplus
 
-extern double emscripten_get_now(void);
-
 struct dotlottieDotLottiePlayer *dotlottie_new_player(uint32_t threads);
 
 enum dotlottieDotLottieResult dotlottie_load_font(const char *name,
@@ -1204,124 +1202,6 @@ void dotlottie_free_wgpu_context(void *context);
  * context must be a valid pointer from dotlottie_create_wgpu_context_from_metal_layer
  */
 void dotlottie_wgpu_context_present(const void *context);
-
-/**
- * Create a WebGL context for a canvas selector
- *
- * # Arguments
- * * `selector` - CSS selector for the canvas element (e.g., "#myCanvas")
- *
- * # Returns
- * A handle (uintptr_t) to the WebGL context, or 0 on failure
- */
-uintptr_t dotlottie_webgl_context_create(const char *selector);
-
-/**
- * Make a WebGL context current
- *
- * # Returns
- * 0 on success, non-zero on failure
- */
-int32_t dotlottie_webgl_context_make_current(uintptr_t context);
-
-/**
- * Check if a WebGL context is lost
- *
- * # Returns
- * 1 if context is lost, 0 otherwise
- */
-int32_t dotlottie_webgl_is_context_lost(uintptr_t context);
-
-/**
- * Destroy a WebGL context
- */
-void dotlottie_webgl_context_destroy(uintptr_t context);
-
-extern uintptr_t emscripten_webgpu_get_device(void);
-
-extern uintptr_t wgpuCreateInstance(const void *descriptor);
-
-extern uintptr_t wgpuInstanceCreateSurface(uintptr_t instance, const void *descriptor);
-
-extern void wgpuInstanceRelease(uintptr_t instance);
-
-extern void wgpuAdapterRelease(uintptr_t adapter);
-
-extern void wgpuDeviceRelease(uintptr_t device);
-
-extern void wgpuSurfaceRelease(uintptr_t surface);
-
-/**
- * Get the WebGPU adapter handle
- *
- * # Returns
- * Handle to the adapter, or 0 if not available
- */
-uintptr_t dotlottie_webgpu_get_adapter(void);
-
-/**
- * Get the WebGPU device handle
- *
- * # Returns
- * Handle to the device, or fallback to emscripten's device
- */
-uintptr_t dotlottie_webgpu_get_device(void);
-
-/**
- * Get the WebGPU instance handle
- *
- * # Returns
- * Handle to the instance
- */
-uintptr_t dotlottie_webgpu_get_instance(void);
-
-/**
- * Create a WebGPU surface for a canvas
- *
- * # Arguments
- * * `canvas_selector` - CSS selector for the canvas element (e.g., "#canvas")
- *
- * # Returns
- * Handle to the surface (0 on failure)
- */
-uintptr_t dotlottie_webgpu_get_surface(const char *canvas_selector);
-
-/**
- * Clean up WebGPU resources
- */
-void dotlottie_webgpu_cleanup(void);
-
-/**
- * Release a WebGPU instance
- *
- * # Arguments
- * * `instance` - Handle to the instance to release
- */
-void dotlottie_wgpu_instance_release(uintptr_t instance);
-
-/**
- * Release a WebGPU adapter
- *
- * # Arguments
- * * `adapter` - Handle to the adapter to release
- */
-void dotlottie_wgpu_adapter_release(uintptr_t adapter);
-
-/**
- * Release a WebGPU device
- *
- * # Arguments
- * * `device` - Handle to the device to release
- */
-void dotlottie_wgpu_device_release(uintptr_t device);
-
-/**
- * Release a WebGPU surface
- *
- * # Arguments
- * * `surface` - Handle to the surface to release
- */
-void dotlottie_wgpu_surface_release(uintptr_t surface);
 
 #ifdef __cplusplus
 }  // extern "C"
