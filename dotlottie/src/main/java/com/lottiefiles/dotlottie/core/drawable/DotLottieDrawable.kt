@@ -24,6 +24,7 @@ import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
+import com.lottiefiles.dotlottie.core.util.pollAndDispatchAllEvents
 import androidx.core.graphics.createBitmap
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as DotLottieJNI
 import com.dotlottie.dlplayer.DotLottiePlayerEvent
@@ -114,8 +115,12 @@ class DotLottieDrawable(
             }
 
             // Poll and dispatch events on main thread
-            pollAndDispatchPlayerEvents()
-            pollAndDispatchStateMachineEvents()
+            pollAndDispatchAllEvents(
+                player = player,
+                eventListeners = dotLottieEventListener,
+                stateMachineListeners = stateMachineListeners,
+                onOpenUrl = onOpenUrlCallback,
+            )
 
             var lockHandedToCoroutine = false
 
@@ -612,141 +617,6 @@ class DotLottieDrawable(
             if (!bmp.isRecycled) {
                 canvas.drawBitmap(bmp, 0f, 0f, drawPaint)
             }
-        }
-    }
-
-    private fun pollAndDispatchPlayerEvents() {
-        val player = dlPlayer ?: return
-        var event = player.pollEvent()
-        while (event != null) {
-            val e = event
-            when (e) {
-                is DotLottiePlayerEvent.Load -> {
-                    dotLottieEventListener.forEach(DotLottieEventListener::onLoad)
-                }
-
-                is DotLottiePlayerEvent.LoadError -> {
-                    dotLottieEventListener.forEach { listener ->
-                        listener.onLoadError()
-                        listener.onLoadError(Throwable("Load error occurred"))
-                    }
-                }
-
-                is DotLottiePlayerEvent.Play -> {
-                    dotLottieEventListener.forEach(DotLottieEventListener::onPlay)
-                }
-
-                is DotLottiePlayerEvent.Pause -> {
-                    dotLottieEventListener.forEach(DotLottieEventListener::onPause)
-                }
-
-                is DotLottiePlayerEvent.Stop -> {
-                    dotLottieEventListener.forEach(DotLottieEventListener::onStop)
-                }
-
-                is DotLottiePlayerEvent.Frame -> {
-                    dotLottieEventListener.forEach { it.onFrame(e.frameNo) }
-                }
-
-                is DotLottiePlayerEvent.Render -> {
-                    dotLottieEventListener.forEach { it.onRender(e.frameNo) }
-                }
-
-                is DotLottiePlayerEvent.Loop -> {
-                    dotLottieEventListener.forEach { it.onLoop(e.loopCount.toInt()) }
-                }
-
-                is DotLottiePlayerEvent.Complete -> {
-                    dotLottieEventListener.forEach(DotLottieEventListener::onComplete)
-                }
-            }
-            event = player.pollEvent()
-        }
-    }
-
-    private fun pollAndDispatchStateMachineEvents() {
-        val player = dlPlayer ?: return
-        var smEvent = player.stateMachinePollEvent()
-        while (smEvent != null) {
-            val e = smEvent
-            when (e) {
-                is StateMachinePlayerEvent.Start -> {
-                    stateMachineListeners.forEach { it.onStart() }
-                }
-
-                is StateMachinePlayerEvent.Stop -> {
-                    stateMachineListeners.forEach { it.onStop() }
-                }
-
-                is StateMachinePlayerEvent.Transition -> {
-                    stateMachineListeners.forEach { it.onTransition(e.previousState, e.newState) }
-                }
-
-                is StateMachinePlayerEvent.StateEntered -> {
-                    stateMachineListeners.forEach { it.onStateEntered(e.state) }
-                }
-
-                is StateMachinePlayerEvent.StateExit -> {
-                    stateMachineListeners.forEach { it.onStateExit(e.state) }
-                }
-
-                is StateMachinePlayerEvent.CustomEvent -> {
-                    stateMachineListeners.forEach { it.onCustomEvent(e.message) }
-                }
-
-                is StateMachinePlayerEvent.Error -> {
-                    stateMachineListeners.forEach { it.onError(e.message) }
-                }
-
-                is StateMachinePlayerEvent.StringInputChange -> {
-                    stateMachineListeners.forEach {
-                        it.onStringInputValueChange(
-                            e.name,
-                            e.oldValue,
-                            e.newValue
-                        )
-                    }
-                }
-
-                is StateMachinePlayerEvent.NumericInputChange -> {
-                    stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(
-                            e.name,
-                            e.oldValue,
-                            e.newValue
-                        )
-                    }
-                }
-
-                is StateMachinePlayerEvent.BooleanInputChange -> {
-                    stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(
-                            e.name,
-                            e.oldValue,
-                            e.newValue
-                        )
-                    }
-                }
-
-                is StateMachinePlayerEvent.InputFired -> {
-                    stateMachineListeners.forEach { it.onInputFired(e.name) }
-                }
-            }
-            smEvent = player.stateMachinePollEvent()
-        }
-        // Poll internal events
-        var internalEvent = player.stateMachinePollInternalEvent()
-        while (internalEvent != null) {
-            if (internalEvent.startsWith("OpenUrl: ")) {
-                val payload = internalEvent.substringAfter("OpenUrl: ")
-                val url = if (payload.contains(" | Target: ")) {
-                    payload.substringBefore(" | Target: ")
-                } else {
-                    payload
-                }
-                onOpenUrlCallback?.invoke(url)
-            }
-            internalEvent = player.stateMachinePollInternalEvent()
         }
     }
 

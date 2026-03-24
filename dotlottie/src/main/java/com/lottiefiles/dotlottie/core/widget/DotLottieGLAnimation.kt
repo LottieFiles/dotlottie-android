@@ -29,6 +29,9 @@ import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
+import com.lottiefiles.dotlottie.core.util.dispatchPlayerEvent
+import com.lottiefiles.dotlottie.core.util.dispatchStateMachineEvent
+import com.lottiefiles.dotlottie.core.util.handleInternalEvent
 import com.lottiefiles.dotlottie.core.util.isUrl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +56,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     private var surfaceReady = false
     private var initialized = false
     private var stateMachineIsActive = false
+    private var glThread: Thread? = null
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var loadJob: Job? = null
@@ -216,6 +220,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== GLSurfaceView.Renderer ====================
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+        glThread = Thread.currentThread()
         // EGL context was (re-)created. Recreate the player if needed.
         if (initialized) {
             // Context was lost and recreated — rebuild player and reload content
@@ -359,84 +364,25 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== Event Polling ====================
 
     private fun pollAndDispatchEvents(player: DotLottiePlayer) {
-        // Player events
+        // Poll events on the GL thread, dispatch to listeners on the main thread via post{}
         var event = player.pollEvent()
         while (event != null) {
             val e = event
-            post {
-                when (e) {
-                    is DotLottiePlayerEvent.Load -> eventListeners.forEach(DotLottieEventListener::onLoad)
-                    is DotLottiePlayerEvent.LoadError -> eventListeners.forEach {
-                        it.onLoadError()
-                        it.onLoadError(Throwable("Load error occurred"))
-                    }
-                    is DotLottiePlayerEvent.Play -> eventListeners.forEach(DotLottieEventListener::onPlay)
-                    is DotLottiePlayerEvent.Pause -> eventListeners.forEach(DotLottieEventListener::onPause)
-                    is DotLottiePlayerEvent.Stop -> eventListeners.forEach(DotLottieEventListener::onStop)
-                    is DotLottiePlayerEvent.Frame -> eventListeners.forEach { it.onFrame(e.frameNo) }
-                    is DotLottiePlayerEvent.Render -> eventListeners.forEach { it.onRender(e.frameNo) }
-                    is DotLottiePlayerEvent.Loop -> eventListeners.forEach { it.onLoop(e.loopCount.toInt()) }
-                    is DotLottiePlayerEvent.Complete -> eventListeners.forEach(DotLottieEventListener::onComplete)
-                }
-            }
+            post { dispatchPlayerEvent(e, eventListeners) }
             event = player.pollEvent()
         }
 
-        // State machine events
         var smEvent = player.stateMachinePollEvent()
         while (smEvent != null) {
             val e = smEvent
-            post {
-                when (e) {
-                    is StateMachinePlayerEvent.Start -> stateMachineListeners.forEach { it.onStart() }
-                    is StateMachinePlayerEvent.Stop -> stateMachineListeners.forEach { it.onStop() }
-                    is StateMachinePlayerEvent.Transition -> stateMachineListeners.forEach {
-                        it.onTransition(e.previousState, e.newState)
-                    }
-                    is StateMachinePlayerEvent.StateEntered -> stateMachineListeners.forEach {
-                        it.onStateEntered(e.state)
-                    }
-                    is StateMachinePlayerEvent.StateExit -> stateMachineListeners.forEach {
-                        it.onStateExit(e.state)
-                    }
-                    is StateMachinePlayerEvent.CustomEvent -> stateMachineListeners.forEach {
-                        it.onCustomEvent(e.message)
-                    }
-                    is StateMachinePlayerEvent.Error -> stateMachineListeners.forEach {
-                        it.onError(e.message)
-                    }
-                    is StateMachinePlayerEvent.StringInputChange -> stateMachineListeners.forEach {
-                        it.onStringInputValueChange(e.name, e.oldValue, e.newValue)
-                    }
-                    is StateMachinePlayerEvent.NumericInputChange -> stateMachineListeners.forEach {
-                        it.onNumericInputValueChange(e.name, e.oldValue, e.newValue)
-                    }
-                    is StateMachinePlayerEvent.BooleanInputChange -> stateMachineListeners.forEach {
-                        it.onBooleanInputValueChange(e.name, e.oldValue, e.newValue)
-                    }
-                    is StateMachinePlayerEvent.InputFired -> stateMachineListeners.forEach {
-                        it.onInputFired(e.name)
-                    }
-                }
-            }
+            post { dispatchStateMachineEvent(e, stateMachineListeners) }
             smEvent = player.stateMachinePollEvent()
         }
 
-        // Internal events (e.g. OpenUrl)
         var internalEvent = player.stateMachinePollInternalEvent()
         while (internalEvent != null) {
-            if (internalEvent.startsWith("OpenUrl: ")) {
-                val payload = internalEvent.substringAfter("OpenUrl: ")
-                val url = if (payload.contains(" | Target: ")) {
-                    payload.substringBefore(" | Target: ")
-                } else {
-                    payload
-                }
-                val cb = onOpenUrlCallback
-                if (cb != null) {
-                    post { cb(url) }
-                }
-            }
+            val msg = internalEvent
+            post { handleInternalEvent(msg, onOpenUrlCallback) }
             internalEvent = player.stateMachinePollInternalEvent()
         }
     }
@@ -687,21 +633,39 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== State Machine ====================
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
-        return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+        // If called from the GL thread (e.g. during onSurfaceChanged), execute directly
+        if (Thread.currentThread() == glThread) {
+            return dlPlayer?.loadStateMachine(stateMachineId) ?: false
+        }
+        // Otherwise queue to the GL thread
+        queueEvent { dlPlayer?.loadStateMachine(stateMachineId) }
+        return true
     }
 
     fun stateMachineLoadData(data: String): Boolean {
-        return dlPlayer?.loadStateMachineData(data) ?: false
+        if (Thread.currentThread() == glThread) {
+            return dlPlayer?.loadStateMachineData(data) ?: false
+        }
+        queueEvent { dlPlayer?.loadStateMachineData(data) }
+        return true
     }
 
     fun stateMachineStart(
         urlConfig: OpenUrlPolicy = createDefaultOpenUrlPolicy(),
         onOpenUrl: ((url: String) -> Unit)? = null
     ): Boolean {
+        onOpenUrlCallback = onOpenUrl
+        if (Thread.currentThread() == glThread) {
+            return startStateMachineOnGlThread(urlConfig)
+        }
+        queueEvent { startStateMachineOnGlThread(urlConfig) }
+        return true
+    }
+
+    private fun startStateMachineOnGlThread(urlConfig: OpenUrlPolicy): Boolean {
         val result = dlPlayer?.stateMachineStart(urlConfig) ?: false
         if (result) {
             stateMachineIsActive = true
-            onOpenUrlCallback = onOpenUrl
             dlPlayer?.let {
                 stateMachineGestureListeners =
                     it.stateMachineFrameworkSetup().map { s -> s.lowercase() }.toSet().toMutableList()
@@ -714,9 +678,16 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     fun stateMachineStop(): Boolean {
         stateMachineIsActive = false
         onOpenUrlCallback = null
-        val result = dlPlayer?.stateMachineStop() ?: false
-        post { renderMode = RENDERMODE_WHEN_DIRTY }
-        return result
+        if (Thread.currentThread() == glThread) {
+            val result = dlPlayer?.stateMachineStop() ?: false
+            post { renderMode = RENDERMODE_WHEN_DIRTY }
+            return result
+        }
+        queueEvent {
+            dlPlayer?.stateMachineStop()
+            post { renderMode = RENDERMODE_WHEN_DIRTY }
+        }
+        return true
     }
 
     fun stateMachinePostEvent(event: Event) {
@@ -769,33 +740,35 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== Touch Events ====================
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val x = event.x
+        val y = event.y
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                lastTouchX = event.x
-                lastTouchY = event.y
+                lastTouchX = x
+                lastTouchY = y
                 movedTooMuch = false
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerDown(event.x, event.y)) }
+                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerDown(x, y)) }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
-                val dx = event.x - lastTouchX
-                val dy = event.y - lastTouchY
+                val dx = x - lastTouchX
+                val dy = y - lastTouchY
                 val distance = kotlin.math.sqrt(dx * dx + dy * dy)
                 if (distance > touchSlop) {
                     movedTooMuch = true
                 }
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerMove(event.x, event.y)) }
+                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerMove(x, y)) }
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(event.x, event.y)) }
+                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
                 if (!movedTooMuch) {
                     performClick()
                 }
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(event.x, event.y)) }
+                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
                 return true
             }
         }

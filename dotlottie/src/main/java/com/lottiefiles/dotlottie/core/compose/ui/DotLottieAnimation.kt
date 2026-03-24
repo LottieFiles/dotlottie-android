@@ -3,8 +3,6 @@ package com.lottiefiles.dotlottie.core.compose.ui
 import android.graphics.Bitmap
 import android.os.Build
 import android.view.Choreographer
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
@@ -22,27 +20,22 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
 import com.dotlottie.dlplayer.DotLottiePlayer
-import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
-import com.lottiefiles.dotlottie.core.compose.runtime.DotLottiePlayerState
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as DotLottieJNI
-import com.dotlottie.dlplayer.DotLottiePlayerEvent
-import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -53,155 +46,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlin.math.pow
-import com.dotlottie.dlplayer.Config as DLConfig
 
 private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-@InternalDotLottieApi
-private fun pollPlayerEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
-    var event = dlPlayer.pollEvent()
-    while (event != null) {
-        val e = event
-        when (e) {
-            is DotLottiePlayerEvent.Load -> {
-                controller.updateState(DotLottiePlayerState.LOADED)
-                controller.eventListeners.forEach(DotLottieEventListener::onLoad)
-            }
-
-            is DotLottiePlayerEvent.LoadError -> {
-                controller.updateState(DotLottiePlayerState.ERROR)
-                controller.eventListeners.forEach { listener ->
-                    listener.onLoadError()
-                    listener.onLoadError(Throwable("Load error occurred"))
-                }
-            }
-
-            is DotLottiePlayerEvent.Play -> {
-                controller.updateState(DotLottiePlayerState.PLAYING)
-                controller.eventListeners.forEach(DotLottieEventListener::onPlay)
-            }
-
-            is DotLottiePlayerEvent.Pause -> {
-                controller.updateState(DotLottiePlayerState.PAUSED)
-                controller.eventListeners.forEach(DotLottieEventListener::onPause)
-            }
-
-            is DotLottiePlayerEvent.Stop -> {
-                controller.updateState(DotLottiePlayerState.STOPPED)
-                controller.eventListeners.forEach(DotLottieEventListener::onStop)
-            }
-
-            is DotLottiePlayerEvent.Frame -> {
-                controller.eventListeners.forEach { it.onFrame(e.frameNo) }
-            }
-
-            is DotLottiePlayerEvent.Render -> {
-                controller.eventListeners.forEach { it.onRender(e.frameNo) }
-            }
-
-            is DotLottiePlayerEvent.Loop -> {
-                controller.eventListeners.forEach { it.onLoop(e.loopCount.toInt()) }
-            }
-
-            is DotLottiePlayerEvent.Complete -> {
-                controller.updateState(DotLottiePlayerState.COMPLETED)
-                controller.eventListeners.forEach(DotLottieEventListener::onComplete)
-            }
-        }
-        event = dlPlayer.pollEvent()
-    }
-}
-
-private fun pollStateMachineEvents(dlPlayer: DotLottiePlayer, controller: DotLottieController) {
-    var smEvent = dlPlayer.stateMachinePollEvent()
-    while (smEvent != null) {
-        val e = smEvent
-        when (e) {
-            is StateMachinePlayerEvent.Start -> {
-                controller.stateMachineListeners.forEach { it.onStart() }
-            }
-
-            is StateMachinePlayerEvent.Stop -> {
-                controller.stateMachineListeners.forEach { it.onStop() }
-            }
-
-            is StateMachinePlayerEvent.Transition -> {
-                controller.stateMachineListeners.forEach {
-                    it.onTransition(
-                        e.previousState,
-                        e.newState
-                    )
-                }
-            }
-
-            is StateMachinePlayerEvent.StateEntered -> {
-                controller.stateMachineListeners.forEach { it.onStateEntered(e.state) }
-            }
-
-            is StateMachinePlayerEvent.StateExit -> {
-                controller.stateMachineListeners.forEach { it.onStateExit(e.state) }
-            }
-
-            is StateMachinePlayerEvent.CustomEvent -> {
-                controller.stateMachineListeners.forEach { it.onCustomEvent(e.message) }
-            }
-
-            is StateMachinePlayerEvent.Error -> {
-                controller.stateMachineListeners.forEach { it.onError(e.message) }
-            }
-
-            is StateMachinePlayerEvent.StringInputChange -> {
-                controller.stateMachineListeners.forEach {
-                    it.onStringInputValueChange(
-                        e.name,
-                        e.oldValue,
-                        e.newValue
-                    )
-                }
-            }
-
-            is StateMachinePlayerEvent.NumericInputChange -> {
-                controller.stateMachineListeners.forEach {
-                    it.onNumericInputValueChange(
-                        e.name,
-                        e.oldValue,
-                        e.newValue
-                    )
-                }
-            }
-
-            is StateMachinePlayerEvent.BooleanInputChange -> {
-                controller.stateMachineListeners.forEach {
-                    it.onBooleanInputValueChange(
-                        e.name,
-                        e.oldValue,
-                        e.newValue
-                    )
-                }
-            }
-
-            is StateMachinePlayerEvent.InputFired -> {
-                controller.stateMachineListeners.forEach { it.onInputFired(e.name) }
-            }
-        }
-        smEvent = dlPlayer.stateMachinePollEvent()
-    }
-    // Poll internal events
-    var internalEvent = dlPlayer.stateMachinePollInternalEvent()
-    while (internalEvent != null) {
-        if (internalEvent.startsWith("OpenUrl: ")) {
-            val payload = internalEvent.substringAfter("OpenUrl: ")
-            val url = if (payload.contains(" | Target: ")) {
-                payload.substringBefore(" | Target: ")
-            } else {
-                payload
-            }
-            controller.onOpenUrlCallback?.invoke(url)
-        }
-        internalEvent = dlPlayer.stateMachinePollInternalEvent()
-    }
-}
 
 @OptIn(InternalDotLottieApi::class, ExperimentalCoroutinesApi::class)
 @Composable
@@ -228,24 +74,7 @@ fun DotLottieAnimation(
     val rController = remember { controller ?: DotLottieController() }
 
     val dlConfig = remember {
-        DLConfig(
-            autoplay = autoplay,
-            loopAnimation = loop,
-            mode = playMode,
-            speed = speed,
-            useFrameInterpolation = useFrameInterpolation,
-            segment = if (segment != null) listOf(
-                segment.first,
-                segment.second
-            ) else emptyList(),
-            backgroundColor = 0u,
-            marker = marker ?: "",
-            layout = layout,
-            themeId = themeId ?: "",
-            stateMachineId = "",
-            animationId = "",
-            loopCount = loopCount
-        )
+        buildDLConfig(autoplay, loop, playMode, speed, useFrameInterpolation, segment, marker, layout, themeId, loopCount)
     }
 
     val initialStateMachineId = remember { stateMachineId }
@@ -293,10 +122,8 @@ fun DotLottieAnimation(
                     dlPlayer.tick()
                 }
 
-                // Poll and dispatch player events to controller listeners
-                pollPlayerEvents(dlPlayer, rController)
-                // Poll and dispatch state machine events to controller listeners
-                pollStateMachineEvents(dlPlayer, rController)
+                // Poll and dispatch events
+                pollAndDispatchEvents(dlPlayer, rController)
 
                 var lockHandedToCoroutine = false
 
@@ -533,61 +360,7 @@ fun DotLottieAnimation(
                     }
                 }
             }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    // First touch (Down)
-                    val down = awaitFirstDown()
-
-                    val downPosition = down.position
-                    val scaledX = downPosition.x
-                    val scaledY = downPosition.y
-
-                    rController.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
-
-                    // Variables to track movement distance
-                    var movedTooMuch = false
-                    val touchSlop = 20f
-
-                    // Handle move and up events
-                    do {
-                        val event = awaitPointerEvent()
-                        val position = event.changes.first()
-
-                        if (!position.pressed) {
-                            val upPosition = position.position
-                            val upScaledX = upPosition.x
-                            val upScaledY = upPosition.y
-
-                            rController.stateMachinePostEvent(Event.PointerUp(upScaledX, upScaledY))
-
-                            val distance = kotlin.math.sqrt(
-                                (upPosition.x - downPosition.x).pow(2) +
-                                        (upPosition.y - downPosition.y).pow(2)
-                            )
-
-                            if (distance < touchSlop && !movedTooMuch) {
-                                rController.stateMachinePostEvent(Event.Click(upScaledX, upScaledY))
-                            }
-
-                            break
-                        } else {
-                            val movePosition = position.position
-                            val moveX = movePosition.x
-                            val moveY = movePosition.y
-
-                            val moveDistance = kotlin.math.sqrt(
-                                (movePosition.x - downPosition.x).pow(2) +
-                                        (movePosition.y - downPosition.y).pow(2)
-                            )
-                            if (moveDistance > touchSlop) {
-                                movedTooMuch = true
-                            }
-
-                            rController.stateMachinePostEvent(Event.PointerMove(moveX, moveY))
-                        }
-                    } while (position.pressed)
-                }
-            }
+            .dotLottiePointerInput(rController)
     ) {
         @Suppress("UNUSED_EXPRESSION")
         drawVersion
