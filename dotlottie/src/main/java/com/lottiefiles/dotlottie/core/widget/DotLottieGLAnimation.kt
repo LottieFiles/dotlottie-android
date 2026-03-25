@@ -260,9 +260,9 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         pollAndDispatchEvents(player)
 
         // Update render mode based on playback state
-        val shouldAnimate = player.isPlaying() || stateMachineIsActive
-        post {
-            renderMode = if (shouldAnimate) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
+        val desiredMode = if (player.isPlaying() || stateMachineIsActive) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
+        if (desiredMode != renderMode) {
+            post { renderMode = desiredMode }
         }
     }
 
@@ -292,6 +292,8 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         }
         dlConfig = config
         initialized = true
+
+        playerCreatedCallback?.invoke(dlPlayer!!, config)
     }
 
     private fun destroyPlayerOnGlThread() {

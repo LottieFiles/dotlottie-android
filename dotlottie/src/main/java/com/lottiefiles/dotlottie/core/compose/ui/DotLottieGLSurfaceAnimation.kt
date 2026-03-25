@@ -75,7 +75,7 @@ fun DotLottieGLSurfaceAnimation(
         widget.setUseFrameInterpolation(useFrameInterpolation)
         if (marker != null) widget.setMarker(marker)
         widget.setLayout(layout.fit, Pair(layout.align[0], layout.align[1]))
-        if (themeId != null) widget.setTheme(themeId)
+        if (themeId != null) widget.setTheme(themeId) else widget.resetTheme()
     }
 
     // Lifecycle handling

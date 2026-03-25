@@ -1417,6 +1417,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
   EGLClientBuffer clientBuffer = getNativeClientBuffer(nativeBuffer);
   if (!clientBuffer) {
     LOGE("eglGetNativeClientBufferANDROID returned null");
+    AHardwareBuffer_release(nativeBuffer);
     return nullptr;
   }
 
@@ -1427,6 +1428,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
                      EGL_NATIVE_BUFFER_ANDROID, clientBuffer, imageAttrs);
   if (eglImage == EGL_NO_IMAGE_KHR) {
     LOGE("eglCreateImageKHR failed");
+    AHardwareBuffer_release(nativeBuffer);
     return nullptr;
   }
 
@@ -1458,6 +1460,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
     if (destroyImageKHR) {
       destroyImageKHR(display, eglImage);
     }
+    AHardwareBuffer_release(nativeBuffer);
     return nullptr;
   }
 
@@ -1470,6 +1473,9 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
       static_cast<jint>((imgPtr >> 32) & 0xFFFFFFFF),
       static_cast<jint>(imgPtr & 0xFFFFFFFF)};
   env->SetIntArrayRegion(result, 0, 4, values);
+
+  AHardwareBuffer_release(nativeBuffer);
+
   return result;
 }
 

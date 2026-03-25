@@ -435,6 +435,7 @@ internal class GlHardwareRenderer {
                         (result[3].toLong() and 0xFFFFFFFFL)
             } else {
                 Log.e(TAG, "Failed to create FBO from HardwareBuffer[$i], result=$result")
+                destroyBuffers()
                 return
             }
         }
