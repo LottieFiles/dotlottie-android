@@ -1379,6 +1379,7 @@ typedef EGLImageKHR (*PFN_eglCreateImageKHR)(EGLDisplay, EGLContext, EGLenum,
                                               const EGLint *);
 typedef EGLBoolean (*PFN_eglDestroyImageKHR)(EGLDisplay, EGLImageKHR);
 typedef void (*PFN_glEGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
+typedef void (*PFN_AHardwareBuffer_release)(AHardwareBuffer *);
 
 jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
                                             jobject hwBuffer) {
@@ -1386,6 +1387,9 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
   static auto fromHwBuffer =
       (PFN_AHardwareBuffer_fromHardwareBuffer)dlsym(
           RTLD_DEFAULT, "AHardwareBuffer_fromHardwareBuffer");
+  static auto releaseHwBuffer =
+      (PFN_AHardwareBuffer_release)dlsym(
+          RTLD_DEFAULT, "AHardwareBuffer_release");
   if (!fromHwBuffer) {
     LOGE("dlsym AHardwareBuffer_fromHardwareBuffer failed");
     return nullptr;
@@ -1417,7 +1421,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
   EGLClientBuffer clientBuffer = getNativeClientBuffer(nativeBuffer);
   if (!clientBuffer) {
     LOGE("eglGetNativeClientBufferANDROID returned null");
-    AHardwareBuffer_release(nativeBuffer);
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
     return nullptr;
   }
 
@@ -1428,7 +1432,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
                      EGL_NATIVE_BUFFER_ANDROID, clientBuffer, imageAttrs);
   if (eglImage == EGL_NO_IMAGE_KHR) {
     LOGE("eglCreateImageKHR failed");
-    AHardwareBuffer_release(nativeBuffer);
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
     return nullptr;
   }
 
@@ -1460,7 +1464,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
     if (destroyImageKHR) {
       destroyImageKHR(display, eglImage);
     }
-    AHardwareBuffer_release(nativeBuffer);
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
     return nullptr;
   }
 
@@ -1474,7 +1478,7 @@ jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
       static_cast<jint>(imgPtr & 0xFFFFFFFF)};
   env->SetIntArrayRegion(result, 0, 4, values);
 
-  AHardwareBuffer_release(nativeBuffer);
+  if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
 
   return result;
 }

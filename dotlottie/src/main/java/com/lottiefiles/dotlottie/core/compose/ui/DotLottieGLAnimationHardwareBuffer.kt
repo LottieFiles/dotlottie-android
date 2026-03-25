@@ -42,7 +42,7 @@ import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 @androidx.annotation.RequiresApi(Build.VERSION_CODES.S)
 @OptIn(InternalDotLottieApi::class)
 @Composable
-internal fun DotLottieGLAnimationHardwareBuffer(
+fun DotLottieGLAnimationHardwareBuffer(
     modifier: Modifier,
     source: DotLottieSource,
     autoplay: Boolean,
