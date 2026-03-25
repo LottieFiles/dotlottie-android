@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
+import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
@@ -43,22 +44,22 @@ import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 @OptIn(InternalDotLottieApi::class)
 @Composable
 fun DotLottieGLAnimationHardwareBuffer(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     source: DotLottieSource,
-    autoplay: Boolean,
-    loop: Boolean,
-    useFrameInterpolation: Boolean,
-    themeId: String?,
-    stateMachineId: String?,
-    marker: String?,
-    speed: Float,
-    segment: Pair<Float, Float>?,
-    playMode: Mode,
-    controller: DotLottieController?,
-    layout: Layout,
-    eventListeners: List<DotLottieEventListener>,
-    threads: UInt?,
-    loopCount: UInt,
+    autoplay: Boolean = false,
+    loop: Boolean = false,
+    useFrameInterpolation: Boolean = true,
+    themeId: String? = null,
+    stateMachineId: String? = null,
+    marker: String? = null,
+    speed: Float = 1f,
+    segment: Pair<Float, Float>? = null,
+    playMode: Mode = Mode.FORWARD,
+    controller: DotLottieController? = null,
+    layout: Layout = createDefaultLayout(),
+    eventListeners: List<DotLottieEventListener> = emptyList(),
+    threads: UInt? = null,
+    loopCount: UInt = 0u,
 ) {
     val context = LocalContext.current
     val rController = remember { controller ?: DotLottieController() }
