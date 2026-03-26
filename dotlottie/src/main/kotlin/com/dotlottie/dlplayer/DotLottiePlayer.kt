@@ -199,6 +199,11 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    fun setGlTarget(framebufferId: Int, width: UInt, height: UInt): Boolean {
+        val result = JNI.nativeSetGlTarget(nativePtr, framebufferId, width.toInt(), height.toInt())
+        return result == 0
+    }
+
     fun bufferPtr(): Long {
         return nativeBufferAddress
     }

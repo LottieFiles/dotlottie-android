@@ -1,6 +1,13 @@
 #include "dotlottie_player.h"
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <android/bitmap.h>
+#include <android/hardware_buffer.h>
+#include <android/hardware_buffer_jni.h>
 #include <android/log.h>
+#include <dlfcn.h>
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,6 +83,8 @@ static jlong nativeAllocateBuffer(JNIEnv *env, jclass, jint width, jint height);
 static void nativeFreeBuffer(JNIEnv *env, jclass, jlong bufferPtr);
 static jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr,
                               jlong bufferPtr, jint width, jint height);
+static jint nativeSetGlTarget(JNIEnv *env, jclass, jlong playerPtr,
+                              jint framebufferId, jint width, jint height);
 
 // Config setters
 static jint nativeSetMode(JNIEnv *env, jclass, jlong ptr, jint mode);
@@ -197,6 +206,13 @@ static void nativeCopyBufferToBitmap(JNIEnv *env, jclass, jlong bufferPtr,
 // Pointer helper
 static jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address,
                                    jint length);
+
+// HardwareBuffer FBO (API 26+, runtime-resolved)
+static jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
+                                                   jobject hwBuffer);
+static void nativeDestroyFboResources(JNIEnv *env, jclass, jint fboId,
+                                      jint textureId, jlong eglImagePtr);
+static void nativeGlFinish(JNIEnv *env, jclass);
 
 } // extern "C"
 
@@ -517,6 +533,17 @@ jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr, jlong bufferPtr,
   auto *buffer = reinterpret_cast<uint32_t *>(bufferPtr);
   return static_cast<jint>(dotlottie_set_sw_target(
       player, buffer, width, height, dotlottieColorSpace::ABGR8888));
+}
+
+jint nativeSetGlTarget(JNIEnv *env, jclass, jlong playerPtr,
+                       jint framebufferId, jint width, jint height) {
+  auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
+  // Must be called from the GL thread — eglGetCurrentContext() returns
+  // the EGLContext that is current on the calling thread.
+  void *context = reinterpret_cast<void *>(eglGetCurrentContext());
+  auto result = dotlottie_set_gl_target(
+      player, context, static_cast<int32_t>(framebufferId), width, height);
+  return static_cast<jint>(result);
 }
 
 // ==================== Config Setters ====================
@@ -1340,6 +1367,141 @@ jobject nativeGetByteBuffer(JNIEnv *env, jclass, jlong address, jint length) {
   return env->NewDirectByteBuffer(reinterpret_cast<void *>(address), length);
 }
 
+// ==================== HardwareBuffer FBO (API 26+) ====================
+
+// Function pointer types for runtime-resolved APIs
+typedef AHardwareBuffer *(*PFN_AHardwareBuffer_fromHardwareBuffer)(
+    JNIEnv *, jobject);
+typedef EGLClientBuffer (*PFN_eglGetNativeClientBufferANDROID)(
+    const AHardwareBuffer *);
+typedef EGLImageKHR (*PFN_eglCreateImageKHR)(EGLDisplay, EGLContext, EGLenum,
+                                              EGLClientBuffer,
+                                              const EGLint *);
+typedef EGLBoolean (*PFN_eglDestroyImageKHR)(EGLDisplay, EGLImageKHR);
+typedef void (*PFN_glEGLImageTargetTexture2DOES)(GLenum, GLeglImageOES);
+typedef void (*PFN_AHardwareBuffer_release)(AHardwareBuffer *);
+
+jintArray nativeCreateFboFromHardwareBuffer(JNIEnv *env, jclass,
+                                            jobject hwBuffer) {
+  // Resolve AHardwareBuffer_fromHardwareBuffer via dlsym
+  static auto fromHwBuffer =
+      (PFN_AHardwareBuffer_fromHardwareBuffer)dlsym(
+          RTLD_DEFAULT, "AHardwareBuffer_fromHardwareBuffer");
+  static auto releaseHwBuffer =
+      (PFN_AHardwareBuffer_release)dlsym(
+          RTLD_DEFAULT, "AHardwareBuffer_release");
+  if (!fromHwBuffer) {
+    LOGE("dlsym AHardwareBuffer_fromHardwareBuffer failed");
+    return nullptr;
+  }
+
+  // Resolve EGL/GL extension functions
+  static auto getNativeClientBuffer =
+      (PFN_eglGetNativeClientBufferANDROID)eglGetProcAddress(
+          "eglGetNativeClientBufferANDROID");
+  static auto createImageKHR =
+      (PFN_eglCreateImageKHR)eglGetProcAddress("eglCreateImageKHR");
+  static auto destroyImageKHR =
+      (PFN_eglDestroyImageKHR)eglGetProcAddress("eglDestroyImageKHR");
+  static auto imageTargetTexture2D =
+      (PFN_glEGLImageTargetTexture2DOES)eglGetProcAddress(
+          "glEGLImageTargetTexture2DOES");
+
+  if (!getNativeClientBuffer || !createImageKHR || !imageTargetTexture2D) {
+    LOGE("Failed to resolve EGL/GL extension functions for HardwareBuffer FBO");
+    return nullptr;
+  }
+
+  AHardwareBuffer *nativeBuffer = fromHwBuffer(env, hwBuffer);
+  if (!nativeBuffer) {
+    LOGE("AHardwareBuffer_fromHardwareBuffer returned null");
+    return nullptr;
+  }
+
+  EGLClientBuffer clientBuffer = getNativeClientBuffer(nativeBuffer);
+  if (!clientBuffer) {
+    LOGE("eglGetNativeClientBufferANDROID returned null");
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
+    return nullptr;
+  }
+
+  EGLDisplay display = eglGetCurrentDisplay();
+  EGLint imageAttrs[] = {EGL_IMAGE_PRESERVED_KHR, EGL_TRUE, EGL_NONE};
+  EGLImageKHR eglImage =
+      createImageKHR(display, EGL_NO_CONTEXT,
+                     EGL_NATIVE_BUFFER_ANDROID, clientBuffer, imageAttrs);
+  if (eglImage == EGL_NO_IMAGE_KHR) {
+    LOGE("eglCreateImageKHR failed");
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
+    return nullptr;
+  }
+
+  // Create GL texture backed by the EGLImage
+  GLuint texId = 0;
+  glGenTextures(1, &texId);
+  glBindTexture(GL_TEXTURE_2D, texId);
+  imageTargetTexture2D(GL_TEXTURE_2D, (GLeglImageOES)eglImage);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // Create FBO and attach the texture
+  GLuint fboId = 0;
+  glGenFramebuffers(1, &fboId);
+  glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                         texId, 0);
+
+  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  if (status != GL_FRAMEBUFFER_COMPLETE) {
+    LOGE("Framebuffer not complete: 0x%x", status);
+    glDeleteFramebuffers(1, &fboId);
+    glDeleteTextures(1, &texId);
+    if (destroyImageKHR) {
+      destroyImageKHR(display, eglImage);
+    }
+    if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
+    return nullptr;
+  }
+
+  // Return {fboId, textureId, eglImagePtrHigh, eglImagePtrLow} as int[4]
+  // Pack the 64-bit eglImage pointer into two 32-bit ints
+  jlong imgPtr = reinterpret_cast<jlong>(eglImage);
+  jintArray result = env->NewIntArray(4);
+  jint values[4] = {
+      static_cast<jint>(fboId), static_cast<jint>(texId),
+      static_cast<jint>((imgPtr >> 32) & 0xFFFFFFFF),
+      static_cast<jint>(imgPtr & 0xFFFFFFFF)};
+  env->SetIntArrayRegion(result, 0, 4, values);
+
+  if (releaseHwBuffer) releaseHwBuffer(nativeBuffer);
+
+  return result;
+}
+
+void nativeDestroyFboResources(JNIEnv *env, jclass, jint fboId, jint textureId,
+                               jlong eglImagePtr) {
+  GLuint fbo = static_cast<GLuint>(fboId);
+  GLuint tex = static_cast<GLuint>(textureId);
+  if (fbo != 0) glDeleteFramebuffers(1, &fbo);
+  if (tex != 0) glDeleteTextures(1, &tex);
+
+  if (eglImagePtr != 0) {
+    static auto destroyImageKHR =
+        (PFN_eglDestroyImageKHR)eglGetProcAddress("eglDestroyImageKHR");
+    if (destroyImageKHR) {
+      EGLDisplay display = eglGetCurrentDisplay();
+      destroyImageKHR(display, reinterpret_cast<EGLImageKHR>(eglImagePtr));
+    }
+  }
+}
+
+void nativeGlFinish(JNIEnv *env, jclass) { glFinish(); }
+
 // ==================== JNI Method Tables ====================
 
 static JNINativeMethod playerMethods[] = {
@@ -1393,6 +1555,7 @@ static JNINativeMethod playerMethods[] = {
     {"nativeAllocateBuffer", "(II)J", (void *)nativeAllocateBuffer},
     {"nativeFreeBuffer", "(J)V", (void *)nativeFreeBuffer},
     {"nativeSetSwTarget", "(JJII)I", (void *)nativeSetSwTarget},
+    {"nativeSetGlTarget", "(JIII)I", (void *)nativeSetGlTarget},
 
     // Bitmap pixel access
     {"nativeLockBitmapPixels", "(Landroid/graphics/Bitmap;)J",
@@ -1518,6 +1681,14 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeStateMachinePollInternalEvent},
     {"nativeGetStateMachine", "(JLjava/lang/String;)Ljava/lang/String;",
      (void *)nativeGetStateMachine},
+
+    // HardwareBuffer FBO
+    {"nativeCreateFboFromHardwareBuffer",
+     "(Landroid/hardware/HardwareBuffer;)[I",
+     (void *)nativeCreateFboFromHardwareBuffer},
+    {"nativeDestroyFboResources", "(IIJ)V",
+     (void *)nativeDestroyFboResources},
+    {"nativeGlFinish", "()V", (void *)nativeGlFinish},
 };
 
 static JNINativeMethod pointerMethods[] = {
