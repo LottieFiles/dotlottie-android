@@ -323,19 +323,11 @@ fun DotLottieAnimation(
             frameCallback.isActive = false
             choreographer.removeFrameCallback(frameCallback)
             renderScope.cancel()
-            // Capture references for background cleanup
-            val capturedPlayer = dlPlayer
-            val capturedBitmap = bitmap
-            val capturedMutex = renderMutex
-            // Free native resources on a background thread to avoid blocking the main thread
-            cleanupScope.launch {
-                capturedMutex.withLock {
-                    capturedBitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
-                    capturedPlayer.destroy()
-                }
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                    capturedBitmap?.recycle()
-                }
+
+            bitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
+            dlPlayer.destroy()
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                bitmap?.recycle()
             }
         }
     }
