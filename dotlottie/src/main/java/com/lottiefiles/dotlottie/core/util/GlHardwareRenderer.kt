@@ -3,15 +3,10 @@ package com.lottiefiles.dotlottie.core.util
 import android.graphics.Bitmap
 import android.graphics.ColorSpace
 import android.hardware.HardwareBuffer
-import android.opengl.EGL14
-import android.opengl.EGLConfig
-import android.opengl.EGLContext
-import android.opengl.EGLDisplay
-import android.opengl.EGLSurface
 import android.opengl.GLES20
+import android.opengl.GLES30
 import android.os.Build
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.Looper
 import android.util.Log
 import android.view.Choreographer
@@ -23,8 +18,9 @@ import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as DotLottieJNI
 
 /**
- * Manages GL rendering on a dedicated HandlerThread using AHardwareBuffer-backed FBOs.
- * Produces hardware-backed Bitmaps for direct Compose drawing via Skia (near-zero-copy GPU path).
+ * Manages GL rendering on a shared GL thread (via [SharedGlThread]) using
+ * AHardwareBuffer-backed FBOs. Produces hardware-backed Bitmaps for direct
+ * Compose drawing via Skia (near-zero-copy GPU path).
  *
  * Requires API 31+ for Bitmap.wrapHardwareBuffer().
  */
@@ -42,15 +38,9 @@ internal class GlHardwareRenderer {
     private var frameCallback: FrameCallback? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // GL thread
-    private var glThread: HandlerThread? = null
+    // Shared GL thread
     private var glHandler: Handler? = null
     private var choreographer: Choreographer? = null
-
-    // EGL state (created on GL thread)
-    private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
-    private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
-    private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
 
     // Double-buffered HardwareBuffers
     private var bufferWidth = 0
@@ -61,6 +51,10 @@ internal class GlHardwareRenderer {
     private val eglImagePtrs = LongArray(2)
     private var backIndex = 0
     private var buffersValid = false
+
+    // Intermediate render FBO (texture-backed, ThorVG renders into this)
+    private var renderFboId = 0
+    private var renderTexId = 0
 
     // Player
     @Volatile
@@ -105,16 +99,13 @@ internal class GlHardwareRenderer {
     }
 
     fun start(config: Config, threads: UInt? = null) {
-        if (glThread != null) return
+        if (glHandler != null) return
 
         dlConfig = config
-        val thread = HandlerThread("DotLottieGL").apply { start() }
-        glThread = thread
-        val handler = Handler(thread.looper)
+        val handler = SharedGlThread.acquire()
         glHandler = handler
 
         handler.post {
-            initEgl()
             val player = if (threads != null) {
                 DotLottiePlayer.withThreads(config, threads)
             } else {
@@ -146,17 +137,24 @@ internal class GlHardwareRenderer {
                 Log.e(TAG, "loadContent: buffers not valid")
                 return@post
             }
-            if (!makeCurrent()) {
+            if (!SharedGlThread.makeCurrent()) {
                 Log.e(TAG, "loadContent: makeCurrent failed")
                 return@post
             }
 
-            // Bind the back buffer FBO and set GL target
-            val fbo = fboIds[backIndex]
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fbo)
+            // Create intermediate render FBO
+            destroyRenderFbo()
+            createRenderFbo()
+            if (renderFboId == 0) {
+                Log.e(TAG, "loadContent: createRenderFbo failed")
+                return@post
+            }
+
+            // Set GL target to render FBO once (not per-frame)
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
             GLES20.glViewport(0, 0, bufferWidth, bufferHeight)
 
-            val glTargetOk = player.setGlTarget(fbo, bufferWidth.toUInt(), bufferHeight.toUInt())
+            val glTargetOk = player.setGlTarget(renderFboId, bufferWidth.toUInt(), bufferHeight.toUInt())
             if (!glTargetOk) {
                 Log.e(TAG, "loadContent: setGlTarget FAILED")
                 GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
@@ -200,22 +198,23 @@ internal class GlHardwareRenderer {
         if (width <= 0 || height <= 0) return
         glHandler?.post {
             if (width == bufferWidth && height == bufferHeight) return@post
-            if (!makeCurrent()) {
+            if (!SharedGlThread.makeCurrent()) {
                 Log.e(TAG, "resize: makeCurrent failed")
                 return@post
             }
+            destroyRenderFbo()
             destroyBuffers()
             bufferWidth = width
             bufferHeight = height
             createBuffers()
+            createRenderFbo()
 
             val player = dlPlayer ?: return@post
             player.resize(width.toUInt(), height.toUInt())
-            if (buffersValid) {
-                val fbo = fboIds[backIndex]
-                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fbo)
+            if (buffersValid && renderFboId != 0) {
+                GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
                 GLES20.glViewport(0, 0, width, height)
-                player.setGlTarget(fbo, width.toUInt(), height.toUInt())
+                player.setGlTarget(renderFboId, width.toUInt(), height.toUInt())
                 GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
             }
 
@@ -313,6 +312,7 @@ internal class GlHardwareRenderer {
     fun release() {
         running = false
         val handler = glHandler ?: return
+        glHandler = null
         handler.post {
             choreographer?.removeFrameCallback(choreographerCallback)
             stateMachineIsActive = false
@@ -320,96 +320,59 @@ internal class GlHardwareRenderer {
             dlPlayer?.destroy()
             dlPlayer = null
 
+            destroyRenderFbo()
             destroyBuffers()
-            destroyEgl()
-
-            glThread?.quitSafely()
-            glThread = null
-            glHandler = null
             choreographer = null
         }
+        SharedGlThread.release()
     }
 
-    // ==================== Private: EGL ====================
+    // ==================== Private: Intermediate Render FBO ====================
 
-    private fun initEgl() {
-        eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
-        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-            Log.e(TAG, "eglGetDisplay failed")
-            return
-        }
-        val version = IntArray(2)
-        if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-            Log.e(TAG, "eglInitialize failed")
-            return
-        }
+    private fun createRenderFbo() {
+        if (bufferWidth <= 0 || bufferHeight <= 0) return
 
-        // ThorVG GL engine requires OpenGL ES 3.0+
-        val EGL_OPENGL_ES3_BIT = 0x0040
-        val configAttribs = intArrayOf(
-            EGL14.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-            EGL14.EGL_RED_SIZE, 8,
-            EGL14.EGL_GREEN_SIZE, 8,
-            EGL14.EGL_BLUE_SIZE, 8,
-            EGL14.EGL_ALPHA_SIZE, 8,
-            EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
-            EGL14.EGL_NONE
+        val texArr = IntArray(1)
+        GLES20.glGenTextures(1, texArr, 0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texArr[0])
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+            bufferWidth, bufferHeight, 0,
+            GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null
         )
-        val configs = arrayOfNulls<EGLConfig>(1)
-        val numConfigs = IntArray(1)
-        EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0)
-        if (numConfigs[0] == 0 || configs[0] == null) {
-            Log.e(TAG, "eglChooseConfig failed")
-            return
-        }
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
+        renderTexId = texArr[0]
 
-        val contextAttribs = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE)
-        eglContext = EGL14.eglCreateContext(
-            eglDisplay, configs[0]!!, EGL14.EGL_NO_CONTEXT, contextAttribs, 0
+        val fboArr = IntArray(1)
+        GLES20.glGenFramebuffers(1, fboArr, 0)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboArr[0])
+        GLES20.glFramebufferTexture2D(
+            GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+            GLES20.GL_TEXTURE_2D, renderTexId, 0
         )
-        if (eglContext == EGL14.EGL_NO_CONTEXT) {
-            Log.e(TAG, "eglCreateContext failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
+
+        val status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
+        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Log.e(TAG, "createRenderFbo: incomplete, status=0x${Integer.toHexString(status)}")
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+            destroyRenderFbo()
             return
         }
 
-        val pbufferAttribs = intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE)
-        eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, configs[0]!!, pbufferAttribs, 0)
-        if (eglSurface == EGL14.EGL_NO_SURFACE) {
-            Log.e(TAG, "eglCreatePbufferSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
-            return
-        }
-
-        makeCurrent()
+        renderFboId = fboArr[0]
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }
 
-    private fun makeCurrent(): Boolean {
-        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-            Log.e(TAG, "makeCurrent: no display")
-            return false
+    private fun destroyRenderFbo() {
+        if (renderFboId != 0) {
+            GLES20.glDeleteFramebuffers(1, intArrayOf(renderFboId), 0)
+            renderFboId = 0
         }
-        val ok = EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)
-        if (!ok) {
-            Log.e(TAG, "makeCurrent failed: EGL error 0x${Integer.toHexString(EGL14.eglGetError())}")
+        if (renderTexId != 0) {
+            GLES20.glDeleteTextures(1, intArrayOf(renderTexId), 0)
+            renderTexId = 0
         }
-        return ok
-    }
-
-    private fun destroyEgl() {
-        if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
-            EGL14.eglMakeCurrent(
-                eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT
-            )
-            if (eglSurface != EGL14.EGL_NO_SURFACE) {
-                EGL14.eglDestroySurface(eglDisplay, eglSurface)
-            }
-            if (eglContext != EGL14.EGL_NO_CONTEXT) {
-                EGL14.eglDestroyContext(eglDisplay, eglContext)
-            }
-            EGL14.eglTerminate(eglDisplay)
-        }
-        eglDisplay = EGL14.EGL_NO_DISPLAY
-        eglContext = EGL14.EGL_NO_CONTEXT
-        eglSurface = EGL14.EGL_NO_SURFACE
     }
 
     // ==================== Private: HardwareBuffer Management ====================
@@ -466,15 +429,10 @@ internal class GlHardwareRenderer {
         val player = dlPlayer ?: return
         if (bufferWidth <= 0 || bufferHeight <= 0) return
         if (!buffersValid) return
-        if (!makeCurrent()) return
+        if (renderFboId == 0) return
+        if (!SharedGlThread.makeCurrent()) return
 
-        // Bind back buffer FBO and set GL target
-        val fbo = fboIds[backIndex]
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fbo)
-        GLES20.glViewport(0, 0, bufferWidth, bufferHeight)
-        player.setGlTarget(fbo, bufferWidth.toUInt(), bufferHeight.toUInt())
-
-        // Tick the player
+        // Tick the player — ThorVG renders into renderFbo (set once via setGlTarget)
         val ticked = if (stateMachineIsActive) {
             player.stateMachineTick()
         } else {
@@ -485,9 +443,18 @@ internal class GlHardwareRenderer {
         pollEvents(player)
 
         if (ticked) {
-            // GPU sync — ensure all rendering to the FBO is complete
+            // Blit from intermediate renderFbo to the back HardwareBuffer FBO
+            GLES30.glBindFramebuffer(GLES30.GL_READ_FRAMEBUFFER, renderFboId)
+            GLES30.glBindFramebuffer(GLES30.GL_DRAW_FRAMEBUFFER, fboIds[backIndex])
+            GLES30.glBlitFramebuffer(
+                0, 0, bufferWidth, bufferHeight,
+                0, 0, bufferWidth, bufferHeight,
+                GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST
+            )
+            GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, 0)
+
+            // GPU sync — ensure blit to HardwareBuffer is complete
             DotLottieJNI.nativeGlFinish()
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
 
             // Swap front/back
             val frontIndex = backIndex
@@ -513,8 +480,6 @@ internal class GlHardwareRenderer {
             // Deliver to main thread
             val cb = frameCallback ?: return
             mainHandler.post { cb.onFrame(hwBitmap) }
-        } else {
-            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
         }
 
         // Only stop looping if content is loaded but nothing is animating.

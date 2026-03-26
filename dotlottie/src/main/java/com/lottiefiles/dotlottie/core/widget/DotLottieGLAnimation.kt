@@ -208,7 +208,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     private fun setupGL() {
-        setEGLContextClientVersion(2)
+        setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 8, 0, 0)
         holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
         setZOrderOnTop(true)
