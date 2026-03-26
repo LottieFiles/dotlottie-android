@@ -3,10 +3,16 @@ package com.lottiefiles.dotlottie.core.util
 import android.graphics.Bitmap
 import android.graphics.ColorSpace
 import android.hardware.HardwareBuffer
+import android.opengl.EGL14
+import android.opengl.EGLConfig
+import android.opengl.EGLContext
+import android.opengl.EGLDisplay
+import android.opengl.EGLSurface
 import android.opengl.GLES20
 import android.opengl.GLES30
 import android.os.Build
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.util.Log
 import android.view.Choreographer
@@ -18,9 +24,12 @@ import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as DotLottieJNI
 
 /**
- * Manages GL rendering on a shared GL thread (via [SharedGlThread]) using
- * AHardwareBuffer-backed FBOs. Produces hardware-backed Bitmaps for direct
- * Compose drawing via Skia (near-zero-copy GPU path).
+ * Manages GL rendering on a dedicated HandlerThread using AHardwareBuffer-backed FBOs.
+ * Produces hardware-backed Bitmaps for direct Compose drawing via Skia (near-zero-copy GPU path).
+ *
+ * Uses triple-buffering to avoid read/write races between the GL thread and Compose's
+ * RenderThread, and an intermediate render FBO so setGlTarget() is called once (on load/resize)
+ * rather than every frame.
  *
  * Requires API 31+ for Bitmap.wrapHardwareBuffer().
  */
@@ -35,35 +44,44 @@ internal class GlHardwareRenderer {
         fun onStateMachineInternalEvent(message: String)
     }
 
+    @Volatile
     private var frameCallback: FrameCallback? = null
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // Shared GL thread
+    // GL thread
+    private var glThread: HandlerThread? = null
     private var glHandler: Handler? = null
     private var choreographer: Choreographer? = null
 
-    // Double-buffered HardwareBuffers
+    // EGL state (created on GL thread)
+    private var eglDisplay: EGLDisplay = EGL14.EGL_NO_DISPLAY
+    private var eglContext: EGLContext = EGL14.EGL_NO_CONTEXT
+    private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
+
+    // Triple-buffered HardwareBuffers
     private var bufferWidth = 0
     private var bufferHeight = 0
-    private val hwBuffers = arrayOfNulls<HardwareBuffer>(2)
-    private val fboIds = IntArray(2)
-    private val texIds = IntArray(2)
-    private val eglImagePtrs = LongArray(2)
+    private val hwBuffers = arrayOfNulls<HardwareBuffer>(BUFFER_COUNT)
+    private val fboIds = IntArray(BUFFER_COUNT)
+    private val texIds = IntArray(BUFFER_COUNT)
+    private val eglImagePtrs = LongArray(BUFFER_COUNT)
     private var backIndex = 0
     private var buffersValid = false
 
-    // Intermediate render FBO (texture-backed, ThorVG renders into this)
+    // Intermediate render FBO (ThorVG renders here; blitted to HW buffer FBOs per frame)
     private var renderFboId = 0
     private var renderTexId = 0
 
     // Player
     @Volatile
     private var dlPlayer: DotLottiePlayer? = null
+    @Volatile
     private var dlConfig: Config? = null
     var stateMachineIsActive: Boolean = false
         private set
 
     // Frame loop state
+    @Volatile
     private var running = false
     private var contentLoaded = false
 
@@ -99,13 +117,16 @@ internal class GlHardwareRenderer {
     }
 
     fun start(config: Config, threads: UInt? = null) {
-        if (glHandler != null) return
+        if (glThread != null) return
 
         dlConfig = config
-        val handler = SharedGlThread.acquire()
+        val thread = HandlerThread("DotLottieGL").apply { start() }
+        glThread = thread
+        val handler = Handler(thread.looper)
         glHandler = handler
 
         handler.post {
+            initEgl()
             val player = if (threads != null) {
                 DotLottiePlayer.withThreads(config, threads)
             } else {
@@ -137,12 +158,12 @@ internal class GlHardwareRenderer {
                 Log.e(TAG, "loadContent: buffers not valid")
                 return@post
             }
-            if (!SharedGlThread.makeCurrent()) {
+            if (!makeCurrent()) {
                 Log.e(TAG, "loadContent: makeCurrent failed")
                 return@post
             }
 
-            // Create intermediate render FBO
+            // Create intermediate render FBO and set GL target once
             destroyRenderFbo()
             createRenderFbo()
             if (renderFboId == 0) {
@@ -150,7 +171,6 @@ internal class GlHardwareRenderer {
                 return@post
             }
 
-            // Set GL target to render FBO once (not per-frame)
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
             GLES20.glViewport(0, 0, bufferWidth, bufferHeight)
 
@@ -185,6 +205,7 @@ internal class GlHardwareRenderer {
             }
 
             contentLoaded = true
+            frameCount = 0
 
             // Start frame loop if not already running
             if (!running) {
@@ -198,7 +219,7 @@ internal class GlHardwareRenderer {
         if (width <= 0 || height <= 0) return
         glHandler?.post {
             if (width == bufferWidth && height == bufferHeight) return@post
-            if (!SharedGlThread.makeCurrent()) {
+            if (!makeCurrent()) {
                 Log.e(TAG, "resize: makeCurrent failed")
                 return@post
             }
@@ -322,9 +343,94 @@ internal class GlHardwareRenderer {
 
             destroyRenderFbo()
             destroyBuffers()
+            destroyEgl()
+
+            glThread?.quitSafely()
+            glThread = null
             choreographer = null
         }
-        SharedGlThread.release()
+    }
+
+    // ==================== Private: EGL ====================
+
+    private fun initEgl() {
+        eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
+        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
+            Log.e(TAG, "eglGetDisplay failed")
+            return
+        }
+        val version = IntArray(2)
+        if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
+            Log.e(TAG, "eglInitialize failed")
+            return
+        }
+
+        // ThorVG GL engine requires OpenGL ES 3.0+
+        val EGL_OPENGL_ES3_BIT = 0x0040
+        val configAttribs = intArrayOf(
+            EGL14.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+            EGL14.EGL_RED_SIZE, 8,
+            EGL14.EGL_GREEN_SIZE, 8,
+            EGL14.EGL_BLUE_SIZE, 8,
+            EGL14.EGL_ALPHA_SIZE, 8,
+            EGL14.EGL_SURFACE_TYPE, EGL14.EGL_PBUFFER_BIT,
+            EGL14.EGL_NONE
+        )
+        val configs = arrayOfNulls<EGLConfig>(1)
+        val numConfigs = IntArray(1)
+        EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0)
+        if (numConfigs[0] == 0 || configs[0] == null) {
+            Log.e(TAG, "eglChooseConfig failed")
+            return
+        }
+
+        val contextAttribs = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 3, EGL14.EGL_NONE)
+        eglContext = EGL14.eglCreateContext(
+            eglDisplay, configs[0]!!, EGL14.EGL_NO_CONTEXT, contextAttribs, 0
+        )
+        if (eglContext == EGL14.EGL_NO_CONTEXT) {
+            Log.e(TAG, "eglCreateContext failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
+            return
+        }
+
+        val pbufferAttribs = intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE)
+        eglSurface = EGL14.eglCreatePbufferSurface(eglDisplay, configs[0]!!, pbufferAttribs, 0)
+        if (eglSurface == EGL14.EGL_NO_SURFACE) {
+            Log.e(TAG, "eglCreatePbufferSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
+            return
+        }
+
+        makeCurrent()
+    }
+
+    private fun makeCurrent(): Boolean {
+        if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
+            Log.e(TAG, "makeCurrent: no display")
+            return false
+        }
+        val ok = EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)
+        if (!ok) {
+            Log.e(TAG, "makeCurrent failed: EGL error 0x${Integer.toHexString(EGL14.eglGetError())}")
+        }
+        return ok
+    }
+
+    private fun destroyEgl() {
+        if (eglDisplay != EGL14.EGL_NO_DISPLAY) {
+            EGL14.eglMakeCurrent(
+                eglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_CONTEXT
+            )
+            if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                EGL14.eglDestroySurface(eglDisplay, eglSurface)
+            }
+            if (eglContext != EGL14.EGL_NO_CONTEXT) {
+                EGL14.eglDestroyContext(eglDisplay, eglContext)
+            }
+            EGL14.eglTerminate(eglDisplay)
+        }
+        eglDisplay = EGL14.EGL_NO_DISPLAY
+        eglContext = EGL14.EGL_NO_CONTEXT
+        eglSurface = EGL14.EGL_NO_SURFACE
     }
 
     // ==================== Private: Intermediate Render FBO ====================
@@ -381,7 +487,7 @@ internal class GlHardwareRenderer {
         if (bufferWidth <= 0 || bufferHeight <= 0) return
         buffersValid = false
 
-        for (i in 0..1) {
+        for (i in 0 until BUFFER_COUNT) {
             val hwBuffer = HardwareBuffer.create(
                 bufferWidth, bufferHeight,
                 HardwareBuffer.RGBA_8888, 1,
@@ -408,7 +514,7 @@ internal class GlHardwareRenderer {
 
     private fun destroyBuffers() {
         buffersValid = false
-        for (i in 0..1) {
+        for (i in 0 until BUFFER_COUNT) {
             if (fboIds[i] != 0 || texIds[i] != 0 || eglImagePtrs[i] != 0L) {
                 DotLottieJNI.nativeDestroyFboResources(fboIds[i], texIds[i], eglImagePtrs[i])
             }
@@ -430,9 +536,13 @@ internal class GlHardwareRenderer {
         if (bufferWidth <= 0 || bufferHeight <= 0) return
         if (!buffersValid) return
         if (renderFboId == 0) return
-        if (!SharedGlThread.makeCurrent()) return
+        if (!makeCurrent()) return
 
-        // Tick the player — ThorVG renders into renderFbo (set once via setGlTarget)
+        // Bind the intermediate render FBO (setGlTarget was called once on load/resize)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
+        GLES20.glViewport(0, 0, bufferWidth, bufferHeight)
+
+        // Tick the player — ThorVG renders into renderFbo
         val ticked = if (stateMachineIsActive) {
             player.stateMachineTick()
         } else {
@@ -443,7 +553,10 @@ internal class GlHardwareRenderer {
         pollEvents(player)
 
         if (ticked) {
-            // Blit from intermediate renderFbo to the back HardwareBuffer FBO
+            // GPU sync — ensure ThorVG rendering is complete before blit
+            DotLottieJNI.nativeGlFinish()
+
+            // Blit from intermediate renderFbo to the back HW buffer FBO
             GLES30.glBindFramebuffer(GLES30.GL_READ_FRAMEBUFFER, renderFboId)
             GLES30.glBindFramebuffer(GLES30.GL_DRAW_FRAMEBUFFER, fboIds[backIndex])
             GLES30.glBlitFramebuffer(
@@ -456,9 +569,9 @@ internal class GlHardwareRenderer {
             // GPU sync — ensure blit to HardwareBuffer is complete
             DotLottieJNI.nativeGlFinish()
 
-            // Swap front/back
+            // Advance back index (triple-buffer cycling)
             val frontIndex = backIndex
-            backIndex = 1 - backIndex
+            backIndex = (backIndex + 1) % BUFFER_COUNT
 
             // Wrap front buffer as hardware Bitmap
             val frontBuffer = hwBuffers[frontIndex]
@@ -480,6 +593,8 @@ internal class GlHardwareRenderer {
             // Deliver to main thread
             val cb = frameCallback ?: return
             mainHandler.post { cb.onFrame(hwBitmap) }
+        } else {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
         }
 
         // Only stop looping if content is loaded but nothing is animating.
@@ -526,5 +641,6 @@ internal class GlHardwareRenderer {
 
     companion object {
         private const val TAG = "GlHardwareRenderer"
+        private const val BUFFER_COUNT = 3
     }
 }
