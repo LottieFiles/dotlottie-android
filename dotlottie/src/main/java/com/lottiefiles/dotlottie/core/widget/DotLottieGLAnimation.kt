@@ -21,6 +21,7 @@ import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.StateMachinePlayerEvent
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
+import com.lottiefiles.dotlottie.core.ExperimentalDotLottieGLApi
 import com.lottiefiles.dotlottie.core.R
 import com.lottiefiles.dotlottie.core.model.Config as ViewConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
+@ExperimentalDotLottieGLApi
 class DotLottieGLAnimation @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,

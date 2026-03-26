@@ -1,6 +1,5 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.dotlottie.dlplayer.Layout
@@ -8,6 +7,7 @@ import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.lottiefiles.dotlottie.core.ExperimentalDotLottieGLApi
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 
@@ -19,6 +19,7 @@ import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
  *
  * On API < 31, falls back to [DotLottieGLSurfaceAnimation] (AndroidView + GLSurfaceView wrapper).
  */
+@ExperimentalDotLottieGLApi
 @OptIn(InternalDotLottieApi::class)
 @Composable
 fun DotLottieGLAnimation(
@@ -39,44 +40,23 @@ fun DotLottieGLAnimation(
     threads: UInt? = null,
     loopCount: UInt = 0u,
 ) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        DotLottieGLAnimationHardwareBuffer(
-            modifier = modifier,
-            source = source,
-            autoplay = autoplay,
-            loop = loop,
-            useFrameInterpolation = useFrameInterpolation,
-            themeId = themeId,
-            stateMachineId = stateMachineId,
-            marker = marker,
-            speed = speed,
-            segment = segment,
-            playMode = playMode,
-            controller = controller,
-            layout = layout,
-            eventListeners = eventListeners,
-            threads = threads,
-            loopCount = loopCount,
-        )
-    } else {
-        // Fallback to existing AndroidView-based GL composable
-        DotLottieGLSurfaceAnimation(
-            modifier = modifier,
-            source = source,
-            autoplay = autoplay,
-            loop = loop,
-            useFrameInterpolation = useFrameInterpolation,
-            themeId = themeId,
-            stateMachineId = stateMachineId,
-            marker = marker,
-            speed = speed,
-            segment = segment,
-            playMode = playMode,
-            controller = controller,
-            layout = layout,
-            eventListeners = eventListeners,
-            threads = threads,
-            loopCount = loopCount,
-        )
-    }
+    // TODO: Add HardwareBuffer support for API 31+
+    DotLottieGLSurfaceAnimation(
+        modifier = modifier,
+        source = source,
+        autoplay = autoplay,
+        loop = loop,
+        useFrameInterpolation = useFrameInterpolation,
+        themeId = themeId,
+        stateMachineId = stateMachineId,
+        marker = marker,
+        speed = speed,
+        segment = segment,
+        playMode = playMode,
+        controller = controller,
+        layout = layout,
+        eventListeners = eventListeners,
+        threads = threads,
+        loopCount = loopCount,
+    )
 }

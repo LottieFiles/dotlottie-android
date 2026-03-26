@@ -16,12 +16,13 @@ import com.lottiefiles.dotlottie.core.compose.runtime.DotLottieController
 import com.lottiefiles.dotlottie.core.model.Config as ViewConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
+import com.lottiefiles.dotlottie.core.ExperimentalDotLottieGLApi
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.lottiefiles.dotlottie.core.widget.DotLottieGLAnimation as GLWidget
 
-@OptIn(InternalDotLottieApi::class)
+@OptIn(InternalDotLottieApi::class, ExperimentalDotLottieGLApi::class)
 @Composable
-fun DotLottieGLSurfaceAnimation(
+internal fun DotLottieGLSurfaceAnimation(
     modifier: Modifier = Modifier,
     source: DotLottieSource,
     autoplay: Boolean = false,
