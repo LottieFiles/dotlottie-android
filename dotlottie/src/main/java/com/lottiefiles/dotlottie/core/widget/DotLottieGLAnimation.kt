@@ -3,9 +3,14 @@ package com.lottiefiles.dotlottie.core.widget
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PointF
-import android.opengl.GLSurfaceView
+import android.graphics.SurfaceTexture
+import android.opengl.EGL14
+import android.opengl.EGLSurface
+import android.opengl.GLES20
+import android.opengl.GLES30
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.TextureView
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import com.dotlottie.dlplayer.Config
@@ -29,6 +34,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.SharedGlThread
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.dispatchPlayerEvent
 import com.lottiefiles.dotlottie.core.util.dispatchStateMachineEvent
@@ -40,25 +46,32 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 
 @ExperimentalDotLottieGLApi
 class DotLottieGLAnimation @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-) : GLSurfaceView(context, attrs), GLSurfaceView.Renderer {
+) : TextureView(context, attrs), TextureView.SurfaceTextureListener, SharedGlThread.RenderClient {
+
+    private val sharedGl = SharedGlThread.instance
 
     private var dlPlayer: DotLottiePlayer? = null
     private var dlConfig: Config? = null
+    private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
     private var pendingContent: DotLottieContent? = null
     private var lastLoadedContent: DotLottieContent? = null
     private var surfaceWidth: Int = 0
     private var surfaceHeight: Int = 0
-    private var surfaceReady = false
+    @Volatile private var surfaceReady = false
     private var initialized = false
-    private var stateMachineIsActive = false
-    private var glThread: Thread? = null
+    @Volatile private var paused = false
+    @Volatile private var dirtyFrame = false
+    private var glTargetDirty = true
+
+    // Intermediate render FBO — ThorVG renders here; we blit to the window surface each frame.
+    // This avoids flickering caused by undefined back-buffer contents after eglSwapBuffers.
+    private var renderFboId = 0
+    private var renderTexId = 0
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var loadJob: Job? = null
@@ -151,7 +164,8 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     init {
         retrieveAttributes(attrs)
-        setupGL()
+        isOpaque = false
+        surfaceTextureListener = this
 
         if (attrSrc.isNotBlank()) {
             val source = if (attrSrc.isUrl()) {
@@ -209,63 +223,159 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         }
     }
 
-    private fun setupGL() {
-        setEGLContextClientVersion(3)
-        setEGLConfigChooser(8, 8, 8, 8, 0, 0)
-        holder.setFormat(android.graphics.PixelFormat.TRANSLUCENT)
-        setZOrderOnTop(true)
-        preserveEGLContextOnPause = true
-        setRenderer(this)
-        renderMode = RENDERMODE_WHEN_DIRTY
-    }
+    // ==================== TextureView.SurfaceTextureListener ====================
 
-    // ==================== GLSurfaceView.Renderer ====================
+    override fun onSurfaceTextureAvailable(st: SurfaceTexture, width: Int, height: Int) {
+        st.setDefaultBufferSize(width, height)
+        sharedGl.handler.post {
+            eglSurface = sharedGl.createWindowSurface(st)
+            if (eglSurface == EGL14.EGL_NO_SURFACE) return@post
 
-    override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        glThread = Thread.currentThread()
-        // EGL context was (re-)created. Recreate the player if needed.
-        if (initialized) {
-            // Context was lost and recreated — rebuild player and reload content
-            destroyPlayerOnGlThread()
+            surfaceWidth = width
+            surfaceHeight = height
+            surfaceReady = true
+            glTargetDirty = true
+
+            // (Re)create player
+            if (initialized) {
+                destroyPlayerOnGlThread()
+            }
+            initPlayerOnGlThread()
+
+            val player = dlPlayer ?: return@post
+            sharedGl.makeCurrent(eglSurface)
+
+            // Create intermediate render FBO
+            destroyRenderFbo()
+            createRenderFbo()
+            if (renderFboId == 0) return@post
+
+            player.setGlTarget(
+                sharedGl.eglDisplay.nativeHandle,
+                eglSurface.nativeHandle,
+                sharedGl.eglContext.nativeHandle,
+                renderFboId,
+                width.toUInt(),
+                height.toUInt()
+            )
+            glTargetDirty = false
+
+            // Load pending content or reload last content
+            val content = pendingContent ?: lastLoadedContent
+            if (content != null) {
+                pendingContent = null
+                loadContentOnGlThread(content)
+            }
         }
-        initPlayerOnGlThread()
+        sharedGl.register(this)
     }
 
-    override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        surfaceWidth = width
-        surfaceHeight = height
-        surfaceReady = true
+    override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, width: Int, height: Int) {
+        st.setDefaultBufferSize(width, height)
+        sharedGl.handler.post {
+            if (width == surfaceWidth && height == surfaceHeight) return@post
+            surfaceWidth = width
+            surfaceHeight = height
+            glTargetDirty = true
+            val player = dlPlayer ?: return@post
 
-        val player = dlPlayer ?: return
-        player.setGlTarget(0, width.toUInt(), height.toUInt())
+            sharedGl.makeCurrent(eglSurface)
 
-        // If content is pending, load it now
-        val content = pendingContent
-        if (content != null && !player.isLoaded()) {
-            pendingContent = null
-            loadContentOnGlThread(content)
-        } else if (player.isLoaded()) {
+            // Recreate FBO at new size
+            destroyRenderFbo()
+            createRenderFbo()
+            if (renderFboId == 0) return@post
+
+            player.setGlTarget(
+                sharedGl.eglDisplay.nativeHandle,
+                eglSurface.nativeHandle,
+                sharedGl.eglContext.nativeHandle,
+                renderFboId,
+                width.toUInt(),
+                height.toUInt()
+            )
+            glTargetDirty = false
             player.resize(width.toUInt(), height.toUInt())
+            dirtyFrame = true
+            sharedGl.requestRender()
         }
     }
 
-    override fun onDrawFrame(gl: GL10?) {
-        val player = dlPlayer ?: return
+    override fun onSurfaceTextureDestroyed(st: SurfaceTexture): Boolean {
+        surfaceReady = false
+        sharedGl.handler.post {
+            sharedGl.unregisterOnGlThread(this)
+            destroyPlayerOnGlThread()
+            destroyRenderFbo()
+            if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                sharedGl.destroyWindowSurface(eglSurface)
+                eglSurface = EGL14.EGL_NO_SURFACE
+            }
+        }
+        return true
+    }
 
-        if (stateMachineIsActive) {
+    override fun onSurfaceTextureUpdated(st: SurfaceTexture) {
+        // No-op
+    }
+
+    // ==================== SharedGlThread.RenderClient ====================
+
+    override fun shouldRender(): Boolean {
+        if (paused || !surfaceReady) return false
+        if (dirtyFrame) return true
+        val player = dlPlayer ?: return false
+        return player.isPlaying() || player.stateMachineIsActive
+    }
+
+    override fun onRenderFrame() {
+        val player = dlPlayer ?: return
+        if (!surfaceReady) return
+        if (surfaceWidth <= 0 || surfaceHeight <= 0) return
+        if (renderFboId == 0) return
+
+        dirtyFrame = false
+
+        if (!sharedGl.makeCurrent(eglSurface)) return
+
+        // Only call setGlTarget when the surface changed or another client
+        // rendered in between (which changes the EGL surface binding).
+        if (glTargetDirty || sharedGl.lastRenderedClient != this) {
+            player.setGlTarget(
+                sharedGl.eglDisplay.nativeHandle,
+                eglSurface.nativeHandle,
+                sharedGl.eglContext.nativeHandle,
+                renderFboId,
+                surfaceWidth.toUInt(),
+                surfaceHeight.toUInt()
+            )
+            glTargetDirty = false
+        }
+
+        // ThorVG renders into the intermediate FBO
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
+        GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
+
+        if (player.stateMachineIsActive) {
             player.stateMachineTick()
         } else {
             player.tick()
         }
 
+        // Blit from render FBO to the window surface's default framebuffer
+        GLES30.glBindFramebuffer(GLES30.GL_READ_FRAMEBUFFER, renderFboId)
+        GLES30.glBindFramebuffer(GLES30.GL_DRAW_FRAMEBUFFER, 0)
+        GLES30.glBlitFramebuffer(
+            0, 0, surfaceWidth, surfaceHeight,
+            0, 0, surfaceWidth, surfaceHeight,
+            GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST
+        )
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+
+        sharedGl.swapBuffers(eglSurface)
+
         // Poll events and dispatch to listeners on the main thread
         pollAndDispatchEvents(player)
-
-        // Update render mode based on playback state
-        val desiredMode = if (player.isPlaying() || stateMachineIsActive) RENDERMODE_CONTINUOUSLY else RENDERMODE_WHEN_DIRTY
-        if (desiredMode != renderMode) {
-            post { renderMode = desiredMode }
-        }
     }
 
     // ==================== Player Management ====================
@@ -299,18 +409,75 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     private fun destroyPlayerOnGlThread() {
-        stateMachineIsActive = false
+        if (!initialized) return
         dlPlayer?.destroy()
         dlPlayer = null
         initialized = false
     }
 
+    private fun createRenderFbo() {
+        if (surfaceWidth <= 0 || surfaceHeight <= 0) return
+
+        val texArr = IntArray(1)
+        GLES20.glGenTextures(1, texArr, 0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texArr[0])
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+            surfaceWidth, surfaceHeight, 0,
+            GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null
+        )
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST)
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST)
+        renderTexId = texArr[0]
+
+        val fboArr = IntArray(1)
+        GLES20.glGenFramebuffers(1, fboArr, 0)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboArr[0])
+        GLES20.glFramebufferTexture2D(
+            GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+            GLES20.GL_TEXTURE_2D, renderTexId, 0
+        )
+
+        val status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER)
+        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+            destroyRenderFbo()
+            return
+        }
+
+        renderFboId = fboArr[0]
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
+    }
+
+    private fun destroyRenderFbo() {
+        if (renderFboId != 0) {
+            GLES20.glDeleteFramebuffers(1, intArrayOf(renderFboId), 0)
+            renderFboId = 0
+        }
+        if (renderTexId != 0) {
+            GLES20.glDeleteTextures(1, intArrayOf(renderTexId), 0)
+            renderTexId = 0
+        }
+    }
+
     private fun loadContentOnGlThread(content: DotLottieContent) {
         val player = dlPlayer ?: return
         if (surfaceWidth <= 0 || surfaceHeight <= 0) return
+        if (renderFboId == 0) return
 
         lastLoadedContent = content
-        player.setGlTarget(0, surfaceWidth.toUInt(), surfaceHeight.toUInt())
+        sharedGl.makeCurrent(eglSurface)
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
+        GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
+        player.setGlTarget(
+            sharedGl.eglDisplay.nativeHandle,
+            eglSurface.nativeHandle,
+            sharedGl.eglContext.nativeHandle,
+            renderFboId,
+            surfaceWidth.toUInt(),
+            surfaceHeight.toUInt()
+        )
+        glTargetDirty = false
 
         when (content) {
             is DotLottieContent.Json -> {
@@ -336,14 +503,9 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             stateMachineStart()
         }
 
-        // Trigger continuous rendering if playing
-        post {
-            renderMode = if (player.isPlaying() || stateMachineIsActive) {
-                RENDERMODE_CONTINUOUSLY
-            } else {
-                RENDERMODE_WHEN_DIRTY
-            }
-        }
+        // Always render at least one frame so events (e.g. Load) get polled and dispatched
+        dirtyFrame = true
+        sharedGl.requestRender()
     }
 
     private fun loadContentAsync(source: DotLottieSource, config: Config) {
@@ -352,7 +514,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         loadJob = coroutineScope.launch {
             runCatching {
                 val content = DotLottieUtils.getContent(context, source)
-                queueEvent {
+                sharedGl.handler.post {
                     if (surfaceReady && dlPlayer != null) {
                         loadContentOnGlThread(content)
                     } else {
@@ -368,7 +530,6 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== Event Polling ====================
 
     private fun pollAndDispatchEvents(player: DotLottiePlayer) {
-        // Poll events on the GL thread, dispatch to listeners on the main thread via post{}
         var event = player.pollEvent()
         while (event != null) {
             val e = event
@@ -389,6 +550,19 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             post { handleInternalEvent(msg, onOpenUrlCallback) }
             internalEvent = player.stateMachinePollInternalEvent()
         }
+    }
+
+    // ==================== Lifecycle ====================
+
+    fun onResume() {
+        paused = false
+        if (surfaceReady) {
+            sharedGl.requestRender()
+        }
+    }
+
+    fun onPause() {
+        paused = true
     }
 
     // ==================== Public API ====================
@@ -413,35 +587,38 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun play() {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.play()
-            post { renderMode = RENDERMODE_CONTINUOUSLY }
+            sharedGl.requestRender()
         }
     }
 
     fun pause() {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.pause()
-            post { renderMode = RENDERMODE_WHEN_DIRTY }
         }
     }
 
     fun stop() {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.stop()
-            post { renderMode = RENDERMODE_WHEN_DIRTY }
         }
     }
 
+    fun requestRender() {
+        sharedGl.requestRender()
+    }
+
     fun setFrame(frame: Float) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.setFrame(frame)
-            requestRender()
+            dirtyFrame = true
+            sharedGl.requestRender()
         }
     }
 
     fun setSpeed(speed: Float) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.speed = speed
@@ -451,7 +628,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setLoop(loop: Boolean) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.loopAnimation = loop
@@ -461,7 +638,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setLoopCount(loopCount: UInt) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.loopCount = loopCount
@@ -471,7 +648,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setPlayMode(mode: Mode) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.mode = mode
@@ -481,7 +658,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setSegment(firstFrame: Float, lastFrame: Float) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.segment = listOf(firstFrame, lastFrame)
@@ -491,7 +668,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setUseFrameInterpolation(enable: Boolean) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.useFrameInterpolation = enable
@@ -501,7 +678,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setMarker(marker: String) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.marker = marker
@@ -511,7 +688,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setLayout(fit: Fit, alignment: LayoutUtil.Alignment) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.layout = Layout(fit, listOf(alignment.alignment.first, alignment.alignment.second))
@@ -521,7 +698,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setLayout(fit: Fit, alignment: Pair<Float, Float>) {
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.let {
                 val config = it.config()
                 config.layout = Layout(fit, listOf(alignment.first, alignment.second))
@@ -531,7 +708,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setTheme(themeId: String) {
-        queueEvent {
+        sharedGl.handler.post {
             if (themeId.isEmpty()) {
                 dlPlayer?.resetTheme()
             } else {
@@ -541,48 +718,67 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun setThemeData(themeData: String) {
-        queueEvent { dlPlayer?.setThemeData(themeData) }
+        sharedGl.handler.post { dlPlayer?.setThemeData(themeData) }
     }
 
     fun resetTheme() {
-        queueEvent { dlPlayer?.resetTheme() }
+        sharedGl.handler.post { dlPlayer?.resetTheme() }
     }
 
     fun manifest(): Manifest? = dlPlayer?.manifest()
 
     fun loadAnimation(animationId: String) {
-        queueEvent { dlPlayer?.loadAnimation(animationId, surfaceWidth.toUInt(), surfaceHeight.toUInt()) }
+        sharedGl.handler.post { dlPlayer?.loadAnimation(animationId, surfaceWidth.toUInt(), surfaceHeight.toUInt()) }
     }
 
     fun freeze() {
-        queueEvent { dlPlayer?.pause() }
-        post { renderMode = RENDERMODE_WHEN_DIRTY }
+        sharedGl.handler.post { dlPlayer?.pause() }
     }
 
     fun unFreeze() {
-        queueEvent { dlPlayer?.play() }
-        post { renderMode = RENDERMODE_CONTINUOUSLY }
+        sharedGl.handler.post {
+            dlPlayer?.play()
+            sharedGl.requestRender()
+        }
     }
 
     fun resize(width: Int, height: Int) {
-        queueEvent {
+        sharedGl.handler.post {
+            surfaceWidth = width
+            surfaceHeight = height
+            sharedGl.makeCurrent(eglSurface)
+            destroyRenderFbo()
+            createRenderFbo()
             dlPlayer?.resize(width.toUInt(), height.toUInt())
-            dlPlayer?.setGlTarget(0, width.toUInt(), height.toUInt())
+            dlPlayer?.let { player ->
+                if (renderFboId != 0) {
+                    player.setGlTarget(
+                        sharedGl.eglDisplay.nativeHandle,
+                        eglSurface.nativeHandle,
+                        sharedGl.eglContext.nativeHandle,
+                        renderFboId,
+                        width.toUInt(),
+                        height.toUInt()
+                    )
+                    glTargetDirty = false
+                }
+            }
+            dirtyFrame = true
+            sharedGl.requestRender()
         }
     }
 
     fun destroy() {
-        queueEvent { destroyPlayerOnGlThread() }
+        sharedGl.handler.post { destroyPlayerOnGlThread() }
     }
 
     // ==================== Slots ====================
 
     fun setSlots(slots: String) {
-        queueEvent { dlPlayer?.setSlots(slots) }
+        sharedGl.handler.post { dlPlayer?.setSlots(slots) }
     }
 
     fun setColorSlot(slotId: String, @ColorInt color: Int): Boolean {
-        // This must run synchronously for return value — best-effort on calling thread
         return dlPlayer?.setColorSlot(slotId, color) ?: false
     }
 
@@ -621,6 +817,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== Event Listeners ====================
 
     fun addEventListener(listener: DotLottieEventListener) {
+        android.util.Log.d("DotLottie", "Adding event listener")
         if (!eventListeners.contains(listener)) {
             eventListeners.add(listener)
         }
@@ -637,20 +834,18 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== State Machine ====================
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
-        // If called from the GL thread (e.g. during onSurfaceChanged), execute directly
-        if (Thread.currentThread() == glThread) {
+        if (isOnGlThread()) {
             return dlPlayer?.loadStateMachine(stateMachineId) ?: false
         }
-        // Otherwise queue to the GL thread
-        queueEvent { dlPlayer?.loadStateMachine(stateMachineId) }
+        sharedGl.handler.post { dlPlayer?.loadStateMachine(stateMachineId) }
         return true
     }
 
     fun stateMachineLoadData(data: String): Boolean {
-        if (Thread.currentThread() == glThread) {
+        if (isOnGlThread()) {
             return dlPlayer?.loadStateMachineData(data) ?: false
         }
-        queueEvent { dlPlayer?.loadStateMachineData(data) }
+        sharedGl.handler.post { dlPlayer?.loadStateMachineData(data) }
         return true
     }
 
@@ -659,37 +854,32 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         onOpenUrl: ((url: String) -> Unit)? = null
     ): Boolean {
         onOpenUrlCallback = onOpenUrl
-        if (Thread.currentThread() == glThread) {
+        if (isOnGlThread()) {
             return startStateMachineOnGlThread(urlConfig)
         }
-        queueEvent { startStateMachineOnGlThread(urlConfig) }
+        sharedGl.handler.post { startStateMachineOnGlThread(urlConfig) }
         return true
     }
 
     private fun startStateMachineOnGlThread(urlConfig: OpenUrlPolicy): Boolean {
         val result = dlPlayer?.stateMachineStart(urlConfig) ?: false
         if (result) {
-            stateMachineIsActive = true
             dlPlayer?.let {
                 stateMachineGestureListeners =
                     it.stateMachineFrameworkSetup().map { s -> s.lowercase() }.toSet().toMutableList()
             }
-            post { renderMode = RENDERMODE_CONTINUOUSLY }
+            sharedGl.requestRender()
         }
         return result
     }
 
     fun stateMachineStop(): Boolean {
-        stateMachineIsActive = false
         onOpenUrlCallback = null
-        if (Thread.currentThread() == glThread) {
-            val result = dlPlayer?.stateMachineStop() ?: false
-            post { renderMode = RENDERMODE_WHEN_DIRTY }
-            return result
+        if (isOnGlThread()) {
+            return dlPlayer?.stateMachineStop() ?: false
         }
-        queueEvent {
+        sharedGl.handler.post {
             dlPlayer?.stateMachineStop()
-            post { renderMode = RENDERMODE_WHEN_DIRTY }
         }
         return true
     }
@@ -697,12 +887,12 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     fun stateMachinePostEvent(event: Event) {
         val eventName = event.toString().split("(").firstOrNull()?.lowercase() ?: event.toString()
         if (stateMachineGestureListeners.contains(eventName)) {
-            queueEvent { dlPlayer?.stateMachinePostEvent(event) }
+            sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(event) }
         }
     }
 
     fun stateMachineFireEvent(event: String) {
-        queueEvent { dlPlayer?.stateMachineFireEvent(event) }
+        sharedGl.handler.post { dlPlayer?.stateMachineFireEvent(event) }
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
@@ -751,7 +941,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 lastTouchX = x
                 lastTouchY = y
                 movedTooMuch = false
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerDown(x, y)) }
+                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerDown(x, y)) }
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
@@ -761,18 +951,18 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 if (distance > touchSlop) {
                     movedTooMuch = true
                 }
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerMove(x, y)) }
+                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerMove(x, y)) }
                 return true
             }
             MotionEvent.ACTION_UP -> {
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
+                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
                 if (!movedTooMuch) {
                     performClick()
                 }
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                queueEvent { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
+                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
                 return true
             }
         }
@@ -781,17 +971,26 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     override fun performClick(): Boolean {
         super.performClick()
-        queueEvent { dlPlayer?.stateMachinePostEvent(Event.Click(lastTouchX, lastTouchY)) }
+        sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.Click(lastTouchX, lastTouchY)) }
         return true
     }
 
-    // ==================== Lifecycle ====================
+    // ==================== View Lifecycle ====================
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         loadJob?.cancel()
         coroutineScope.cancel()
-        queueEvent { destroyPlayerOnGlThread() }
+        surfaceReady = false
+        sharedGl.handler.post {
+            sharedGl.unregisterOnGlThread(this)
+            destroyPlayerOnGlThread()
+            destroyRenderFbo()
+            if (eglSurface != EGL14.EGL_NO_SURFACE) {
+                sharedGl.destroyWindowSurface(eglSurface)
+                eglSurface = EGL14.EGL_NO_SURFACE
+            }
+        }
     }
 
     // ==================== Internal: Player Instance Access ====================
@@ -804,11 +1003,14 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         if (dlPlayer != null && dlConfig != null) {
             callback(dlPlayer!!, dlConfig!!)
         }
-        // Also set for future recreation
         playerCreatedCallback = callback
     }
 
     private var playerCreatedCallback: ((DotLottiePlayer, Config) -> Unit)? = null
+
+    private fun isOnGlThread(): Boolean {
+        return Thread.currentThread() == sharedGl.handler.looper.thread
+    }
 
     companion object {
         private const val TAG = "DotLottieGLAnimation"

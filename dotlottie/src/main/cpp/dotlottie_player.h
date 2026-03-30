@@ -602,6 +602,8 @@ enum dotlottieDotLottieResult dotlottie_set_sw_target(struct dotlottieDotLottieP
                                                       enum dotlottieColorSpace color_space);
 
 enum dotlottieDotLottieResult dotlottie_set_gl_target(struct dotlottieDotLottiePlayer *ptr,
+                                                      void *display,
+                                                      void *surface,
                                                       void *context,
                                                       int32_t id,
                                                       uint32_t width,

@@ -112,8 +112,8 @@ class DotLottieController {
     val activeAnimationId: String
         get() = dlplayer?.activeAnimationId() ?: ""
 
-    var stateMachineIsActive: Boolean = false
-        get() = field
+    val stateMachineIsActive: Boolean
+        get() = dlplayer?.stateMachineIsActive ?: false
 
     private val _bufferNeedsUpdate = MutableStateFlow(false)
     val bufferNeedsUpdate: StateFlow<Boolean> = _bufferNeedsUpdate.asStateFlow()
@@ -155,7 +155,6 @@ class DotLottieController {
     ): Boolean {
         val result = dlplayer?.stateMachineStart(openUrl) ?: false
         if (result) {
-            stateMachineIsActive = true
             onOpenUrlCallback = onOpenUrl
             // Handles states that are in paused state
             _frameUpdateRequested.value++
@@ -171,7 +170,6 @@ class DotLottieController {
     }
 
     fun stateMachineStop(): Boolean {
-        stateMachineIsActive = false
         onOpenUrlCallback = null
         return dlplayer?.stateMachineStop() ?: false
     }

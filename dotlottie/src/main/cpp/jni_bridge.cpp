@@ -84,6 +84,7 @@ static void nativeFreeBuffer(JNIEnv *env, jclass, jlong bufferPtr);
 static jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr,
                               jlong bufferPtr, jint width, jint height);
 static jint nativeSetGlTarget(JNIEnv *env, jclass, jlong playerPtr,
+                              jlong display, jlong surface, jlong context,
                               jint framebufferId, jint width, jint height);
 
 // Config setters
@@ -536,13 +537,16 @@ jint nativeSetSwTarget(JNIEnv *env, jclass, jlong playerPtr, jlong bufferPtr,
 }
 
 jint nativeSetGlTarget(JNIEnv *env, jclass, jlong playerPtr,
+                       jlong display, jlong surface, jlong context,
                        jint framebufferId, jint width, jint height) {
   auto *player = reinterpret_cast<dotlottieDotLottiePlayer *>(playerPtr);
-  // Must be called from the GL thread — eglGetCurrentContext() returns
-  // the EGLContext that is current on the calling thread.
-  void *context = reinterpret_cast<void *>(eglGetCurrentContext());
   auto result = dotlottie_set_gl_target(
-      player, context, static_cast<int32_t>(framebufferId), width, height);
+      player,
+      reinterpret_cast<void *>(display),
+      reinterpret_cast<void *>(surface),
+      reinterpret_cast<void *>(context),
+      static_cast<int32_t>(framebufferId),
+      width, height);
   return static_cast<jint>(result);
 }
 
@@ -1555,7 +1559,7 @@ static JNINativeMethod playerMethods[] = {
     {"nativeAllocateBuffer", "(II)J", (void *)nativeAllocateBuffer},
     {"nativeFreeBuffer", "(J)V", (void *)nativeFreeBuffer},
     {"nativeSetSwTarget", "(JJII)I", (void *)nativeSetSwTarget},
-    {"nativeSetGlTarget", "(JIII)I", (void *)nativeSetGlTarget},
+    {"nativeSetGlTarget", "(JJJJIII)I", (void *)nativeSetGlTarget},
 
     // Bitmap pixel access
     {"nativeLockBitmapPixels", "(Landroid/graphics/Bitmap;)J",

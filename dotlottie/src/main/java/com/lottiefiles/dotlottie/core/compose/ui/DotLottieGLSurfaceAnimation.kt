@@ -3,6 +3,8 @@ package com.lottiefiles.dotlottie.core.compose.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -77,6 +79,12 @@ internal fun DotLottieGLSurfaceAnimation(
         if (marker != null) widget.setMarker(marker)
         widget.setLayout(layout.fit, Pair(layout.align[0], layout.align[1]))
         if (themeId != null) widget.setTheme(themeId) else widget.resetTheme()
+    }
+
+    // Re-start animation loop
+    val currentState by rController.currentState.collectAsState()
+    LaunchedEffect(currentState) {
+        glWidgetRef[0]?.requestRender()
     }
 
     // Lifecycle handling
