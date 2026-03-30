@@ -137,7 +137,15 @@ object DotLottiePlayer {
     external fun nativeSetSwTarget(playerPtr: Long, bufferPtr: Long, width: Int, height: Int): Int
 
     @JvmStatic
-    external fun nativeSetGlTarget(playerPtr: Long, framebufferId: Int, width: Int, height: Int): Int
+    external fun nativeSetGlTarget(
+        playerPtr: Long,
+        display: Long,
+        surface: Long,
+        context: Long,
+        framebufferId: Int,
+        width: Int,
+        height: Int
+    ): Int
 
     // ==================== Bitmap Pixel Access ====================
 

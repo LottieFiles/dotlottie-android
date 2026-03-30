@@ -199,8 +199,18 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun setGlTarget(framebufferId: Int, width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeSetGlTarget(nativePtr, framebufferId, width.toInt(), height.toInt())
+    fun setGlTarget(
+        display: Long,
+        surface: Long,
+        context: Long,
+        framebufferId: Int,
+        width: UInt,
+        height: UInt
+    ): Boolean {
+        val result = JNI.nativeSetGlTarget(
+            nativePtr, display, surface, context,
+            framebufferId, width.toInt(), height.toInt()
+        )
         return result == 0
     }
 
@@ -483,8 +493,13 @@ class DotLottiePlayer {
         if (stateMachinePtr != 0L) {
             JNI.nativeStateMachineRelease(stateMachinePtr)
             stateMachinePtr = 0
+            stateMachineIsActive = false
         }
     }
+
+    @Volatile
+    var stateMachineIsActive: Boolean = false
+        private set
 
     fun stateMachineStart(openUrlPolicy: OpenUrlPolicy = OpenUrlPolicy()): Boolean {
         if (stateMachinePtr == 0L) return false
@@ -498,12 +513,15 @@ class DotLottiePlayer {
             whitelist,
             openUrlPolicy.requireUserInteraction
         )
-        return result == 0
+        val started = result == 0
+        if (started) stateMachineIsActive = true
+        return started
     }
 
     fun stateMachineStop(): Boolean {
         if (stateMachinePtr == 0L) return false
         val result = JNI.nativeStateMachineStop(stateMachinePtr)
+        if (result == 0) stateMachineIsActive = false
         return result == 0
     }
 
