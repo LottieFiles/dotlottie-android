@@ -13,8 +13,8 @@ import android.view.Choreographer
 
 /**
  * Singleton shared GL thread that owns a single EGL context.
- * All DotLottieGLAnimation instances render sequentially on this thread,
- * avoiding ThorVG's thread-safety issues without needing locks or glFinish().
+ * All rendering clients (TextureView and HardwareBuffer paths) render
+ * sequentially on this thread, avoiding ThorVG's thread-safety issues.
  */
 internal class SharedGlThread private constructor() {
 
