@@ -934,6 +934,12 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== Touch Events ====================
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val player = dlPlayer
+
+        if (player == null || !player.stateMachineIsActive) {
+            return super.onTouchEvent(event)
+        }
+
         val x = event.x
         val y = event.y
         when (event.action) {
@@ -941,8 +947,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 lastTouchX = x
                 lastTouchY = y
                 movedTooMuch = false
-                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerDown(x, y)) }
-                return true
+                sharedGl.handler.post { player.stateMachinePostEvent(Event.PointerDown(x, y)) }
             }
             MotionEvent.ACTION_MOVE -> {
                 val dx = x - lastTouchX
@@ -951,19 +956,16 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 if (distance > touchSlop) {
                     movedTooMuch = true
                 }
-                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerMove(x, y)) }
-                return true
+                sharedGl.handler.post { player.stateMachinePostEvent(Event.PointerMove(x, y)) }
             }
             MotionEvent.ACTION_UP -> {
-                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
+                sharedGl.handler.post { player.stateMachinePostEvent(Event.PointerUp(x, y)) }
                 if (!movedTooMuch) {
                     performClick()
                 }
-                return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                sharedGl.handler.post { dlPlayer?.stateMachinePostEvent(Event.PointerUp(x, y)) }
-                return true
+                sharedGl.handler.post { player.stateMachinePostEvent(Event.PointerUp(x, y)) }
             }
         }
         return super.onTouchEvent(event)
