@@ -394,8 +394,8 @@ class DotLottiePlayer {
 
     fun manifest(): Manifest {
         val jsonStr = JNI.nativeManifest(nativePtr) ?: return Manifest(
-            activeAnimationId = null, animations = null, author = null,
-            description = null, generator = null, keywords = null,
+            activeAnimationId = null, animations = emptyList(), author = null,
+            description = null, generator = null, initial = null, keywords = null,
             revision = null, themes = null, stateMachines = null, version = null,
             customData = null
         )
@@ -406,14 +406,19 @@ class DotLottiePlayer {
             val animations = if (animationsJson != null) {
                 (0 until animationsJson.length()).map { i ->
                     val anim = animationsJson.getJSONObject(i)
+                    val animThemesJson = anim.optJSONArray("themes")
+                    val animThemes = if (animThemesJson != null) {
+                        (0 until animThemesJson.length()).map { j -> animThemesJson.getString(j) }
+                    } else null
                     Manifest.Animation(
                         id = anim.optString("id", ""),
                         name = anim.optString("name", null),
+                        themes = animThemes,
                         initialTheme = anim.optString("initialTheme", null),
                         background = anim.optString("background", null)
                     )
                 }
-            } else null
+            } else emptyList()
 
             val themesJson = json.optJSONArray("themes")
             val themes = if (themesJson != null) {
@@ -437,12 +442,21 @@ class DotLottiePlayer {
                 }
             } else null
 
+            val initialJson = json.optJSONObject("initial")
+            val initial = if (initialJson != null) {
+                ManifestInitial(
+                    animation = initialJson.optString("animation", null),
+                    stateMachine = initialJson.optString("stateMachine", null)
+                )
+            } else null
+
             Manifest(
                 activeAnimationId = json.optString("activeAnimationId", null),
                 animations = animations,
                 author = json.optString("author", null),
                 description = json.optString("description", null),
                 generator = json.optString("generator", null),
+                initial = initial,
                 keywords = json.optString("keywords", null),
                 revision = json.optString("revision", null)?.toUIntOrNull(),
                 themes = themes,
@@ -452,8 +466,8 @@ class DotLottiePlayer {
             )
         } catch (e: Exception) {
             Manifest(
-                activeAnimationId = null, animations = null, author = null,
-                description = null, generator = null, keywords = null,
+                activeAnimationId = null, animations = emptyList(), author = null,
+                description = null, generator = null, initial = null, keywords = null,
                 revision = null, themes = null, stateMachines = null, version = null,
                 customData = null
             )

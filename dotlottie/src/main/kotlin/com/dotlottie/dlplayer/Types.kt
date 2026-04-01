@@ -56,10 +56,11 @@ data class Marker(
  */
 data class Manifest(
     val activeAnimationId: String?,
-    val animations: List<Animation>?,
+    val animations: List<Animation>,
     val author: String?,
     val description: String?,
     val generator: String?,
+    val initial: ManifestInitial?,
     val keywords: String?,
     val revision: UInt?,
     val themes: List<Theme>?,
@@ -70,6 +71,7 @@ data class Manifest(
     data class Animation(
         val id: String,
         val name: String?,
+        val themes: List<String>?,
         val initialTheme: String?,
         val background: String?
     )
