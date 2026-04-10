@@ -1,0 +1,32 @@
+name: Notify Docs of PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main, master]
+
+jobs:
+  notify-docs:
+    runs-on: ubuntu-latest
+    if: >
+      !contains(github.event.pull_request.title, '[ci skip]') &&
+      !contains(github.event.pull_request.title, '[docs skip]')
+    steps:
+      - name: Dispatch to docs-content
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DOCS_CONTENT_SYNC_TOKEN }}
+          repository: LottieFiles/docs-content
+          event-type: docs-eval
+          client-payload: |
+            {
+              "source_repo": "${{ github.repository }}",
+              "source_package": "",
+              "pr_number": ${{ github.event.pull_request.number }},
+              "pr_title": "${{ github.event.pull_request.title }}",
+              "pr_body": "${{ github.event.pull_request.body }}",
+              "pr_branch": "${{ github.event.pull_request.head.ref }}",
+              "pr_url": "${{ github.event.pull_request.html_url }}",
+              "diff_url": "${{ github.event.pull_request.diff_url }}",
+              "sender": "${{ github.actor }}"
+            }
