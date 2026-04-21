@@ -36,6 +36,15 @@ class DotLottieController {
     private var dlplayer: DotLottiePlayer? = null
     private var config: Config = createDefaultConfig()
 
+    @Volatile
+    private var isDestroyed: Boolean = false
+
+    private inline fun <T> safePlayer(default: T, block: (DotLottiePlayer) -> T): T {
+        if (isDestroyed) return default
+        val player = dlplayer ?: return default
+        return runCatching { block(player) }.getOrDefault(default)
+    }
+
     private val _currentState = MutableStateFlow(DotLottiePlayerState.INITIAL)
     val currentState: StateFlow<DotLottiePlayerState> = _currentState.asStateFlow()
 
@@ -57,63 +66,64 @@ class DotLottieController {
         private set
 
     val isPlaying: Boolean
-        get() = dlplayer?.isPlaying() ?: false
+        get() = safePlayer(false) { it.isPlaying() }
 
     val isLoaded: Boolean
-        get() = dlplayer?.isLoaded() ?: false
+        get() = safePlayer(false) { it.isLoaded() }
 
     val isComplete: Boolean
-        get() = dlplayer?.isComplete() ?: false
+        get() = safePlayer(false) { it.isComplete() }
 
     val isStopped: Boolean
-        get() = dlplayer?.isStopped() ?: false
+        get() = safePlayer(false) { it.isStopped() }
 
     val isPaused: Boolean
-        get() = dlplayer?.isPaused() ?: false
+        get() = safePlayer(false) { it.isPaused() }
 
     val speed: Float
-        get() = dlplayer?.config()?.speed ?: 1f
+        get() = safePlayer(1f) { it.config().speed }
+
     val loop: Boolean
-        get() = dlplayer?.config()?.loopAnimation ?: false
+        get() = safePlayer(false) { it.config().loopAnimation }
 
     val autoplay: Boolean
-        get() = dlplayer?.config()?.autoplay ?: false
+        get() = safePlayer(false) { it.config().autoplay }
 
     val totalFrames: Float
-        get() = dlplayer?.totalFrames() ?: 0f
+        get() = safePlayer(0f) { it.totalFrames() }
 
     val currentFrame: Float
-        get() = dlplayer?.currentFrame() ?: 0f
+        get() = safePlayer(0f) { it.currentFrame() }
 
     val playMode: Mode
-        get() = dlplayer?.config()?.mode ?: Mode.FORWARD
+        get() = safePlayer(Mode.FORWARD) { it.config().mode }
 
     val segment: Pair<Float, Float>?
-        get() {
-            if (dlplayer?.config()?.segment!!.isEmpty() || dlplayer?.config()?.segment?.size != 2) return null
-            return Pair(dlplayer?.config()?.segment!![0], dlplayer!!.config().segment[1])
+        get() = safePlayer(null) {
+            val seg = it.config().segment
+            if (seg.size != 2) null else Pair(seg[0], seg[1])
         }
 
     val duration: Float
-        get() = dlplayer?.duration() ?: 0f
+        get() = safePlayer(0f) { it.duration() }
 
     val loopCount: UInt
-        get() = dlplayer?.loopCount() ?: 0u
+        get() = safePlayer(0u) { it.loopCount() }
 
     val useFrameInterpolation: Boolean
-        get() = dlplayer?.config()?.useFrameInterpolation ?: false
+        get() = safePlayer(false) { it.config().useFrameInterpolation }
 
     val markers: List<Marker>
-        get() = dlplayer?.markers() ?: emptyList()
+        get() = safePlayer(emptyList()) { it.markers() }
 
     val activeThemeId: String
-        get() = dlplayer?.activeThemeId() ?: ""
+        get() = safePlayer("") { it.activeThemeId() }
 
     val activeAnimationId: String
-        get() = dlplayer?.activeAnimationId() ?: ""
+        get() = safePlayer("") { it.activeAnimationId() }
 
     val stateMachineIsActive: Boolean
-        get() = dlplayer?.stateMachineIsActive ?: false
+        get() = safePlayer(false) { it.stateMachineIsActive }
 
     private val _bufferNeedsUpdate = MutableStateFlow(false)
     val bufferNeedsUpdate: StateFlow<Boolean> = _bufferNeedsUpdate.asStateFlow()
@@ -132,19 +142,22 @@ class DotLottieController {
     val frameUpdateRequested: StateFlow<Long> = _frameUpdateRequested.asStateFlow()
 
     fun play() {
-        dlplayer?.play()
+        if (isDestroyed) return
+        runCatching { dlplayer?.play() }
         _currentState.update { DotLottiePlayerState.PLAYING }
         shouldPlayOnInit = true
     }
 
     fun pause() {
-        dlplayer?.pause()
+        if (isDestroyed) return
+        runCatching { dlplayer?.pause() }
         _currentState.update { DotLottiePlayerState.PAUSED }
         shouldPlayOnInit = false
     }
 
     fun stop() {
-        dlplayer?.stop()
+        if (isDestroyed) return
+        runCatching { dlplayer?.stop() }
         _currentState.update { DotLottiePlayerState.STOPPED }
         shouldPlayOnInit = false
     }
@@ -238,14 +251,33 @@ class DotLottieController {
 
     @InternalDotLottieApi
     fun setPlayerInstance(player: DotLottiePlayer, config: Config) {
-        dlplayer?.destroy()
+        runCatching { dlplayer?.destroy() }
         dlplayer = player
         this.config = config
+        isDestroyed = false
+    }
+
+    /**
+     * Marks the controller as destroyed and releases the native player reference so
+     * subsequent accessor calls return safe defaults rather than throwing
+     * `IllegalStateException: DotLottiePlayer already destroyed`.
+     *
+     * Invoked by the [DotLottieAnimation] composable's `DisposableEffect.onDispose` to
+     * break the race where a pending callback or recomposition touches the controller after
+     * the native player has been destroyed.
+     */
+    @InternalDotLottieApi
+    fun destroy() {
+        if (isDestroyed) return
+        isDestroyed = true
+        dlplayer = null
+        onOpenUrlCallback = null
     }
 
     @InternalDotLottieApi
     fun init() {
-        dlplayer?.setConfig(config)
+        if (isDestroyed) return
+        runCatching { dlplayer?.setConfig(config) }
 
         if (shouldPlayOnInit) {
             this.play()

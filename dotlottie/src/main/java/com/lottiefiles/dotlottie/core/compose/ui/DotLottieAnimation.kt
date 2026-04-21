@@ -325,7 +325,11 @@ fun DotLottieAnimation(
             renderScope.cancel()
 
             bitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
-            dlPlayer.destroy()
+            // Detach the controller from the native player before destroying it so any
+            // pending callbacks or recompositions that touch the controller see a
+            // safe-default state instead of calling into an already-destroyed player.
+            rController.destroy()
+            runCatching { dlPlayer.destroy() }
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 bitmap?.recycle()
             }
