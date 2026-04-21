@@ -2,6 +2,8 @@ package com.lottiefiles.dotlottie.core.compose.ui
 
 import android.graphics.Bitmap
 import android.os.Build
+import android.os.SystemClock
+import android.util.Log
 import android.view.Choreographer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
@@ -46,6 +48,16 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+
+private const val TAG = "DotLottieAnimation"
+
+// Log a warning when a single tick blows past two vsync intervals at 60Hz —
+// helps attribute future ANRs to long native tick calls.
+private const val SLOW_TICK_THRESHOLD_MS = 32L
+
+// Log a warning when the native parse/decode takes longer than this —
+// helps attribute future ANRs to long native load calls.
+private const val SLOW_LOAD_THRESHOLD_MS = 100L
 
 private val cleanupScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -116,10 +128,15 @@ fun DotLottieAnimation(
                     return
                 }
 
+                val tickStartMs = SystemClock.uptimeMillis()
                 val ticked = if (rController.stateMachineIsActive) {
                     dlPlayer.stateMachineTick()
                 } else {
                     dlPlayer.tick()
+                }
+                val tickElapsedMs = SystemClock.uptimeMillis() - tickStartMs
+                if (tickElapsedMs > SLOW_TICK_THRESHOLD_MS) {
+                    Log.w(TAG, "tick took ${tickElapsedMs}ms (stateMachine=${rController.stateMachineIsActive})")
                 }
 
                 // Poll and dispatch events
@@ -188,13 +205,23 @@ fun DotLottieAnimation(
                 if (pixelPtr == 0L) return@withLock
                 dlPlayer.setSwTarget(pixelPtr, width, height)
 
-                when (animationData) {
-                    is DotLottieContent.Json -> {
-                        dlPlayer.loadAnimationData(animationData.jsonString, width, height)
-                    }
+                // Native parse/decode can be slow for large .lottie archives — run off the
+                // main thread to avoid ANRs. The render loop on Main already skips frames
+                // via renderMutex.tryLock() while this is in flight.
+                withContext(Dispatchers.Default) {
+                    val startMs = SystemClock.uptimeMillis()
+                    when (animationData) {
+                        is DotLottieContent.Json -> {
+                            dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                        }
 
-                    is DotLottieContent.Binary -> {
-                        dlPlayer.loadDotlottieData(animationData.data, width, height)
+                        is DotLottieContent.Binary -> {
+                            dlPlayer.loadDotlottieData(animationData.data, width, height)
+                        }
+                    }
+                    val elapsedMs = SystemClock.uptimeMillis() - startMs
+                    if (elapsedMs > SLOW_LOAD_THRESHOLD_MS) {
+                        Log.w(TAG, "load took ${elapsedMs}ms (size=${width}x${height})")
                     }
                 }
 

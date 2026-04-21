@@ -9,6 +9,8 @@ import android.graphics.PointF
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.os.SystemClock
+import android.util.Log
 import android.view.Choreographer
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
@@ -106,10 +108,15 @@ class DotLottieDrawable(
             }
 
             // stateMachineTick() calls player tick() internally (player is borrowed by state machine)
+            val tickStartMs = SystemClock.uptimeMillis()
             val ticked = if (stateMachineIsActive) {
                 player.stateMachineTick()
             } else {
                 player.tick()
+            }
+            val tickElapsedMs = SystemClock.uptimeMillis() - tickStartMs
+            if (tickElapsedMs > SLOW_TICK_THRESHOLD_MS) {
+                Log.w(TAG, "tick took ${tickElapsedMs}ms (stateMachine=$stateMachineIsActive)")
             }
 
             // Poll and dispatch events on main thread
@@ -239,65 +246,100 @@ class DotLottieDrawable(
         get() = dlPlayer?.isLoaded() ?: false
 
 
-    private var initialized = false
+    @Volatile private var initialized = false
+    @Volatile private var initializing = false
 
     /**
-     * Initialize the native player and load the animation.
-     * MUST be called on the main thread (ThorVG has thread affinity for rendering).
+     * Trigger native player creation and animation load off the main thread.
+     * The first call from [draw] launches the work on [renderScope]; subsequent
+     * calls are no-ops until init completes (or fails). Once initialized, a
+     * frame is scheduled on the main thread to render the loaded animation.
      */
     private fun ensureInitialized() {
-        if (initialized) return
+        if (initialized || initializing) return
         if (width <= 0 || height <= 0) return
 
-        try {
-            dlPlayer = if (threads != null) {
-                DotLottiePlayer.withThreads(config, threads)
-            } else {
-                DotLottiePlayer(config)
+        initializing = true
+        renderScope.launch {
+            val player = try {
+                if (threads != null) {
+                    DotLottiePlayer.withThreads(config, threads)
+                } else {
+                    DotLottiePlayer(config)
+                }
+            } catch (e: Throwable) {
+                withContext(Dispatchers.Main) {
+                    initializing = false
+                    dotLottieEventListener.forEach { it.onLoadError(e) }
+                }
+                return@launch
             }
-            setupBufferAndLoad()
 
-            // Load and start state machine if configured
-            if (config.stateMachineId.isNotEmpty()) {
-                stateMachineLoad(config.stateMachineId)
-                stateMachineStart()
+            var lockedBitmap: Bitmap? = null
+            var assigned = false
+            try {
+                renderMutex.withLock {
+                    val bmp = createBitmap(width, height)
+                    val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(bmp)
+                    if (pixelPtr == 0L) return@withLock
+                    lockedBitmap = bmp
+                    player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
+
+                    val startMs = SystemClock.uptimeMillis()
+                    when (animationData) {
+                        is DotLottieContent.Json -> player.loadAnimationData(
+                            animationData.jsonString,
+                            width.toUInt(),
+                            height.toUInt()
+                        )
+
+                        is DotLottieContent.Binary -> player.loadDotlottieData(
+                            animationData.data,
+                            width.toUInt(),
+                            height.toUInt()
+                        )
+                    }
+                    val elapsedMs = SystemClock.uptimeMillis() - startMs
+                    if (elapsedMs > SLOW_LOAD_THRESHOLD_MS) {
+                        Log.w(TAG, "load took ${elapsedMs}ms (size=${width}x${height})")
+                    }
+
+                    dlPlayer = player
+                    bitmapBuffer = bmp
+                    assigned = true
+                }
+
+                if (!assigned) {
+                    lockedBitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
+                    player.destroy()
+                    withContext(Dispatchers.Main) {
+                        initializing = false
+                    }
+                    return@launch
+                }
+
+                withContext(Dispatchers.Main) {
+                    // State machine wiring mutates state read from the Choreographer callback
+                    // on Main — keep those writes on Main to avoid cross-thread races.
+                    if (config.stateMachineId.isNotEmpty()) {
+                        stateMachineLoad(config.stateMachineId)
+                        stateMachineStart()
+                    }
+                    initialized = true
+                    initializing = false
+                    scheduleFrame(forceUpdate = true)
+                }
+            } catch (e: Throwable) {
+                if (!assigned) {
+                    lockedBitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
+                    player.destroy()
+                }
+                withContext(Dispatchers.Main) {
+                    initializing = false
+                    dotLottieEventListener.forEach { it.onLoadError(e) }
+                }
             }
-
-            initialized = true
-            scheduleFrame(forceUpdate = true)
-        } catch (e: Throwable) {
-            // Clean up partially initialized state so retry is possible
-            dlPlayer?.destroy()
-            dlPlayer = null
-            dotLottieEventListener.forEach { it.onLoadError(e) }
         }
-    }
-
-    private fun setupBufferAndLoad() {
-        val player = dlPlayer ?: return
-
-        // 1. Create bitmap and lock its pixels as the render target (zero-copy)
-        val newBitmap = createBitmap(width, height)
-        val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
-        if (pixelPtr == 0L) return
-        player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
-
-        // 2. Load animation
-        when (animationData) {
-            is DotLottieContent.Json -> {
-                player.loadAnimationData(
-                    animationData.jsonString,
-                    width.toUInt(),
-                    height.toUInt()
-                )
-            }
-
-            is DotLottieContent.Binary -> {
-                player.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
-            }
-        }
-
-        bitmapBuffer = newBitmap
     }
 
     fun release() {
@@ -601,7 +643,7 @@ class DotLottieDrawable(
     }
 
     override fun draw(canvas: Canvas) {
-        // Lazy init on main thread (ThorVG requires thread affinity)
+        // First draw triggers async load; subsequent draws no-op until init completes
         ensureInitialized()
 
         bitmapBuffer?.let { bmp ->
@@ -614,6 +656,14 @@ class DotLottieDrawable(
     companion object {
 
         private const val TAG = "DotLottieDrawable"
+
+        // Log a warning when a single tick blows past two vsync intervals at 60Hz —
+        // helps attribute future ANRs to long native tick calls.
+        private const val SLOW_TICK_THRESHOLD_MS = 32L
+
+        // Log a warning when the native parse/decode takes longer than this —
+        // helps attribute future ANRs to long native load calls.
+        private const val SLOW_LOAD_THRESHOLD_MS = 100L
 
         private const val LOTTIE_INFO_FRAME_COUNT = 0
         private const val LOTTIE_INFO_DURATION = 1
