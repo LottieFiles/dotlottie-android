@@ -241,35 +241,50 @@ class DotLottieDrawable(
 
     private var initialized = false
 
+    @Volatile
+    private var initializing = false
+
     /**
-     * Initialize the native player and load the animation.
-     * MUST be called on the main thread (ThorVG has thread affinity for rendering).
+     * Initialize the native player and load the animation asynchronously.
      */
     private fun ensureInitialized() {
-        if (initialized) return
+        if (initialized || initializing) return
         if (width <= 0 || height <= 0) return
+        initializing = true
 
-        try {
-            dlPlayer = if (threads != null) {
-                DotLottiePlayer.withThreads(config, threads)
-            } else {
-                DotLottiePlayer(config)
+        renderScope.launch(Dispatchers.Default) {
+            try {
+                val player = if (threads != null) {
+                    DotLottiePlayer.withThreads(config, threads)
+                } else {
+                    DotLottiePlayer(config)
+                }
+
+                renderMutex.withLock {
+                    dlPlayer = player
+                    setupBufferAndLoad()
+                }
+
+                withContext(Dispatchers.Main) {
+                    // State machine and frame scheduling must run on Main (Choreographer)
+                    if (config.stateMachineId.isNotEmpty()) {
+                        stateMachineLoad(config.stateMachineId)
+                        stateMachineStart()
+                    }
+
+                    initialized = true
+                    scheduleFrame(forceUpdate = true)
+                    invalidateSelf()
+                }
+            } catch (e: Throwable) {
+                // Clean up partially initialized state so retry is possible
+                dlPlayer?.destroy()
+                dlPlayer = null
+                initializing = false
+                withContext(Dispatchers.Main) {
+                    dotLottieEventListener.forEach { it.onLoadError(e) }
+                }
             }
-            setupBufferAndLoad()
-
-            // Load and start state machine if configured
-            if (config.stateMachineId.isNotEmpty()) {
-                stateMachineLoad(config.stateMachineId)
-                stateMachineStart()
-            }
-
-            initialized = true
-            scheduleFrame(forceUpdate = true)
-        } catch (e: Throwable) {
-            // Clean up partially initialized state so retry is possible
-            dlPlayer?.destroy()
-            dlPlayer = null
-            dotLottieEventListener.forEach { it.onLoadError(e) }
         }
     }
 
@@ -307,6 +322,8 @@ class DotLottieDrawable(
         val capturedBitmap = bitmapBuffer
         dlPlayer = null
         bitmapBuffer = null
+        initialized = false
+        initializing = false
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
 
         if (capturedPlayer != null) {
@@ -601,7 +618,7 @@ class DotLottieDrawable(
     }
 
     override fun draw(canvas: Canvas) {
-        // Lazy init on main thread (ThorVG requires thread affinity)
+        // Trigger async initialization if not yet started
         ensureInitialized()
 
         bitmapBuffer?.let { bmp ->

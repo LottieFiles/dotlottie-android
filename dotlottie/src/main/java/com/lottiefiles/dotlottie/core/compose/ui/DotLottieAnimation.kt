@@ -178,29 +178,31 @@ fun DotLottieAnimation(
             val isLoaded = dlPlayer.isLoaded()
             rController.resize(height, width)
 
-            // Coordinate with render loop to prevent concurrent access during buffer realloc
-            renderMutex.withLock {
-                bitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
+            // Move expensive native load off the main thread.
+            withContext(Dispatchers.Default) {
+                renderMutex.withLock {
+                    bitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }
 
-                // Create bitmap and lock its pixels as the render target
-                val newBitmap = createBitmap(width.toInt(), height.toInt())
-                val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
-                if (pixelPtr == 0L) return@withLock
-                dlPlayer.setSwTarget(pixelPtr, width, height)
+                    // Create bitmap and lock its pixels as the render target
+                    val newBitmap = createBitmap(width.toInt(), height.toInt())
+                    val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
+                    if (pixelPtr == 0L) return@withLock
+                    dlPlayer.setSwTarget(pixelPtr, width, height)
 
-                when (animationData) {
-                    is DotLottieContent.Json -> {
-                        dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                    when (animationData) {
+                        is DotLottieContent.Json -> {
+                            dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                        }
+
+                        is DotLottieContent.Binary -> {
+                            dlPlayer.loadDotlottieData(animationData.data, width, height)
+                        }
                     }
 
-                    is DotLottieContent.Binary -> {
-                        dlPlayer.loadDotlottieData(animationData.data, width, height)
-                    }
+                    bitmap = newBitmap
+                    drawDstRect.set(0f, 0f, layoutSize.width, layoutSize.height)
+                    drawVersion++
                 }
-
-                bitmap = newBitmap
-                drawDstRect.set(0f, 0f, layoutSize.width, layoutSize.height)
-                drawVersion++
             }
 
             if (!isLoaded) {
