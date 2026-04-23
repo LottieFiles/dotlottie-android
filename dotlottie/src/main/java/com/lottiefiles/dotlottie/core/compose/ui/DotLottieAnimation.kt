@@ -179,7 +179,6 @@ fun DotLottieAnimation(
             rController.resize(height, width)
 
             // Move expensive native load off the main thread.
-            // The frame callback uses renderMutex.tryLock() and skips frames while held.
             withContext(Dispatchers.Default) {
                 renderMutex.withLock {
                     bitmap?.let { DotLottieJNI.nativeUnlockBitmapPixels(it) }

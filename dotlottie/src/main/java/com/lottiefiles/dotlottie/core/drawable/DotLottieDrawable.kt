@@ -246,8 +246,6 @@ class DotLottieDrawable(
 
     /**
      * Initialize the native player and load the animation asynchronously.
-     * The expensive native load runs on Dispatchers.Default to avoid blocking the main thread.
-     * Rendering (tick/draw) still happens on the main thread via Choreographer.
      */
     private fun ensureInitialized() {
         if (initialized || initializing) return
