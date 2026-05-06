@@ -3,26 +3,54 @@ name: Notify Docs of Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   notify-docs:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve release info
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_CONTENT_SYNC_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          REL_TAG: ${{ github.event.release.tag_name }}
+          REL_NAME: ${{ github.event.release.name }}
+          REL_BODY: ${{ github.event.release.body }}
+          REL_URL: ${{ github.event.release.html_url }}
+        run: |
+          if [ "$EVENT_NAME" = "release" ]; then
+            TAG="$REL_TAG"
+            NAME="$REL_NAME"
+            BODY="$REL_BODY"
+            URL="$REL_URL"
+          else
+            DATA=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName,name,body,url)
+            TAG=$(jq -r '.tagName' <<<"$DATA")
+            NAME=$(jq -r '.name' <<<"$DATA")
+            BODY=$(jq -r '.body' <<<"$DATA")
+            URL=$(jq -r '.url' <<<"$DATA")
+          fi
+
+          jq -n \
+            --arg source_repo "$GITHUB_REPOSITORY" \
+            --arg source_package "" \
+            --arg release_tag "$TAG" \
+            --arg release_name "$NAME" \
+            --arg release_body "$BODY" \
+            --arg release_url "$URL" \
+            --arg sender "${{ github.actor }}" \
+            '{event_type: "dotlottie-docs-eval", client_payload: {source_repo: $source_repo, source_package: $source_package, release_tag: $release_tag, release_name: $release_name, release_body: $release_body, release_url: $release_url, sender: $sender}}' \
+            > payload.json
+
+          echo "Dispatching for release: $TAG"
+
       - name: Dispatch to docs-content
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.DOCS_CONTENT_SYNC_TOKEN }}
-          repository: LottieFiles/docs-content
-          event-type: dotlottie-docs-eval
-          client-payload: |
-            {
-              "source_repo": "${{ github.repository }}",
-              "source_package": "",
-              "release_tag": "${{ github.event.release.tag_name }}",
-              "release_name": ${{ toJSON(github.event.release.name) }},
-              "release_body": ${{ toJSON(github.event.release.body) }},
-              "release_url": "${{ github.event.release.html_url }}",
-              "sender": "${{ github.actor }}"
-            }
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_CONTENT_SYNC_TOKEN }}
+        run: |
+          gh api --method POST \
+            "/repos/LottieFiles/docs-content/dispatches" \
+            --input payload.json
