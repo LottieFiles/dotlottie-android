@@ -857,6 +857,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     fun destroy() {
+        if (performanceMode == 1) return // Keep alive in CPU mode
         sharedGl.handler.post { destroyPlayerOnGlThread() }
     }
 
@@ -1068,13 +1069,16 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     // ==================== View Lifecycle ====================
 
     override fun onDetachedFromWindow() {
+        paused = true // STOP IMMEDIATELY
         super.onDetachedFromWindow()
         loadJob?.cancel()
         coroutineScope.cancel()
         surfaceReady = false
         sharedGl.handler.post {
             sharedGl.unregisterOnGlThread(this)
-            destroyPlayerOnGlThread()
+            if (performanceMode != 1) {
+                destroyPlayerOnGlThread()
+            }
             destroyRenderFbo()
             if (eglSurface != EGL14.EGL_NO_SURFACE) {
                 sharedGl.destroyWindowSurface(eglSurface)

@@ -104,7 +104,9 @@ internal fun DotLottieGLSurfaceAnimation(
 
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            glWidgetRef[0]?.destroy()
+            val widget = glWidgetRef[0]
+            widget?.onPause() // Stop render loop immediately
+            widget?.destroy()
             glWidgetRef[0] = null
         }
     }
