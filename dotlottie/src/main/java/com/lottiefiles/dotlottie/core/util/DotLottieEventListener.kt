@@ -15,4 +15,5 @@ interface DotLottieEventListener {
     fun onUnFreeze() {}
     fun onDestroy() {}
     fun onError(error: Throwable) {}
+    fun onSurfaceReady() {}
 }

@@ -41,6 +41,9 @@ internal fun DotLottieGLSurfaceAnimation(
     eventListeners: List<DotLottieEventListener> = emptyList(),
     @Suppress("UNUSED_PARAMETER") threads: UInt? = null,
     loopCount: UInt = 0u,
+    performanceMode: Int = 0,
+
+    cacheId: String = "",
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -111,6 +114,9 @@ internal fun DotLottieGLSurfaceAnimation(
         factory = { ctx ->
             GLWidget(ctx).also { widget ->
                 glWidgetRef[0] = widget
+
+                widget.setPerformanceMode(performanceMode)
+                widget.setCacheId(cacheId)
 
                 // Add event listeners
                 eventListeners.forEach { widget.addEventListener(it) }

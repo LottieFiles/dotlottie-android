@@ -55,6 +55,9 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     private val sharedGl = SharedGlThread.instance
 
+    private var performanceMode: Int = 0
+    private var cacheId: String = ""
+
     private var dlPlayer: DotLottiePlayer? = null
     private var dlConfig: Config? = null
     private var eglSurface: EGLSurface = EGL14.EGL_NO_SURFACE
@@ -236,11 +239,48 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             surfaceReady = true
             glTargetDirty = true
 
-            // (Re)create player
-            if (initialized) {
-                destroyPlayerOnGlThread()
-            }
-            initPlayerOnGlThread()
+            // CPU mode: player kept alive across surface destroy/create
+            if (performanceMode == 1 && dlPlayer != null) {
+                val player = dlPlayer ?: return@post
+                sharedGl.makeCurrent(eglSurface)
+
+                destroyRenderFbo()
+                createRenderFbo()
+                if (renderFboId == 0) return@post
+
+                // Rebind GL target to new surface on existing player
+                player.setGlTarget(
+                        sharedGl.eglDisplay.nativeHandle,
+                        eglSurface.nativeHandle,
+                        sharedGl.eglContext.nativeHandle,
+                        renderFboId,
+                        width.toUInt(),
+                        height.toUInt()
+                )
+                glTargetDirty = false
+                player.resize(width.toUInt(), height.toUInt())
+
+                // Restore saved frame
+                if (cacheId.isNotEmpty() && savedFrames.containsKey(cacheId)) {
+                    val savedFrame = savedFrames[cacheId]
+                    if (savedFrame != null) {
+                        player.setFrame(savedFrame)
+                        savedFrames.remove(cacheId)
+                    }
+                }
+
+                // Render immediately
+                dirtyFrame = true
+                sharedGl.requestRender()
+
+                // Notify surface ready
+                post { eventListeners.forEach { it.onSurfaceReady() } }
+            } else {
+                // Default / RAM mode: destroy and recreate player
+                if (initialized) {
+                    destroyPlayerOnGlThread()
+                }
+                initPlayerOnGlThread()
 
             val player = dlPlayer ?: return@post
             sharedGl.makeCurrent(eglSurface)
@@ -305,8 +345,19 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         surfaceReady = false
         sharedGl.handler.post {
             sharedGl.unregisterOnGlThread(this)
-            destroyPlayerOnGlThread()
+
+            // Save current frame for all modes if cacheId is set
+            if (cacheId.isNotEmpty()) {
+                dlPlayer?.let { player -> savedFrames[cacheId] = player.currentFrame() }
+            }
+
+            // CPU mode: keep player alive, only destroy GL resources
+            if (performanceMode != 1 || cacheId.isEmpty()) {
+                destroyPlayerOnGlThread()
+            }
+
             destroyRenderFbo()
+
             if (eglSurface != EGL14.EGL_NO_SURFACE) {
                 sharedGl.destroyWindowSurface(eglSurface)
                 eglSurface = EGL14.EGL_NO_SURFACE
@@ -397,11 +448,29 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             loopCount = attrLoopCount
         )
 
-        dlPlayer = if (attrThreads != null) {
-            DotLottiePlayer.withThreads(config, attrThreads!!)
+        if (performanceMode == 1 && cacheId.isNotEmpty()) {
+
+            val cachedPlayer = playerCache[cacheId]
+            if (cachedPlayer != null) {
+                dlPlayer = cachedPlayer
+            } else {
+                dlPlayer =
+                        if (attrThreads != null) {
+                            DotLottiePlayer.withThreads(config, attrThreads!!)
+                        } else {
+                            DotLottiePlayer(config)
+                        }
+                playerCache[cacheId] = dlPlayer!!
+            }
         } else {
-            DotLottiePlayer(config)
+            dlPlayer =
+                    if (attrThreads != null) {
+                        DotLottiePlayer.withThreads(config, attrThreads!!)
+                    } else {
+                        DotLottiePlayer(config)
+                    }
         }
+
         dlConfig = config
         initialized = true
 
@@ -479,6 +548,8 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         )
         glTargetDirty = false
 
+        if (!(performanceMode == 1 && player.isLoaded())) {
+
         when (content) {
             is DotLottieContent.Json -> {
                 player.loadAnimationData(
@@ -501,6 +572,15 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         if (!smId.isNullOrEmpty()) {
             stateMachineLoad(smId)
             stateMachineStart()
+            }
+        }
+
+        if (cacheId.isNotEmpty() && savedFrames.containsKey(cacheId)) {
+            val savedFrame = savedFrames[cacheId]
+            if (savedFrame != null) {
+                player.setFrame(savedFrame)
+                savedFrames.remove(cacheId)
+            }
         }
 
         // Always render at least one frame so events (e.g. Load) get polled and dispatched
@@ -566,6 +646,14 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     }
 
     // ==================== Public API ====================
+
+    fun setPerformanceMode(mode: Int?) {
+        performanceMode = mode ?: 0
+    }
+
+    fun setCacheId(id: String?) {
+        cacheId = id ?: ""
+    }
 
     fun load(config: ViewConfig) {
         val newDlConfig = Config(
@@ -1016,5 +1104,9 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     companion object {
         private const val TAG = "DotLottieGLAnimation"
+        // Global cache of players keyed by cacheId
+        val playerCache = mutableMapOf<String, DotLottiePlayer>()
+        // Saved frames for RAM mode keyed by cacheId
+        val savedFrames = mutableMapOf<String, Float>()
     }
 }
