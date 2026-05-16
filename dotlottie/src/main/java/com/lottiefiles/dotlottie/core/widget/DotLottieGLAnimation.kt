@@ -46,6 +46,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlin.jvm.JvmStatic
 
 @ExperimentalDotLottieGLApi
 class DotLottieGLAnimation @JvmOverloads constructor(
@@ -282,29 +283,30 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 }
                 initPlayerOnGlThread()
 
-            val player = dlPlayer ?: return@post
-            sharedGl.makeCurrent(eglSurface)
+                val player = dlPlayer ?: return@post
+                sharedGl.makeCurrent(eglSurface)
 
-            // Create intermediate render FBO
-            destroyRenderFbo()
-            createRenderFbo()
-            if (renderFboId == 0) return@post
+                // Create intermediate render FBO
+                destroyRenderFbo()
+                createRenderFbo()
+                if (renderFboId == 0) return@post
 
-            player.setGlTarget(
-                sharedGl.eglDisplay.nativeHandle,
-                eglSurface.nativeHandle,
-                sharedGl.eglContext.nativeHandle,
-                renderFboId,
-                width.toUInt(),
-                height.toUInt()
-            )
-            glTargetDirty = false
+                player.setGlTarget(
+                    sharedGl.eglDisplay.nativeHandle,
+                    eglSurface.nativeHandle,
+                    sharedGl.eglContext.nativeHandle,
+                    renderFboId,
+                    width.toUInt(),
+                    height.toUInt()
+                )
+                glTargetDirty = false
 
-            // Load pending content or reload last content
-            val content = pendingContent ?: lastLoadedContent
-            if (content != null) {
-                pendingContent = null
-                loadContentOnGlThread(content)
+                // Load pending content or reload last content
+                val content = pendingContent ?: lastLoadedContent
+                if (content != null) {
+                    pendingContent = null
+                    loadContentOnGlThread(content)
+                }
             }
         }
         sharedGl.register(this)
@@ -1112,5 +1114,15 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         val playerCache = mutableMapOf<String, DotLottiePlayer>()
         // Saved frames for RAM mode keyed by cacheId
         val savedFrames = mutableMapOf<String, Float>()
+
+        /**
+         * Release a cached player instance to prevent memory leaks.
+         * Should be called when the animation is no longer needed across screens.
+         */
+        @JvmStatic
+        fun releaseCache(cacheId: String) {
+            playerCache.remove(cacheId)?.destroy()
+            savedFrames.remove(cacheId)
+        }
     }
 }
