@@ -1,4 +1,12 @@
-# dotLottie Android
+<p align="center">
+  <img
+    src="https://lottie.host/c254e158-7a32-4fd5-8822-405f42e178d9/XYe7rtDZEf.svg"
+    alt="dotLottie Web"
+    width="550"
+  />
+</p>
+
+<h1 align="center">dotLottie Android</h1>
 
 <p align="center">
   <a href="https://android-arsenal.com/api?level=21"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
