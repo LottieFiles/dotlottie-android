@@ -39,6 +39,9 @@ fun DotLottieGLAnimation(
     eventListeners: List<DotLottieEventListener> = emptyList(),
     threads: UInt? = null,
     loopCount: UInt = 0u,
+    performanceMode: Int = 0,
+
+    cacheId: String = "",
 ) {
     // TODO: Add HardwareBuffer support for API 31+
     DotLottieGLSurfaceAnimation(
@@ -58,5 +61,7 @@ fun DotLottieGLAnimation(
         eventListeners = eventListeners,
         threads = threads,
         loopCount = loopCount,
+        performanceMode = performanceMode,
+        cacheId = cacheId,
     )
 }
