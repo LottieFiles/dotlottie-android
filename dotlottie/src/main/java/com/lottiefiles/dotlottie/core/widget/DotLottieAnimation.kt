@@ -79,7 +79,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var lastTouchX: Float = 0f
     private var lastTouchY: Float = 0f
     private var movedTooMuch: Boolean = false
-    private val touchSlop: Float = 20f // Movement threshold to distinguish tap from drag
+    private val touchSlop: Float = android.view.ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
     @get:FloatRange(from = 0.0)
     val speed: Float
@@ -503,6 +503,9 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val drawable = mLottieDrawable ?: return super.onTouchEvent(event)
+        if (!drawable.stateMachineHasPointerListeners) {
+            return super.onTouchEvent(event)
+        }
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
