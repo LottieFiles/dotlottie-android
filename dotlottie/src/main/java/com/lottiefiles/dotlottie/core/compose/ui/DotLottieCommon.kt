@@ -24,17 +24,18 @@ import kotlin.math.pow
  * Maps [DotLottiePlayerEvent] to [DotLottiePlayerState] updates on the controller.
  */
 @InternalDotLottieApi
-internal fun controllerStateChange(controller: DotLottieController): (DotLottiePlayerEvent) -> Unit = { event ->
-    when (event) {
-        is DotLottiePlayerEvent.Load -> controller.updateState(DotLottiePlayerState.LOADED)
-        is DotLottiePlayerEvent.LoadError -> controller.updateState(DotLottiePlayerState.ERROR)
-        is DotLottiePlayerEvent.Play -> controller.updateState(DotLottiePlayerState.PLAYING)
-        is DotLottiePlayerEvent.Pause -> controller.updateState(DotLottiePlayerState.PAUSED)
-        is DotLottiePlayerEvent.Stop -> controller.updateState(DotLottiePlayerState.STOPPED)
-        is DotLottiePlayerEvent.Complete -> controller.updateState(DotLottiePlayerState.COMPLETED)
-        else -> {}
+internal fun controllerStateChange(controller: DotLottieController): (DotLottiePlayerEvent) -> Unit =
+    { event ->
+        when (event) {
+            is DotLottiePlayerEvent.Load -> controller.updateState(DotLottiePlayerState.LOADED)
+            is DotLottiePlayerEvent.LoadError -> controller.updateState(DotLottiePlayerState.ERROR)
+            is DotLottiePlayerEvent.Play -> controller.updateState(DotLottiePlayerState.PLAYING)
+            is DotLottiePlayerEvent.Pause -> controller.updateState(DotLottiePlayerState.PAUSED)
+            is DotLottiePlayerEvent.Stop -> controller.updateState(DotLottiePlayerState.STOPPED)
+            is DotLottiePlayerEvent.Complete -> controller.updateState(DotLottiePlayerState.COMPLETED)
+            else -> {}
+        }
     }
-}
 
 /**
  * Polls all pending events from the player and dispatches them via the controller.

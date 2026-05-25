@@ -79,7 +79,8 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var lastTouchX: Float = 0f
     private var lastTouchY: Float = 0f
     private var movedTooMuch: Boolean = false
-    private val touchSlop: Float = android.view.ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    private val touchSlop: Float =
+        android.view.ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
     @get:FloatRange(from = 0.0)
     val speed: Float
