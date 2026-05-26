@@ -2,7 +2,11 @@ package com.lottiefiles.dotlottie.core.compose.ui
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.DotLottiePlayer
@@ -20,17 +24,18 @@ import kotlin.math.pow
  * Maps [DotLottiePlayerEvent] to [DotLottiePlayerState] updates on the controller.
  */
 @InternalDotLottieApi
-internal fun controllerStateChange(controller: DotLottieController): (DotLottiePlayerEvent) -> Unit = { event ->
-    when (event) {
-        is DotLottiePlayerEvent.Load -> controller.updateState(DotLottiePlayerState.LOADED)
-        is DotLottiePlayerEvent.LoadError -> controller.updateState(DotLottiePlayerState.ERROR)
-        is DotLottiePlayerEvent.Play -> controller.updateState(DotLottiePlayerState.PLAYING)
-        is DotLottiePlayerEvent.Pause -> controller.updateState(DotLottiePlayerState.PAUSED)
-        is DotLottiePlayerEvent.Stop -> controller.updateState(DotLottiePlayerState.STOPPED)
-        is DotLottiePlayerEvent.Complete -> controller.updateState(DotLottiePlayerState.COMPLETED)
-        else -> {}
+internal fun controllerStateChange(controller: DotLottieController): (DotLottiePlayerEvent) -> Unit =
+    { event ->
+        when (event) {
+            is DotLottiePlayerEvent.Load -> controller.updateState(DotLottiePlayerState.LOADED)
+            is DotLottiePlayerEvent.LoadError -> controller.updateState(DotLottiePlayerState.ERROR)
+            is DotLottiePlayerEvent.Play -> controller.updateState(DotLottiePlayerState.PLAYING)
+            is DotLottiePlayerEvent.Pause -> controller.updateState(DotLottiePlayerState.PAUSED)
+            is DotLottiePlayerEvent.Stop -> controller.updateState(DotLottiePlayerState.STOPPED)
+            is DotLottiePlayerEvent.Complete -> controller.updateState(DotLottiePlayerState.COMPLETED)
+            else -> {}
+        }
     }
-}
 
 /**
  * Polls all pending events from the player and dispatches them via the controller.
@@ -49,10 +54,13 @@ internal fun pollAndDispatchEvents(player: DotLottiePlayer, controller: DotLotti
 /**
  * Pointer input modifier for state machine interaction (PointerDown, PointerUp, PointerMove, Click).
  */
-internal fun Modifier.dotLottiePointerInput(controller: DotLottieController): Modifier =
-    this.pointerInput(Unit) {
+@Composable
+internal fun Modifier.dotLottiePointerInput(controller: DotLottieController): Modifier {
+    val hasPointerListeners by controller.stateMachineHasPointerListeners.collectAsState()
+    if (!hasPointerListeners) return this
+    return this.pointerInput(Unit) {
         awaitEachGesture {
-            val down = awaitFirstDown()
+            val down = awaitFirstDown(pass = PointerEventPass.Initial)
             val downPosition = down.position
             val scaledX = downPosition.x
             val scaledY = downPosition.y
@@ -60,11 +68,15 @@ internal fun Modifier.dotLottiePointerInput(controller: DotLottieController): Mo
             controller.stateMachinePostEvent(Event.PointerDown(scaledX, scaledY))
 
             var movedTooMuch = false
-            val touchSlop = 20f
+            val touchSlop = viewConfiguration.touchSlop
 
             do {
-                val event = awaitPointerEvent()
+                val event = awaitPointerEvent(pass = PointerEventPass.Initial)
                 val position = event.changes.first()
+
+                if (position.isConsumed) {
+                    break;
+                }
 
                 if (!position.pressed) {
                     val upPosition = position.position
@@ -100,6 +112,7 @@ internal fun Modifier.dotLottiePointerInput(controller: DotLottieController): Mo
             } while (position.pressed)
         }
     }
+}
 
 /**
  * Builds a [Config] from composable parameters.

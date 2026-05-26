@@ -23,6 +23,7 @@ import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.util.DotLottieContent
+import com.lottiefiles.dotlottie.core.util.POINTER_EVENT_NAMES
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.pollAndDispatchAllEvents
 import androidx.core.graphics.createBitmap
@@ -54,6 +55,9 @@ class DotLottieDrawable(
     private var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
     private var stateMachineGestureListeners: MutableList<String> = mutableListOf()
     private var stateMachineIsActive = false
+
+    val stateMachineHasPointerListeners: Boolean
+        get() = stateMachineGestureListeners.any { it in POINTER_EVENT_NAMES }
     private var onOpenUrlCallback: ((url: String) -> Unit)? = null
 
     var freeze: Boolean = false
@@ -307,6 +311,8 @@ class DotLottieDrawable(
         val capturedBitmap = bitmapBuffer
         dlPlayer = null
         bitmapBuffer = null
+        stateMachineGestureListeners.clear()
+        stateMachineIsActive = false
         dotLottieEventListener.forEach(DotLottieEventListener::onDestroy)
 
         if (capturedPlayer != null) {
@@ -529,6 +535,7 @@ class DotLottieDrawable(
         stateMachineIsActive = false
         onOpenUrlCallback = null
         val result = dlPlayer?.stateMachineStop() ?: false
+        stateMachineGestureListeners.clear()
         choreographer.removeFrameCallback(frameCallback)
         invalidateSelf()
         return result

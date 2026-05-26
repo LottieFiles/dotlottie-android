@@ -16,6 +16,7 @@ import com.dotlottie.dlplayer.createDefaultConfig
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.InternalDotLottieApi
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.POINTER_EVENT_NAMES
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,10 @@ class DotLottieController {
     val height: StateFlow<UInt> = _height.asStateFlow()
 
     var stateMachineGestureListeners: MutableList<String> = mutableListOf()
+
+    private val _stateMachineHasPointerListeners = MutableStateFlow(false)
+    val stateMachineHasPointerListeners: StateFlow<Boolean> =
+        _stateMachineHasPointerListeners.asStateFlow()
 
     var stateMachineListeners: MutableList<StateMachineEventListener> = mutableListOf()
         private set
@@ -176,6 +181,8 @@ class DotLottieController {
                 stateMachineGestureListeners =
                     dlplayer!!.stateMachineFrameworkSetup().map { it.lowercase() }.toSet()
                         .toMutableList()
+                _stateMachineHasPointerListeners.value =
+                    stateMachineGestureListeners.any { it in POINTER_EVENT_NAMES }
             }
 
         }
@@ -184,7 +191,10 @@ class DotLottieController {
 
     fun stateMachineStop(): Boolean {
         onOpenUrlCallback = null
-        return dlplayer?.stateMachineStop() ?: false
+        val result = dlplayer?.stateMachineStop() ?: false
+        stateMachineGestureListeners.clear()
+        _stateMachineHasPointerListeners.value = false
+        return result
     }
 
     fun stateMachineLoad(stateMachineId: String): Boolean {
@@ -272,6 +282,8 @@ class DotLottieController {
         isDestroyed = true
         dlplayer = null
         onOpenUrlCallback = null
+        stateMachineGestureListeners.clear()
+        _stateMachineHasPointerListeners.value = false
     }
 
     @InternalDotLottieApi

@@ -34,6 +34,7 @@ import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
 import com.lottiefiles.dotlottie.core.util.DotLottieSource
 import com.lottiefiles.dotlottie.core.util.DotLottieUtils
 import com.lottiefiles.dotlottie.core.util.LayoutUtil
+import com.lottiefiles.dotlottie.core.util.POINTER_EVENT_NAMES
 import com.lottiefiles.dotlottie.core.util.SharedGlThread
 import com.lottiefiles.dotlottie.core.util.StateMachineEventListener
 import com.lottiefiles.dotlottie.core.util.dispatchPlayerEvent
@@ -85,7 +86,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     private var lastTouchX: Float = 0f
     private var lastTouchY: Float = 0f
     private var movedTooMuch: Boolean = false
-    private val touchSlop: Float = 20f
+    private val touchSlop: Float = android.view.ViewConfiguration.get(context).scaledTouchSlop.toFloat()
 
     // XML attributes
     private var attrSrc: String = ""
@@ -413,6 +414,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         dlPlayer?.destroy()
         dlPlayer = null
         initialized = false
+        stateMachineGestureListeners.clear()
     }
 
     private fun createRenderFbo() {
@@ -876,10 +878,13 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     fun stateMachineStop(): Boolean {
         onOpenUrlCallback = null
         if (isOnGlThread()) {
-            return dlPlayer?.stateMachineStop() ?: false
+            val result = dlPlayer?.stateMachineStop() ?: false
+            stateMachineGestureListeners.clear()
+            return result
         }
         sharedGl.handler.post {
             dlPlayer?.stateMachineStop()
+            stateMachineGestureListeners.clear()
         }
         return true
     }
@@ -935,8 +940,10 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val player = dlPlayer
-
-        if (player == null || !player.stateMachineIsActive) {
+        if (player == null ||
+            !player.stateMachineIsActive ||
+            stateMachineGestureListeners.none { it in POINTER_EVENT_NAMES }
+        ) {
             return super.onTouchEvent(event)
         }
 
@@ -968,7 +975,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 sharedGl.handler.post { player.stateMachinePostEvent(Event.PointerUp(x, y)) }
             }
         }
-        return super.onTouchEvent(event)
+        return true
     }
 
     override fun performClick(): Boolean {
