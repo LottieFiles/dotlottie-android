@@ -115,10 +115,7 @@ internal fun DotLottieGLSurfaceAnimation(
                 // Add event listeners
                 eventListeners.forEach { widget.addEventListener(it) }
 
-                // Wire up controller. The state machine is loaded by the widget's
-                // own post-animation-load path (driven by config.stateMachineId), not
-                // here — this callback fires at player creation, before the animation
-                // is loaded, which is too early for stateMachineLoad to succeed.
+                // Wire up controller
                 widget.setOnPlayerCreated { player, config ->
                     rController.setPlayerInstance(player, config)
                     rController.init()

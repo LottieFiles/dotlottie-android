@@ -89,7 +89,6 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeRender(ptr: Long): Int
 
-    /** Advance by `dtMillis` and render if frame changed. Returns true if a new frame was rendered. */
     @JvmStatic
     external fun nativeTick(ptr: Long, dtMillis: Float): Boolean
 
@@ -326,7 +325,6 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeStateMachineStop(smPtr: Long): Int
 
-    /** Advance state machine by `dtMillis` and render if frame changed. Returns true if a new frame was rendered. */
     @JvmStatic
     external fun nativeStateMachineTick(smPtr: Long, dtMillis: Float): Boolean
 
