@@ -164,18 +164,10 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
 
             val loaded = when (content) {
                 is DotLottieContent.Json -> {
-                    player.loadAnimationData(
-                        content.jsonString,
-                        bufferWidth.toUInt(),
-                        bufferHeight.toUInt()
-                    )
+                    player.loadAnimationData(content.jsonString)
                 }
                 is DotLottieContent.Binary -> {
-                    player.loadDotlottieData(
-                        content.data,
-                        bufferWidth.toUInt(),
-                        bufferHeight.toUInt()
-                    )
+                    player.loadDotlottieData(content.data)
                 }
             }
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
@@ -213,7 +205,6 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
             createRenderFbo()
 
             val player = dlPlayer ?: return@post
-            player.resize(width.toUInt(), height.toUInt())
             if (buffersValid && renderFboId != 0) {
                 GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderFboId)
                 GLES20.glViewport(0, 0, width, height)
@@ -341,7 +332,7 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
         return player.isPlaying() || player.stateMachineIsActive || !player.isLoaded()
     }
 
-    override fun onRenderFrame() {
+    override fun onRenderFrame(frameTimeNanos: Long) {
         val player = dlPlayer ?: return
         if (bufferWidth <= 0 || bufferHeight <= 0) return
         if (!buffersValid) return
@@ -370,9 +361,9 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
 
         // Tick the player — ThorVG renders into renderFbo
         val ticked = if (player.stateMachineIsActive) {
-            player.stateMachineTick()
+            player.stateMachineTick(frameTimeNanos)
         } else {
-            player.tick()
+            player.tick(frameTimeNanos)
         }
 
         // Poll and dispatch events

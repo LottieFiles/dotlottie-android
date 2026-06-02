@@ -45,7 +45,6 @@ internal fun DotLottieGLSurfaceAnimation(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val rController = remember { controller ?: DotLottieController() }
-    val initialStateMachineId = remember { stateMachineId }
 
     // Hold a reference to the widget so we can interact with it
     val glWidgetRef = remember { arrayOfNulls<GLWidget>(1) }
@@ -61,6 +60,7 @@ internal fun DotLottieGLSurfaceAnimation(
             .useFrameInterpolation(useFrameInterpolation)
             .marker(marker ?: "")
             .loopCount(loopCount)
+            .stateMachineId(stateMachineId ?: "")
             .build()
     }
 
@@ -115,15 +115,13 @@ internal fun DotLottieGLSurfaceAnimation(
                 // Add event listeners
                 eventListeners.forEach { widget.addEventListener(it) }
 
-                // Wire up controller
+                // Wire up controller. The state machine is loaded by the widget's
+                // own post-animation-load path (driven by config.stateMachineId), not
+                // here — this callback fires at player creation, before the animation
+                // is loaded, which is too early for stateMachineLoad to succeed.
                 widget.setOnPlayerCreated { player, config ->
                     rController.setPlayerInstance(player, config)
                     rController.init()
-
-                    if (!initialStateMachineId.isNullOrEmpty()) {
-                        rController.stateMachineLoad(initialStateMachineId)
-                        rController.stateMachineStart()
-                    }
                 }
 
                 // Load content

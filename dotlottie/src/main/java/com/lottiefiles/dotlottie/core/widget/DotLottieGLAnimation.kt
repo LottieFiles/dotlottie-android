@@ -54,6 +54,10 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : TextureView(context, attrs), TextureView.SurfaceTextureListener, SharedGlThread.RenderClient {
 
+    init {
+        com.lottiefiles.dotlottie.core.jni.DotLottiePlayer.ensureAndroidInitialized(context)
+    }
+
     private val sharedGl = SharedGlThread.instance
 
     private var dlPlayer: DotLottiePlayer? = null
@@ -296,7 +300,6 @@ class DotLottieGLAnimation @JvmOverloads constructor(
                 height.toUInt()
             )
             glTargetDirty = false
-            player.resize(width.toUInt(), height.toUInt())
             dirtyFrame = true
             sharedGl.requestRender()
         }
@@ -329,7 +332,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         return player.isPlaying() || player.stateMachineIsActive
     }
 
-    override fun onRenderFrame() {
+    override fun onRenderFrame(frameTimeNanos: Long) {
         val player = dlPlayer ?: return
         if (!surfaceReady) return
         if (surfaceWidth <= 0 || surfaceHeight <= 0) return
@@ -358,9 +361,9 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight)
 
         if (player.stateMachineIsActive) {
-            player.stateMachineTick()
+            player.stateMachineTick(frameTimeNanos)
         } else {
-            player.tick()
+            player.tick(frameTimeNanos)
         }
 
         // Blit from render FBO to the window surface's default framebuffer
@@ -483,18 +486,10 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
         when (content) {
             is DotLottieContent.Json -> {
-                player.loadAnimationData(
-                    content.jsonString,
-                    surfaceWidth.toUInt(),
-                    surfaceHeight.toUInt()
-                )
+                player.loadAnimationData(content.jsonString)
             }
             is DotLottieContent.Binary -> {
-                player.loadDotlottieData(
-                    content.data,
-                    surfaceWidth.toUInt(),
-                    surfaceHeight.toUInt()
-                )
+                player.loadDotlottieData(content.data)
             }
         }
 
@@ -730,7 +725,7 @@ class DotLottieGLAnimation @JvmOverloads constructor(
     fun manifest(): Manifest? = dlPlayer?.manifest()
 
     fun loadAnimation(animationId: String) {
-        sharedGl.handler.post { dlPlayer?.loadAnimation(animationId, surfaceWidth.toUInt(), surfaceHeight.toUInt()) }
+        sharedGl.handler.post { dlPlayer?.loadAnimation(animationId) }
     }
 
     fun freeze() {
@@ -751,7 +746,6 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             sharedGl.makeCurrent(eglSurface)
             destroyRenderFbo()
             createRenderFbo()
-            dlPlayer?.resize(width.toUInt(), height.toUInt())
             dlPlayer?.let { player ->
                 if (renderFboId != 0) {
                     player.setGlTarget(

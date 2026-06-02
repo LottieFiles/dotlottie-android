@@ -62,6 +62,10 @@ class DotLottieAnimation @JvmOverloads constructor(
     private val defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
 
+    init {
+        com.lottiefiles.dotlottie.core.jni.DotLottiePlayer.ensureAndroidInitialized(context)
+    }
+
     private var width: Int = 0
     private var height: Int = 0
     private var mConfig: Config? = null
