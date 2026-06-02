@@ -37,12 +37,7 @@ internal class SharedGlThread private constructor() {
         private set
 
     interface RenderClient {
-        /**
-         * Called on the shared GL thread during each choreographer frame.
-         *
-         * @param frameTimeNanos vsync timestamp from `Choreographer.FrameCallback.doFrame`,
-         *                       used by the dotlottie player to compute frame delta.
-         */
+        /** Called on the shared GL thread during each choreographer frame. */
         fun onRenderFrame(frameTimeNanos: Long)
         /** Whether this client needs rendering. Checked each frame. */
         fun shouldRender(): Boolean

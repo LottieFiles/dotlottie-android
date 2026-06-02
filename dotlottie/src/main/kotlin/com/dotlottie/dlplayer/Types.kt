@@ -43,7 +43,7 @@ data class Layout(
 }
 
 /**
- * Animation marker. `start` and `end` are absolute frame numbers.
+ * Animation marker
  */
 data class Marker(
     val name: String,

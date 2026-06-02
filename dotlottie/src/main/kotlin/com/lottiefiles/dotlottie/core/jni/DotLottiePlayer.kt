@@ -21,8 +21,8 @@ object DotLottiePlayer {
     private var androidInitialized = false
 
     /**
-     * Hands the Android JVM + application Context to the native audio backend.
-     * Must be called before loading any animation that contains audio.
+     * Provides the JavaVM and Application Context to the native runtime.
+     * Should be called once before any player is used.
      *
      * Idempotent and thread-safe — only the first call propagates to native.
      */
@@ -386,10 +386,8 @@ object DotLottiePlayer {
     // ==================== Android Init ====================
 
     /**
-     * Provides the Android JVM context to the Rust audio backend.
-     *
-     * Must be called once before loading any animation that contains audio.
-     * Idempotent — subsequent calls are ignored by the native side.
+     * Provides the JavaVM and Application Context to the native runtime.
+     * Idempotent — subsequent calls are ignored on the native side.
      */
     @JvmStatic
     external fun nativeInitAndroid(context: Context)

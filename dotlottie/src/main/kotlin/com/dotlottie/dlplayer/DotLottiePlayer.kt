@@ -105,13 +105,6 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    /**
-     * Advance the animation using `nowNanos` (e.g. `Choreographer.FrameCallback.doFrame`'s timestamp)
-     * and render if the frame changed. Returns true if a new frame was rendered.
-     *
-     * The first call after the player is created (or after a reset) bootstraps `lastFrameTimeNanos`
-     * and ticks with `dt = 0`; subsequent calls use the wall delta between consecutive timestamps.
-     */
     fun tick(nowNanos: Long): Boolean {
         val last = lastPlayerFrameTimeNanos
         lastPlayerFrameTimeNanos = nowNanos
@@ -530,10 +523,6 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    /**
-     * Tick the state machine using `nowNanos` (e.g. `Choreographer.FrameCallback.doFrame`'s
-     * timestamp). Returns true if a new frame was rendered.
-     */
     fun stateMachineTick(nowNanos: Long): Boolean {
         if (stateMachinePtr == 0L) return false
         val last = lastStateMachineFrameTimeNanos
@@ -653,8 +642,6 @@ class DotLottiePlayer {
     }
 
     companion object {
-        // Multiplication is cheaper than division. JIT won't fold `/ 1e9f` because
-        // `1e-9f` is not exactly representable in float, so write it as a constant.
         private const val NS_TO_SEC = 1e-9f
         private const val NS_TO_MS = 1e-6f
 

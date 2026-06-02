@@ -1471,13 +1471,10 @@ void nativeGlFinish(JNIEnv *env, jclass) { glFinish(); }
 
 // ==================== Android Init ====================
 
-// Pass JavaVM + a global ref to the Application Context into the Rust audio
-// backend. Must be called once before loading any animation that contains
-// audio. Safe to call multiple times.
-//
-// `dotlottie_init_android` is feature-gated in the Rust crate (audio backend),
-// so it may not be present in every shipped .so. Resolve via dlsym so the SDK
-// works against both feature variants — when absent this is a no-op.
+// Hands the JavaVM + Application Context to the Rust runtime.
+// Looked up at runtime (rather than linked at build time) because the symbol
+// is feature-gated in the Rust crate and may be absent from the shipped .so —
+// in that case this is a no-op.
 typedef void (*PFN_dotlottie_init_android)(void *, void *);
 
 void nativeInitAndroid(JNIEnv *env, jclass, jobject ctx) {
