@@ -111,9 +111,9 @@ class DotLottieDrawable(
 
             // stateMachineTick() calls player tick() internally (player is borrowed by state machine)
             val ticked = if (stateMachineIsActive) {
-                player.stateMachineTick()
+                player.stateMachineTick(frameTimeNanos)
             } else {
-                player.tick()
+                player.tick(frameTimeNanos)
             }
 
             // Poll and dispatch events on main thread
@@ -289,15 +289,11 @@ class DotLottieDrawable(
         // 2. Load animation
         when (animationData) {
             is DotLottieContent.Json -> {
-                player.loadAnimationData(
-                    animationData.jsonString,
-                    width.toUInt(),
-                    height.toUInt()
-                )
+                player.loadAnimationData(animationData.jsonString)
             }
 
             is DotLottieContent.Binary -> {
-                player.loadDotlottieData(animationData.data, width.toUInt(), height.toUInt())
+                player.loadDotlottieData(animationData.data)
             }
         }
 
@@ -341,7 +337,6 @@ class DotLottieDrawable(
                 val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
                 if (pixelPtr == 0L) return@withLock
                 player.setSwTarget(pixelPtr, width.toUInt(), height.toUInt())
-                player.resize(width.toUInt(), height.toUInt())
                 bitmapBuffer = newBitmap
 
                 // Unlock and recycle old bitmap
@@ -405,7 +400,7 @@ class DotLottieDrawable(
     fun loadAnimation(
         animationId: String,
     ) {
-        val result = dlPlayer?.loadAnimation(animationId, width.toUInt(), height.toUInt())
+        val result = dlPlayer?.loadAnimation(animationId)
         if (result == true) {
             scheduleFrame(forceUpdate = true)
         }

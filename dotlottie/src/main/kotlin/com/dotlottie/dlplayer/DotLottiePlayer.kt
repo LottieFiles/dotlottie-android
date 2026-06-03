@@ -21,6 +21,11 @@ class DotLottiePlayer {
     private var nativeBufferWidth: Int = 0
     private var nativeBufferHeight: Int = 0
 
+    // Vsync timestamp of the previous tick — used to compute dt between frames.
+    // Zero means "no prior tick" (player just created / state machine just started).
+    private var lastPlayerFrameTimeNanos: Long = 0
+    private var lastStateMachineFrameTimeNanos: Long = 0
+
     constructor(config: Config) {
         this.currentConfig = config
         nativePtr = createPlayerWithConfig(0, config)
@@ -55,39 +60,42 @@ class DotLottiePlayer {
 
     // ==================== Loading ====================
 
-    fun loadAnimationData(data: String, width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeLoadAnimationData(nativePtr, data, width.toInt(), height.toInt())
+    fun loadAnimationData(data: String): Boolean {
+        val result = JNI.nativeLoadAnimationData(nativePtr, data)
         return result == 0
     }
 
-    fun loadAnimationPath(path: String, width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeLoadAnimationPath(nativePtr, path, width.toInt(), height.toInt())
+    fun loadAnimationPath(path: String): Boolean {
+        val result = JNI.nativeLoadAnimationPath(nativePtr, path)
         return result == 0
     }
 
-    fun loadAnimation(id: String, width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeLoadAnimation(nativePtr, id, width.toInt(), height.toInt())
+    fun loadAnimation(id: String): Boolean {
+        val result = JNI.nativeLoadAnimation(nativePtr, id)
         return result == 0
     }
 
-    fun loadDotlottieData(data: ByteArray, width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeLoadDotLottieData(nativePtr, data, width.toInt(), height.toInt())
+    fun loadDotlottieData(data: ByteArray): Boolean {
+        val result = JNI.nativeLoadDotLottieData(nativePtr, data)
         return result == 0
     }
 
     // ==================== Playback Control ====================
 
     fun play(): Boolean {
+        lastPlayerFrameTimeNanos = 0
         val result = JNI.nativePlay(nativePtr)
         return result == 0
     }
 
     fun pause(): Boolean {
+        lastPlayerFrameTimeNanos = 0
         val result = JNI.nativePause(nativePtr)
         return result == 0
     }
 
     fun stop(): Boolean {
+        lastPlayerFrameTimeNanos = 0
         val result = JNI.nativeStop(nativePtr)
         return result == 0
     }
@@ -97,32 +105,15 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun tick(): Boolean {
-        val result = JNI.nativeTick(nativePtr)
-        return result == 0
-    }
-
-    fun requestFrame(): Float {
-        return JNI.nativeRequestFrame(nativePtr)
+    fun tick(nowNanos: Long): Boolean {
+        val last = lastPlayerFrameTimeNanos
+        lastPlayerFrameTimeNanos = nowNanos
+        val dtMs = if (last == 0L) 0f else (nowNanos - last).toFloat() * NS_TO_MS
+        return JNI.nativeTick(nativePtr, dtMs)
     }
 
     fun setFrame(frame: Float): Boolean {
         val result = JNI.nativeSetFrame(nativePtr, frame)
-        return result == 0
-    }
-
-    fun seek(time: Float): Boolean {
-        val result = JNI.nativeSeek(nativePtr, time)
-        return result == 0
-    }
-
-    fun resize(width: UInt, height: UInt): Boolean {
-        val result = JNI.nativeResize(nativePtr, width.toInt(), height.toInt())
-        return result == 0
-    }
-
-    fun clear(): Boolean {
-        val result = JNI.nativeClear(nativePtr)
         return result == 0
     }
 
@@ -164,10 +155,6 @@ class DotLottiePlayer {
 
     fun loopCount(): UInt {
         return JNI.nativeLoopCount(nativePtr).toUInt()
-    }
-
-    fun segmentDuration(): Float {
-        return JNI.nativeSegmentDuration(nativePtr)
     }
 
     fun animationSize(): Pair<Float, Float> {
@@ -300,16 +287,6 @@ class DotLottiePlayer {
     fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
         val result = JNI.nativeSetImageSlotDataUrl(nativePtr, slotId, dataUrl)
         return result == 0
-    }
-
-    // ==================== Layer Bounds ====================
-
-    fun getLayerBounds(layerName: String): LayerBoundingBox? {
-        val arr = JNI.nativeGetLayerBounds(nativePtr, layerName) ?: return null
-        return LayerBoundingBox(
-            x1 = arr[0], y1 = arr[1], x2 = arr[2], y2 = arr[3],
-            x3 = arr[4], y3 = arr[5], x4 = arr[6], y4 = arr[7]
-        )
     }
 
     // ==================== Viewport ====================
@@ -482,9 +459,9 @@ class DotLottiePlayer {
         for (i in 0 until count) {
             val markerData = JNI.nativeMarker(nativePtr, i) ?: continue
             val name = markerData[0] ?: ""
-            val time = markerData[1]?.toFloatOrNull() ?: 0f
-            val duration = markerData[2]?.toFloatOrNull() ?: 0f
-            result.add(Marker(name = name, time = time, duration = duration))
+            val start = markerData[1]?.toFloatOrNull() ?: 0f
+            val end = markerData[2]?.toFloatOrNull() ?: 0f
+            result.add(Marker(name = name, start = start, end = end))
         }
         return result
     }
@@ -508,6 +485,7 @@ class DotLottiePlayer {
             JNI.nativeStateMachineRelease(stateMachinePtr)
             stateMachinePtr = 0
             stateMachineIsActive = false
+            lastStateMachineFrameTimeNanos = 0
         }
     }
 
@@ -528,21 +506,29 @@ class DotLottiePlayer {
             openUrlPolicy.requireUserInteraction
         )
         val started = result == 0
-        if (started) stateMachineIsActive = true
+        if (started) {
+            stateMachineIsActive = true
+            lastStateMachineFrameTimeNanos = 0
+        }
         return started
     }
 
     fun stateMachineStop(): Boolean {
         if (stateMachinePtr == 0L) return false
         val result = JNI.nativeStateMachineStop(stateMachinePtr)
-        if (result == 0) stateMachineIsActive = false
+        if (result == 0) {
+            stateMachineIsActive = false
+            lastStateMachineFrameTimeNanos = 0
+        }
         return result == 0
     }
 
-    fun stateMachineTick(): Boolean {
+    fun stateMachineTick(nowNanos: Long): Boolean {
         if (stateMachinePtr == 0L) return false
-        val result = JNI.nativeStateMachineTick(stateMachinePtr)
-        return result == 0
+        val last = lastStateMachineFrameTimeNanos
+        lastStateMachineFrameTimeNanos = nowNanos
+        val dtMs = if (last == 0L) 0f else (nowNanos - last).toFloat() * NS_TO_MS
+        return JNI.nativeStateMachineTick(stateMachinePtr, dtMs)
     }
 
     fun stateMachineSetNumericInput(key: String, value: Float): Boolean {
@@ -656,6 +642,9 @@ class DotLottiePlayer {
     }
 
     companion object {
+        private const val NS_TO_SEC = 1e-9f
+        private const val NS_TO_MS = 1e-6f
+
         @JvmStatic
         fun withThreads(config: Config, threads: UInt): DotLottiePlayer {
             return DotLottiePlayer(config, threads)

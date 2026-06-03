@@ -71,6 +71,8 @@ fun DotLottieAnimation(
 ) {
     val context = LocalContext.current
 
+    remember(context) { DotLottieJNI.ensureAndroidInitialized(context); Unit }
+
     val rController = remember { controller ?: DotLottieController() }
 
     val dlConfig = remember {
@@ -117,9 +119,9 @@ fun DotLottieAnimation(
                 }
 
                 val ticked = if (rController.stateMachineIsActive) {
-                    dlPlayer.stateMachineTick()
+                    dlPlayer.stateMachineTick(frameTimeNanos)
                 } else {
-                    dlPlayer.tick()
+                    dlPlayer.tick(frameTimeNanos)
                 }
 
                 // Poll and dispatch events
@@ -190,11 +192,11 @@ fun DotLottieAnimation(
 
                 when (animationData) {
                     is DotLottieContent.Json -> {
-                        dlPlayer.loadAnimationData(animationData.jsonString, width, height)
+                        dlPlayer.loadAnimationData(animationData.jsonString)
                     }
 
                     is DotLottieContent.Binary -> {
-                        dlPlayer.loadDotlottieData(animationData.data, width, height)
+                        dlPlayer.loadDotlottieData(animationData.data)
                     }
                 }
 
@@ -297,7 +299,6 @@ fun DotLottieAnimation(
                 val newBitmap = createBitmap(_width.toInt(), _height.toInt())
                 val pixelPtr = DotLottieJNI.nativeLockBitmapPixels(newBitmap)
                 if (pixelPtr == 0L) return@withLock
-                dlPlayer.resize(_width, _height)
                 dlPlayer.setSwTarget(pixelPtr, _width, _height)
                 bitmap = newBitmap
                 drawVersion++

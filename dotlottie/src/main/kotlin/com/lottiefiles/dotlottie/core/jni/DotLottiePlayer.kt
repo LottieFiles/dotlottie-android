@@ -1,5 +1,6 @@
 package com.lottiefiles.dotlottie.core.jni
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.hardware.HardwareBuffer
 
@@ -14,6 +15,24 @@ object DotLottiePlayer {
         System.loadLibrary("dotlottie_player")
         // Then load JNI bridge
         System.loadLibrary("dlplayer")
+    }
+
+    @Volatile
+    private var androidInitialized = false
+
+    /**
+     * Provides the JavaVM and Application Context to the native runtime.
+     * Should be called once before any player is used.
+     *
+     * Idempotent and thread-safe — only the first call propagates to native.
+     */
+    fun ensureAndroidInitialized(context: Context) {
+        if (androidInitialized) return
+        synchronized(this) {
+            if (androidInitialized) return
+            nativeInitAndroid(context.applicationContext)
+            androidInitialized = true
+        }
     }
 
     // ==================== Player Lifecycle ====================
@@ -45,16 +64,16 @@ object DotLottiePlayer {
     // ==================== Loading ====================
 
     @JvmStatic
-    external fun nativeLoadAnimationData(ptr: Long, data: String, width: Int, height: Int): Int
+    external fun nativeLoadAnimationData(ptr: Long, data: String): Int
 
     @JvmStatic
-    external fun nativeLoadAnimationPath(ptr: Long, path: String, width: Int, height: Int): Int
+    external fun nativeLoadAnimationPath(ptr: Long, path: String): Int
 
     @JvmStatic
-    external fun nativeLoadAnimation(ptr: Long, id: String, width: Int, height: Int): Int
+    external fun nativeLoadAnimation(ptr: Long, id: String): Int
 
     @JvmStatic
-    external fun nativeLoadDotLottieData(ptr: Long, data: ByteArray, width: Int, height: Int): Int
+    external fun nativeLoadDotLottieData(ptr: Long, data: ByteArray): Int
 
     // ==================== Playback Control ====================
 
@@ -71,22 +90,10 @@ object DotLottiePlayer {
     external fun nativeRender(ptr: Long): Int
 
     @JvmStatic
-    external fun nativeTick(ptr: Long): Int
-
-    @JvmStatic
-    external fun nativeRequestFrame(ptr: Long): Float
+    external fun nativeTick(ptr: Long, dtMillis: Float): Boolean
 
     @JvmStatic
     external fun nativeSetFrame(ptr: Long, frame: Float): Int
-
-    @JvmStatic
-    external fun nativeSeek(ptr: Long, time: Float): Int
-
-    @JvmStatic
-    external fun nativeResize(ptr: Long, width: Int, height: Int): Int
-
-    @JvmStatic
-    external fun nativeClear(ptr: Long): Int
 
     // ==================== State Queries ====================
 
@@ -118,9 +125,6 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeLoopCount(ptr: Long): Int
-
-    @JvmStatic
-    external fun nativeSegmentDuration(ptr: Long): Float
 
     @JvmStatic
     external fun nativeAnimationSize(ptr: Long): FloatArray
@@ -290,11 +294,6 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeSetImageSlotDataUrl(ptr: Long, slotId: String, dataUrl: String): Int
 
-    // ==================== Layer Bounds ====================
-
-    @JvmStatic
-    external fun nativeGetLayerBounds(ptr: Long, layerName: String): FloatArray?
-
     // ==================== Viewport ====================
 
     @JvmStatic
@@ -327,7 +326,7 @@ object DotLottiePlayer {
     external fun nativeStateMachineStop(smPtr: Long): Int
 
     @JvmStatic
-    external fun nativeStateMachineTick(smPtr: Long): Int
+    external fun nativeStateMachineTick(smPtr: Long, dtMillis: Float): Boolean
 
     @JvmStatic
     external fun nativeStateMachineSetNumericInput(smPtr: Long, key: String, value: Float): Int
@@ -381,4 +380,13 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeGlFinish()
+
+    // ==================== Android Init ====================
+
+    /**
+     * Provides the JavaVM and Application Context to the native runtime.
+     * Idempotent — subsequent calls are ignored on the native side.
+     */
+    @JvmStatic
+    external fun nativeInitAndroid(context: Context)
 }

@@ -38,7 +38,7 @@ internal class SharedGlThread private constructor() {
 
     interface RenderClient {
         /** Called on the shared GL thread during each choreographer frame. */
-        fun onRenderFrame()
+        fun onRenderFrame(frameTimeNanos: Long)
         /** Whether this client needs rendering. Checked each frame. */
         fun shouldRender(): Boolean
     }
@@ -115,7 +115,7 @@ internal class SharedGlThread private constructor() {
             for (client in clients) {
                 if (client.shouldRender()) {
                     anyActive = true
-                    client.onRenderFrame()
+                    client.onRenderFrame(frameTimeNanos)
                     lastRenderedClient = client
                 }
             }

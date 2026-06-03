@@ -45,7 +45,6 @@ internal fun DotLottieGLSurfaceAnimation(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val rController = remember { controller ?: DotLottieController() }
-    val initialStateMachineId = remember { stateMachineId }
 
     // Hold a reference to the widget so we can interact with it
     val glWidgetRef = remember { arrayOfNulls<GLWidget>(1) }
@@ -61,6 +60,7 @@ internal fun DotLottieGLSurfaceAnimation(
             .useFrameInterpolation(useFrameInterpolation)
             .marker(marker ?: "")
             .loopCount(loopCount)
+            .stateMachineId(stateMachineId ?: "")
             .build()
     }
 
@@ -119,11 +119,6 @@ internal fun DotLottieGLSurfaceAnimation(
                 widget.setOnPlayerCreated { player, config ->
                     rController.setPlayerInstance(player, config)
                     rController.init()
-
-                    if (!initialStateMachineId.isNullOrEmpty()) {
-                        rController.stateMachineLoad(initialStateMachineId)
-                        rController.stateMachineStart()
-                    }
                 }
 
                 // Load content

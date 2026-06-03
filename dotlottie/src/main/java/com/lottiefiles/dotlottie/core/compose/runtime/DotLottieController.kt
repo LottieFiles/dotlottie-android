@@ -445,8 +445,7 @@ class DotLottieController {
     fun loadAnimation(
         animationId: String,
     ) {
-        val result =
-            dlplayer?.loadAnimation(animationId, this._width.value, this._height.value) ?: false
+        val result = dlplayer?.loadAnimation(animationId) ?: false
 
         if (result) {
             _bufferNeedsUpdate.value = true

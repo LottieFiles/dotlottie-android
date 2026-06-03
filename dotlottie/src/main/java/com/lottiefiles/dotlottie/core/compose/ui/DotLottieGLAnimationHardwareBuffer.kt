@@ -62,6 +62,9 @@ internal fun DotLottieGLAnimationHardwareBuffer(
     loopCount: UInt = 0u,
 ) {
     val context = LocalContext.current
+    remember(context) {
+        com.lottiefiles.dotlottie.core.jni.DotLottiePlayer.ensureAndroidInitialized(context); Unit
+    }
     val rController = remember { controller ?: DotLottieController() }
     val initialStateMachineId = remember { stateMachineId }
 
