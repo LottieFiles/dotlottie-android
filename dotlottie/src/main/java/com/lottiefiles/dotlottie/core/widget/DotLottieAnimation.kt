@@ -444,6 +444,8 @@ class DotLottieAnimation @JvmOverloads constructor(
                         DotLottieUtils.getContent(context, DotLottieSource.Asset(attributes.src))
                     }
 
+                    if (!isActive || !this@DotLottieAnimation.isAttachedToWindow) return@launch
+
                     mLottieDrawable = DotLottieDrawable(
                         animationData = content,
                         width = width,
