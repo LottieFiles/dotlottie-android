@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
@@ -69,6 +70,12 @@ fun DotLottieAnimation(
     threads: UInt? = null,
     loopCount: UInt = 0u,
 ) {
+    // Ignores rendering in Android Studio design preview.
+    if (LocalInspectionMode.current) {
+        Box(modifier = modifier.defaultMinSize(200.dp, 200.dp))
+        return
+    }
+
     val context = LocalContext.current
 
     remember(context) { DotLottieJNI.ensureAndroidInitialized(context); Unit }
