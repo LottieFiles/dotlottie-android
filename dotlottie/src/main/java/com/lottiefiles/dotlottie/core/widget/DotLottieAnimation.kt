@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dotlottie.dlplayer.Config as DLConfig
@@ -70,7 +71,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     private var height: Int = 0
     private var mConfig: Config? = null
     private var mLottieDrawable: DotLottieDrawable? = null
-    private val coroutineScope = CoroutineScope(SupervisorJob())
+    private var coroutineScope = CoroutineScope(SupervisorJob())
     private var setupConfigJob: Job? = null
     private var setupDrawableJob: Job? = null
     private var layoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
@@ -337,8 +338,8 @@ class DotLottieAnimation @JvmOverloads constructor(
         layoutListener = object : ViewTreeObserver.OnGlobalLayoutListener {
             override fun onGlobalLayout() {
                 if (width > 0 && height > 0) {
-                    // Start animation setup only when dimensions are available
-                    setupDotLottieDrawable()
+                    // Start animation setup only when dimensions are available.
+                    setupDrawableIfNeeded()
                     // Remove the listener to avoid redundant calls
                     removeLayoutListener()
                 }
@@ -365,8 +366,24 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
 
+    private fun ensureScopeActive() {
+        if (!coroutineScope.isActive) {
+            coroutineScope = CoroutineScope(SupervisorJob())
+        }
+    }
+
+    private fun setupDrawableIfNeeded() {
+        if (mLottieDrawable != null) return
+        if (setupConfigJob?.isActive == true || setupDrawableJob?.isActive == true) return
+        when {
+            mConfig != null -> setupConfig()
+            ::attributes.isInitialized && attributes.src.isNotBlank() -> setupDotLottieDrawable()
+        }
+    }
+
     private fun setupConfig() {
         val config = mConfig ?: return
+        ensureScopeActive()
         setupConfigJob?.cancel()
         setupConfigJob = coroutineScope.launch {
             runCatching {
@@ -416,6 +433,7 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     private fun setupDotLottieDrawable() {
+        ensureScopeActive()
         setupDrawableJob?.cancel()
         setupDrawableJob = coroutineScope.launch {
             runCatching {
@@ -478,6 +496,17 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.let { drawable ->
             if ((width != drawable.intrinsicWidth || height != drawable.intrinsicHeight)) {
                 drawable.resize(width, height)
+            }
+        }
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (mLottieDrawable == null) {
+            if (width > 0 && height > 0) {
+                setupDrawableIfNeeded()
+            } else if (layoutListener == null) {
+                waitForLayout()
             }
         }
     }
