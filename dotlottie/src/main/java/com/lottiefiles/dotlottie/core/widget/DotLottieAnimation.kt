@@ -631,6 +631,10 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.stateMachineSetStringInput(key, value) ?: false
     }
 
+    fun stateMachineSetSeed(seed: Long): Boolean {
+        return mLottieDrawable?.stateMachineSetSeed(seed) ?: false
+    }
+
     fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
         return mLottieDrawable?.stateMachineSetBooleanInput(key, value) ?: false
     }
