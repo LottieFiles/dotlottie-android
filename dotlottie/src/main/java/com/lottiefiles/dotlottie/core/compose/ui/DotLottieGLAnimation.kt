@@ -1,7 +1,11 @@
 package com.lottiefiles.dotlottie.core.compose.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.unit.dp
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.createDefaultLayout
@@ -40,6 +44,12 @@ fun DotLottieGLAnimation(
     threads: UInt? = null,
     loopCount: UInt = 0u,
 ) {
+    // Ignores rendering in Android Studio design preview.
+    if (LocalInspectionMode.current) {
+        Box(modifier = modifier.defaultMinSize(200.dp, 200.dp))
+        return
+    }
+
     // TODO: Add HardwareBuffer support for API 31+
     DotLottieGLSurfaceAnimation(
         modifier = modifier,
