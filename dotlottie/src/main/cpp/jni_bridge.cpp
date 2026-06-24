@@ -168,6 +168,8 @@ static jint nativeStateMachineSetStringInput(JNIEnv *env, jclass, jlong smPtr,
                                              jstring key, jstring value);
 static jint nativeStateMachineSetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
                                               jstring key, jboolean value);
+static jint nativeStateMachineSetSeed(JNIEnv *env, jclass, jlong smPtr,
+                                      jlong seed);
 static jfloat nativeStateMachineGetNumericInput(JNIEnv *env, jclass,
                                                 jlong smPtr, jstring key);
 static jstring nativeStateMachineGetStringInput(JNIEnv *env, jclass,
@@ -1022,6 +1024,13 @@ jint nativeStateMachineSetBooleanInput(JNIEnv *env, jclass, jlong smPtr,
   return static_cast<jint>(result);
 }
 
+jint nativeStateMachineSetSeed(JNIEnv *env, jclass, jlong smPtr, jlong seed) {
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
+  auto result =
+      dotlottie_state_machine_set_seed(sm, static_cast<uint64_t>(seed));
+  return static_cast<jint>(result);
+}
+
 jfloat nativeStateMachineGetNumericInput(JNIEnv *env, jclass, jlong smPtr,
                                          jstring key) {
   auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
@@ -1646,6 +1655,7 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeStateMachineSetStringInput},
     {"nativeStateMachineSetBooleanInput", "(JLjava/lang/String;Z)I",
      (void *)nativeStateMachineSetBooleanInput},
+    {"nativeStateMachineSetSeed", "(JJ)I", (void *)nativeStateMachineSetSeed},
     {"nativeStateMachineGetNumericInput", "(JLjava/lang/String;)F",
      (void *)nativeStateMachineGetNumericInput},
     {"nativeStateMachineGetStringInput",

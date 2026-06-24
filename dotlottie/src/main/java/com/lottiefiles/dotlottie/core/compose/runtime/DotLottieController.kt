@@ -235,6 +235,10 @@ class DotLottieController {
         return dlplayer?.stateMachineSetBooleanInput(key, value) ?: false
     }
 
+    fun stateMachineSetSeed(seed: Long): Boolean {
+        return dlplayer?.stateMachineSetSeed(seed) ?: false
+    }
+
     fun stateMachineGetNumericInput(key: String): Float? {
         return dlplayer?.stateMachineGetNumericInput(key)
     }

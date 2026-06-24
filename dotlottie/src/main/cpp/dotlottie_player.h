@@ -971,6 +971,16 @@ enum dotlottieDotLottieResult dotlottie_state_machine_set_numeric_input(struct d
                                                                         float value);
 
 /**
+ * Seed the state machine's PRNG (used by the SetRandom action).
+ *
+ * Pass fresh entropy per instance for desynchronized randomness, or a fixed
+ * value for reproducible runs. Takes effect immediately and is re-applied on
+ * every `start()`.
+ */
+enum dotlottieDotLottieResult dotlottie_state_machine_set_seed(struct dotlottieDotLottieStateMachine *sm,
+                                                               uint64_t seed);
+
+/**
  * Set a string input
  */
 enum dotlottieDotLottieResult dotlottie_state_machine_set_string_input(struct dotlottieDotLottieStateMachine *sm,

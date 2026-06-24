@@ -338,6 +338,9 @@ object DotLottiePlayer {
     external fun nativeStateMachineSetBooleanInput(smPtr: Long, key: String, value: Boolean): Int
 
     @JvmStatic
+    external fun nativeStateMachineSetSeed(smPtr: Long, seed: Long): Int
+
+    @JvmStatic
     external fun nativeStateMachineGetNumericInput(smPtr: Long, key: String): Float
 
     @JvmStatic

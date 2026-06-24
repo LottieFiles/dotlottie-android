@@ -910,6 +910,10 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         return dlPlayer?.stateMachineSetStringInput(key, value) ?: false
     }
 
+    fun stateMachineSetSeed(seed: Long): Boolean {
+        return dlPlayer?.stateMachineSetSeed(seed) ?: false
+    }
+
     fun stateMachineSetBooleanInput(key: String, value: Boolean): Boolean {
         return dlPlayer?.stateMachineSetBooleanInput(key, value) ?: false
     }
