@@ -37,7 +37,7 @@ dotlottieRust {
 }
 
 group = "com.github.LottieFiles"
-version = "0.14.1"
+version = "0.14.2"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
