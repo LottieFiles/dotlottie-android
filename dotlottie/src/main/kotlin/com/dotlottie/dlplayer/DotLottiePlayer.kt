@@ -549,6 +549,12 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    fun stateMachineSetSeed(seed: Long): Boolean {
+        if (stateMachinePtr == 0L) return false
+        val result = JNI.nativeStateMachineSetSeed(stateMachinePtr, seed)
+        return result == 0
+    }
+
     fun stateMachineGetNumericInput(key: String): Float {
         if (stateMachinePtr == 0L) return 0f
         return JNI.nativeStateMachineGetNumericInput(stateMachinePtr, key)
