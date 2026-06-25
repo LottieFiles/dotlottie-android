@@ -265,19 +265,19 @@ static void applyConfigToPlayer(JNIEnv *env,
                            static_cast<uint8_t>(bg & 0xFF),
                            static_cast<uint8_t>((bg >> 24) & 0xFF));
 
-  if (hasSegment == JNI_TRUE) {
-    float segment[2] = {segmentStart, segmentEnd};
-    dotlottie_set_segment(player, &segment);
-  } else {
-    dotlottie_set_segment(player, nullptr);
-  }
-
   if (marker != nullptr) {
+    dotlottie_set_segment(player, nullptr);
     const char *cMarker = env->GetStringUTFChars(marker, nullptr);
     dotlottie_set_marker(player, cMarker);
     env->ReleaseStringUTFChars(marker, cMarker);
   } else {
     dotlottie_set_marker(player, nullptr);
+    if (hasSegment == JNI_TRUE) {
+      float segment[2] = {segmentStart, segmentEnd};
+      dotlottie_set_segment(player, &segment);
+    } else {
+      dotlottie_set_segment(player, nullptr);
+    }
   }
 
   dotlottieLayout layout;
