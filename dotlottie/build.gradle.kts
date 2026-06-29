@@ -1,7 +1,9 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    `maven-publish`
+    id("com.vanniktech.maven.publish")
     id("com.lottiefiles.dotlottie-rust")
 }
 
@@ -36,7 +38,7 @@ dotlottieRust {
     // apiLevel = 21
 }
 
-group = "com.github.LottieFiles"
+group = "com.lottiefiles"
 version = "0.14.3"
 
 android {
@@ -114,19 +116,43 @@ android {
     }
 }
 
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "com.github.LottieFiles"
-            artifactId = "dotlottie-android"
-            version = version
-            afterEvaluate {
-                from(components["release"])
+mavenPublishing {
+    coordinates("com.lottiefiles", "dotlottie-android", version.toString())
+
+    pom {
+        name.set("dotLottie Android")
+        description.set(
+            "A powerful Android library for rendering Lottie and dotLottie animations " +
+                "with advanced features like interactivity, theming, and state machines."
+        )
+        inceptionYear.set("2024")
+        url.set("https://github.com/LottieFiles/dotlottie-android")
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://github.com/LottieFiles/dotlottie-android/blob/main/LICENSE")
+                distribution.set("repo")
             }
         }
+        developers {
+            developer {
+                id.set("lottiefiles")
+                name.set("LottieFiles")
+                url.set("https://lottiefiles.com")
+            }
+        }
+        scm {
+            url.set("https://github.com/LottieFiles/dotlottie-android")
+            connection.set("scm:git:git://github.com/LottieFiles/dotlottie-android.git")
+            developerConnection.set("scm:git:ssh://git@github.com/LottieFiles/dotlottie-android.git")
+        }
     }
-    repositories {
-        mavenLocal()
+
+    val hasSigningKey = providers.gradleProperty("signingInMemoryKey").isPresent ||
+        providers.environmentVariable("ORG_GRADLE_PROJECT_signingInMemoryKey").isPresent
+    if (hasSigningKey) {
+        publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = false)
+        signAllPublications()
     }
 }
 

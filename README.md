@@ -49,7 +49,21 @@ You can find and run the sample application in the `sample` directory.
 
 ## Installation
 
-To add DotLottie Android, you need to add this dependency to your module's gradle file:
+### Maven Central (recommended)
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+```
+
+```kotlin
+dependencies {
+    implementation("com.lottiefiles:dotlottie-android:0.5.0")
+}
+```
+
+### JitPack
 
 ```kotlin
 repositories {
