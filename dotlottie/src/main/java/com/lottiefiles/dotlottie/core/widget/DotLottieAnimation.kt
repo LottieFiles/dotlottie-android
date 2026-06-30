@@ -18,6 +18,7 @@ import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
+import com.dotlottie.dlplayer.TextDocument
 import com.dotlottie.dlplayer.createDefaultLayout
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
 import com.lottiefiles.dotlottie.core.R
@@ -235,6 +236,10 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     fun setTextSlot(slotId: String, text: String): Boolean {
         return mLottieDrawable?.setTextSlot(slotId, text) ?: false
+    }
+
+    fun setTextSlot(slotId: String, document: TextDocument): Boolean {
+        return mLottieDrawable?.setTextSlot(slotId, document) ?: false
     }
 
     fun setVectorSlot(slotId: String, vector: PointF): Boolean {

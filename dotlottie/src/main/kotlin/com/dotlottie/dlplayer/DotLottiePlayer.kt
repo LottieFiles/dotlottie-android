@@ -2,6 +2,7 @@ package com.dotlottie.dlplayer
 
 import android.graphics.Color
 import android.graphics.PointF
+import android.util.Log
 import androidx.annotation.ColorInt
 import com.lottiefiles.dotlottie.core.jni.DotLottiePlayer as JNI
 import org.json.JSONObject
@@ -264,9 +265,35 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    /**
+     * Sets the text of a text slot while preserving its existing styling
+     * (font, size, color, ...).
+     */
     fun setTextSlot(slotId: String, text: String): Boolean {
-        val result = JNI.nativeSetTextSlot(nativePtr, slotId, text)
-        return result == 0
+        val current = getTextDocument(slotId)
+        if (current == null) {
+            Log.w(
+                "DotLottie",
+                "setTextSlot: no text document found for slot \"$slotId\"; " +
+                    "pass a TextDocument to set its styling explicitly.",
+            )
+            return false
+        }
+        return setTextSlot(slotId, current.copy(text = text))
+    }
+
+    /** Sets a text slot from a full [TextDocument] (text plus styling). */
+    fun setTextSlot(slotId: String, document: TextDocument): Boolean {
+        val slotsJson = JSONObject().apply {
+            put(slotId, JSONObject().apply { put("p", JSONObject(document.toSlotJson())) })
+        }.toString()
+        return JNI.nativeSetSlotsStr(nativePtr, slotsJson) == 0
+    }
+
+    /** Returns the current text slot value as a [TextDocument], or null if unavailable. */
+    private fun getTextDocument(slotId: String): TextDocument? {
+        val json = JNI.nativeGetSlotStr(nativePtr, slotId)
+        return TextDocument.fromSlotJson(json)
     }
 
     fun setVectorSlot(slotId: String, vector: PointF): Boolean {
