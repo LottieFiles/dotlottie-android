@@ -265,10 +265,6 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    /**
-     * Sets the text of a text slot while preserving its existing styling
-     * (font, size, color, ...).
-     */
     fun setTextSlot(slotId: String, text: String): Boolean {
         val current = getTextDocument(slotId)
         if (current == null) {
@@ -282,7 +278,6 @@ class DotLottiePlayer {
         return setTextSlot(slotId, current.copy(text = text))
     }
 
-    /** Sets a text slot from a full [TextDocument] (text plus styling). */
     fun setTextSlot(slotId: String, document: TextDocument): Boolean {
         val slotsJson = JSONObject().apply {
             put(slotId, JSONObject().apply { put("p", JSONObject(document.toSlotJson())) })
@@ -290,7 +285,6 @@ class DotLottiePlayer {
         return JNI.nativeSetSlotsStr(nativePtr, slotsJson) == 0
     }
 
-    /** Returns the current text slot value as a [TextDocument], or null if unavailable. */
     private fun getTextDocument(slotId: String): TextDocument? {
         val json = JNI.nativeGetSlotStr(nativePtr, slotId)
         return TextDocument.fromSlotJson(json)
