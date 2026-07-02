@@ -377,9 +377,6 @@ jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr, jbyteArray data) {
   return static_cast<jint>(result);
 }
 
-// dotlottie_load_font/unload_font are process-wide (no player pointer): they write into
-// ThorVG's global font registry, keyed by the Lottie `fName`, so any player can resolve text
-// layers referencing that name without needing a filesystem path for the font file.
 jint nativeLoadFont(JNIEnv *env, jclass, jstring name, jbyteArray data) {
   const char *cName = env->GetStringUTFChars(name, nullptr);
   jbyte *bytes = env->GetByteArrayElements(data, nullptr);
