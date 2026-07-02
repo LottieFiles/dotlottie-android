@@ -48,6 +48,8 @@ static jint nativeLoadAnimationPath(JNIEnv *env, jclass, jlong ptr,
 static jint nativeLoadAnimation(JNIEnv *env, jclass, jlong ptr, jstring id);
 static jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr,
                                     jbyteArray data);
+static jint nativeLoadFont(JNIEnv *env, jclass, jstring name, jbyteArray data);
+static jint nativeUnloadFont(JNIEnv *env, jclass, jstring name);
 
 // Playback control
 static jint nativePlay(JNIEnv *env, jclass, jlong ptr);
@@ -372,6 +374,27 @@ jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr, jbyteArray data) {
   auto result = dotlottie_load_dotlottie_data(
       player, reinterpret_cast<const char *>(bytes), len);
   env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
+  return static_cast<jint>(result);
+}
+
+// dotlottie_load_font/unload_font are process-wide (no player pointer): they write into
+// ThorVG's global font registry, keyed by the Lottie `fName`, so any player can resolve text
+// layers referencing that name without needing a filesystem path for the font file.
+jint nativeLoadFont(JNIEnv *env, jclass, jstring name, jbyteArray data) {
+  const char *cName = env->GetStringUTFChars(name, nullptr);
+  jbyte *bytes = env->GetByteArrayElements(data, nullptr);
+  jsize len = env->GetArrayLength(data);
+  auto result = dotlottie_load_font(
+      cName, reinterpret_cast<const uint8_t *>(bytes), len);
+  env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
+  env->ReleaseStringUTFChars(name, cName);
+  return static_cast<jint>(result);
+}
+
+jint nativeUnloadFont(JNIEnv *env, jclass, jstring name) {
+  const char *cName = env->GetStringUTFChars(name, nullptr);
+  auto result = dotlottie_unload_font(cName);
+  env->ReleaseStringUTFChars(name, cName);
   return static_cast<jint>(result);
 }
 
@@ -1529,6 +1552,8 @@ static JNINativeMethod playerMethods[] = {
     {"nativeLoadAnimation", "(JLjava/lang/String;)I",
      (void *)nativeLoadAnimation},
     {"nativeLoadDotLottieData", "(J[B)I", (void *)nativeLoadDotLottieData},
+    {"nativeLoadFont", "(Ljava/lang/String;[B)I", (void *)nativeLoadFont},
+    {"nativeUnloadFont", "(Ljava/lang/String;)I", (void *)nativeUnloadFont},
 
     // Playback control
     {"nativePlay", "(J)I", (void *)nativePlay},

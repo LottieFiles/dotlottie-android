@@ -473,4 +473,14 @@ class DotLottieController {
     fun clearEventListeners() {
         eventListeners.clear()
     }
+
+    companion object {
+        /** Registers a font into ThorVG's global font registry. */
+        @JvmStatic
+        fun loadFont(name: String, data: ByteArray): Boolean = DotLottiePlayer.loadFont(name, data)
+
+        /** Removes a font previously registered with [loadFont] from the global registry. */
+        @JvmStatic
+        fun unloadFont(name: String): Boolean = DotLottiePlayer.unloadFont(name)
+    }
 }
