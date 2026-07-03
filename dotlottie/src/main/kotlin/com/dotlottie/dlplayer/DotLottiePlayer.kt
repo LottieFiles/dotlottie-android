@@ -676,5 +676,15 @@ class DotLottiePlayer {
         fun withThreads(config: Config, threads: UInt): DotLottiePlayer {
             return DotLottiePlayer(config, threads)
         }
+
+        @JvmStatic
+        fun loadFont(name: String, data: ByteArray): Boolean {
+            return JNI.nativeLoadFont(name, data) == 0
+        }
+
+        @JvmStatic
+        fun unloadFont(name: String): Boolean {
+            return JNI.nativeUnloadFont(name) == 0
+        }
     }
 }
