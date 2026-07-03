@@ -294,6 +294,9 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeSetImageSlotDataUrl(ptr: Long, slotId: String, dataUrl: String): Int
 
+    @JvmStatic
+    external fun nativeGetSlotStr(ptr: Long, slotId: String): String
+
     // ==================== Viewport ====================
 
     @JvmStatic

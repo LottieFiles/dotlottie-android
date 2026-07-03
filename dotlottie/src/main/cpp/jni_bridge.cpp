@@ -142,6 +142,7 @@ static jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr,
                                    jstring slotId, jstring path);
 static jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr,
                                       jstring slotId, jstring dataUrl);
+static jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId);
 
 // Viewport
 static jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y,
@@ -851,6 +852,27 @@ jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   env->ReleaseStringUTFChars(slotId, cSlotId);
   env->ReleaseStringUTFChars(text, cText);
   return static_cast<jint>(result);
+}
+
+jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  uintptr_t size = 0;
+  auto res = dotlottie_get_slot_str(player, cSlotId, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    env->ReleaseStringUTFChars(slotId, cSlotId);
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    env->ReleaseStringUTFChars(slotId, cSlotId);
+    return env->NewStringUTF("");
+  }
+  dotlottie_get_slot_str(player, cSlotId, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return result;
 }
 
 jint nativeSetVectorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
@@ -1631,6 +1653,8 @@ static JNINativeMethod playerMethods[] = {
     {"nativeSetImageSlotDataUrl",
      "(JLjava/lang/String;Ljava/lang/String;)I",
      (void *)nativeSetImageSlotDataUrl},
+    {"nativeGetSlotStr", "(JLjava/lang/String;)Ljava/lang/String;",
+     (void *)nativeGetSlotStr},
 
     // Viewport
     {"nativeSetViewport", "(JIIII)I", (void *)nativeSetViewport},
