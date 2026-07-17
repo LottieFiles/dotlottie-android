@@ -48,6 +48,8 @@ static jint nativeLoadAnimationPath(JNIEnv *env, jclass, jlong ptr,
 static jint nativeLoadAnimation(JNIEnv *env, jclass, jlong ptr, jstring id);
 static jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr,
                                     jbyteArray data);
+static jint nativeLoadFont(JNIEnv *env, jclass, jstring name, jbyteArray data);
+static jint nativeUnloadFont(JNIEnv *env, jclass, jstring name);
 
 // Playback control
 static jint nativePlay(JNIEnv *env, jclass, jlong ptr);
@@ -142,6 +144,7 @@ static jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr,
                                    jstring slotId, jstring path);
 static jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr,
                                       jstring slotId, jstring dataUrl);
+static jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId);
 
 // Viewport
 static jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y,
@@ -372,6 +375,24 @@ jint nativeLoadDotLottieData(JNIEnv *env, jclass, jlong ptr, jbyteArray data) {
   auto result = dotlottie_load_dotlottie_data(
       player, reinterpret_cast<const char *>(bytes), len);
   env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
+  return static_cast<jint>(result);
+}
+
+jint nativeLoadFont(JNIEnv *env, jclass, jstring name, jbyteArray data) {
+  const char *cName = env->GetStringUTFChars(name, nullptr);
+  jbyte *bytes = env->GetByteArrayElements(data, nullptr);
+  jsize len = env->GetArrayLength(data);
+  auto result = dotlottie_load_font(
+      cName, reinterpret_cast<const uint8_t *>(bytes), len);
+  env->ReleaseByteArrayElements(data, bytes, JNI_ABORT);
+  env->ReleaseStringUTFChars(name, cName);
+  return static_cast<jint>(result);
+}
+
+jint nativeUnloadFont(JNIEnv *env, jclass, jstring name) {
+  const char *cName = env->GetStringUTFChars(name, nullptr);
+  auto result = dotlottie_unload_font(cName);
+  env->ReleaseStringUTFChars(name, cName);
   return static_cast<jint>(result);
 }
 
@@ -851,6 +872,27 @@ jint nativeSetTextSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   env->ReleaseStringUTFChars(slotId, cSlotId);
   env->ReleaseStringUTFChars(text, cText);
   return static_cast<jint>(result);
+}
+
+jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  uintptr_t size = 0;
+  auto res = dotlottie_get_slot_str(player, cSlotId, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    env->ReleaseStringUTFChars(slotId, cSlotId);
+    return env->NewStringUTF("");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    env->ReleaseStringUTFChars(slotId, cSlotId);
+    return env->NewStringUTF("");
+  }
+  dotlottie_get_slot_str(player, cSlotId, buf, nullptr);
+  jstring result = env->NewStringUTF(buf);
+  free(buf);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return result;
 }
 
 jint nativeSetVectorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
@@ -1529,6 +1571,8 @@ static JNINativeMethod playerMethods[] = {
     {"nativeLoadAnimation", "(JLjava/lang/String;)I",
      (void *)nativeLoadAnimation},
     {"nativeLoadDotLottieData", "(J[B)I", (void *)nativeLoadDotLottieData},
+    {"nativeLoadFont", "(Ljava/lang/String;[B)I", (void *)nativeLoadFont},
+    {"nativeUnloadFont", "(Ljava/lang/String;)I", (void *)nativeUnloadFont},
 
     // Playback control
     {"nativePlay", "(J)I", (void *)nativePlay},
@@ -1631,6 +1675,8 @@ static JNINativeMethod playerMethods[] = {
     {"nativeSetImageSlotDataUrl",
      "(JLjava/lang/String;Ljava/lang/String;)I",
      (void *)nativeSetImageSlotDataUrl},
+    {"nativeGetSlotStr", "(JLjava/lang/String;)Ljava/lang/String;",
+     (void *)nativeGetSlotStr},
 
     // Viewport
     {"nativeSetViewport", "(JIIII)I", (void *)nativeSetViewport},

@@ -18,6 +18,7 @@ import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.Event
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
+import com.dotlottie.dlplayer.TextDocument
 import com.dotlottie.dlplayer.Marker
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
@@ -443,6 +444,12 @@ class DotLottieDrawable(
 
     fun setTextSlot(slotId: String, text: String): Boolean {
         val result = dlPlayer?.setTextSlot(slotId, text) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun setTextSlot(slotId: String, document: TextDocument): Boolean {
+        val result = dlPlayer?.setTextSlot(slotId, document) ?: false
         if (result) scheduleFrame(forceUpdate = true)
         return result
     }

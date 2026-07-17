@@ -75,6 +75,12 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeLoadDotLottieData(ptr: Long, data: ByteArray): Int
 
+    @JvmStatic
+    external fun nativeLoadFont(name: String, data: ByteArray): Int
+
+    @JvmStatic
+    external fun nativeUnloadFont(name: String): Int
+
     // ==================== Playback Control ====================
 
     @JvmStatic
@@ -293,6 +299,9 @@ object DotLottiePlayer {
 
     @JvmStatic
     external fun nativeSetImageSlotDataUrl(ptr: Long, slotId: String, dataUrl: String): Int
+
+    @JvmStatic
+    external fun nativeGetSlotStr(ptr: Long, slotId: String): String
 
     // ==================== Viewport ====================
 

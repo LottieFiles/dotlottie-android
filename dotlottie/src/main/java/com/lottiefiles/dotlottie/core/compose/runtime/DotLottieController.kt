@@ -9,6 +9,7 @@ import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Manifest
 import com.dotlottie.dlplayer.Marker
+import com.dotlottie.dlplayer.TextDocument
 import com.dotlottie.dlplayer.Mode
 import com.dotlottie.dlplayer.OpenUrlPolicy
 import com.dotlottie.dlplayer.createDefaultOpenUrlPolicy
@@ -414,6 +415,10 @@ class DotLottieController {
         return dlplayer?.setTextSlot(slotId, text) ?: false
     }
 
+    fun setTextSlot(slotId: String, document: TextDocument): Boolean {
+        return dlplayer?.setTextSlot(slotId, document) ?: false
+    }
+
     fun setVectorSlot(slotId: String, vector: PointF): Boolean {
         return dlplayer?.setVectorSlot(slotId, vector) ?: false
     }
@@ -472,5 +477,15 @@ class DotLottieController {
 
     fun clearEventListeners() {
         eventListeners.clear()
+    }
+
+    companion object {
+        /** Registers a font into ThorVG's global font registry. */
+        @JvmStatic
+        fun loadFont(name: String, data: ByteArray): Boolean = DotLottiePlayer.loadFont(name, data)
+
+        /** Removes a font previously registered with [loadFont] from the global registry. */
+        @JvmStatic
+        fun unloadFont(name: String): Boolean = DotLottiePlayer.unloadFont(name)
     }
 }
