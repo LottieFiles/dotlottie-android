@@ -8,6 +8,9 @@
 
 <h1 align="center">dotLottie Android</h1>
 
+> [!TIP]
+> Looking for animations to use with this player? Browse **[100,000+ free Lottie animations](https://lottiefiles.com/free-animations?utm_source=npm&utm_medium=readme)** and grab any of them as `.lottie` or `.json`, or create your own with [Lottie Creator](https://lottiefiles.com/lottie-creator?utm_source=npm&utm_medium=readme).
+
 <p align="center">
   <a href="https://android-arsenal.com/api?level=21"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
   <a href="https://jitpack.io/#LottieFiles/dotlottie-android"><img alt="API" src="https://jitpack.io/v/LottieFiles/dotlottie-android.svg"/></a>
@@ -37,7 +40,9 @@ dotLottie is an open-source file format that bundles one or more Lottie animatio
 
 This makes dotLottie a powerful tool for creating dynamic and interactive animations that go beyond traditional Lottie capabilities.
 
-[Learn more about dotLottie](https://dotlottie.io)
+[Learn more about dotLottie](https://lottiefiles.com/dotlottie)
+
+> Full documentation is available at [docs.lottiefiles.com](https://docs.lottiefiles.com/en/runtimes/distributions/android).
 
 ## Demo
 
