@@ -40,7 +40,7 @@ dotlottieRust {
 }
 
 group = "com.lottiefiles"
-version = "0.15.0"
+version = "0.16.0"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
