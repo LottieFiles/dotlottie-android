@@ -300,15 +300,28 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        val result = JNI.nativeSetImageSlotPath(nativePtr, slotId, path)
+    /**
+     * Sets an image slot from a source string: a `data:` URI, an `http(s)://`
+     * URL, or a file in the package `i/` folder referenced by name.
+     */
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        val result = JNI.nativeSetImageSlotSrc(nativePtr, slotId, src)
         return result == 0
     }
 
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        val result = JNI.nativeSetImageSlotDataUrl(nativePtr, slotId, dataUrl)
-        return result == 0
-    }
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, path)")
+    )
+    fun setImageSlotPath(slotId: String, path: String): Boolean =
+        setImageSlotSrc(slotId, path)
+
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, dataUrl)")
+    )
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean =
+        setImageSlotSrc(slotId, dataUrl)
 
     // ==================== Viewport ====================
 

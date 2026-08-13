@@ -26,6 +26,7 @@ dotlottieRust {
          "tvg-png",              // PNG image support
          "tvg-jpg",              // JPEG image support
          "tvg-ttf",              // TrueType font support
+         "tvg-otf",              // OpenType font support
          "tvg-lottie-expressions", // Lottie expression evaluation
          "tvg-threads",          // multi-threaded rendering
      )

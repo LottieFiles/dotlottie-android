@@ -24,7 +24,7 @@ DOTLOTTIE_RS_ROOT ?= deps/dotlottie-rs/dotlottie-rs
 MIN_NDK_VERSION = 28
 
 # Default Rust features for Android builds
-ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-lottie-expressions,tvg-threads
+ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-otf,tvg-lottie-expressions,tvg-threads
 
 ifdef FEATURES
 	ANDROID_FEATURES = $(FEATURES)
@@ -90,7 +90,8 @@ ANDROID_CXX_armv7 = $(ANDROID_TOOLCHAIN)/bin/armv7a-linux-androideabi$(API_LEVEL
 
 # Get version information
 CRATE_VERSION = $(shell grep -m 1 'version =' $(DOTLOTTIE_RS_ROOT)/Cargo.toml | grep -o '[0-9][0-9.]*')
-COMMIT_HASH := $(shell git rev-parse --short HEAD)
+# Stamp the dotlottie-rs commit, not this repository's HEAD
+COMMIT_HASH := $(shell git -C $(DOTLOTTIE_RS_ROOT) rev-parse --short HEAD)
 
 # ============================================================================
 # Android Build Targets (C API)
@@ -143,7 +144,7 @@ android-clean:
 # ============================================================================
 
 # Android feature set (C API from dotlottie-rs)
-ANDROID_DEFAULT_FEATURES = tvg,tvg-sw,c_api,dotlottie,state-machines,theming
+ANDROID_DEFAULT_FEATURES = tvg,tvg-cpu,tvg-gl,c_api,dotlottie,state-machines,theming
 ANDROID_LIB_NAME = libdotlottie_rs.so
 
 # Build for all Android architectures with C API
@@ -162,8 +163,9 @@ android-aarch64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
-	cargo build \
+	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
+		--crate-type cdylib \
 		--target $(RUST_TARGET_aarch64) \
 		--release \
 		--no-default-features \
@@ -191,8 +193,9 @@ android-x86_64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
-	cargo build \
+	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
+		--crate-type cdylib \
 		--target $(RUST_TARGET_x86_64) \
 		--release \
 		--no-default-features \
@@ -220,8 +223,9 @@ android-x86: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
-	cargo build \
+	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
+		--crate-type cdylib \
 		--target $(RUST_TARGET_x86) \
 		--release \
 		--no-default-features \
@@ -249,8 +253,9 @@ android-armv7: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
-	cargo build \
+	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
+		--crate-type cdylib \
 		--target $(RUST_TARGET_armv7) \
 		--release \
 		--no-default-features \

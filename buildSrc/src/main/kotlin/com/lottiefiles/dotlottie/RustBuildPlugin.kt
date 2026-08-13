@@ -21,6 +21,7 @@ class RustBuildPlugin : Plugin<Project> {
                 "tvg-png",
                 "tvg-jpg",
                 "tvg-ttf",
+                "tvg-otf",
                 "tvg-lottie-expressions",
                 "tvg-threads"
             )

@@ -250,13 +250,27 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.setPositionSlot(slotId, position) ?: false
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        return mLottieDrawable?.setImageSlotPath(slotId, path) ?: false
+    /**
+     * Sets an image slot from a source string: a `data:` URI, an `http(s)://`
+     * URL, or a file in the package `i/` folder referenced by name.
+     */
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        return mLottieDrawable?.setImageSlotSrc(slotId, src) ?: false
     }
 
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        return mLottieDrawable?.setImageSlotDataUrl(slotId, dataUrl) ?: false
-    }
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, path)")
+    )
+    fun setImageSlotPath(slotId: String, path: String): Boolean =
+        setImageSlotSrc(slotId, path)
+
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, dataUrl)")
+    )
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean =
+        setImageSlotSrc(slotId, dataUrl)
 
     fun clearSlots(): Boolean {
         return mLottieDrawable?.clearSlots() ?: false

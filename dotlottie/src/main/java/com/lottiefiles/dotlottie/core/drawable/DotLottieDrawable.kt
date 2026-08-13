@@ -466,17 +466,29 @@ class DotLottieDrawable(
         return result
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        val result = dlPlayer?.setImageSlotPath(slotId, path) ?: false
+    /**
+     * Sets an image slot from a source string: a `data:` URI, an `http(s)://`
+     * URL, or a file in the package `i/` folder referenced by name.
+     */
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        val result = dlPlayer?.setImageSlotSrc(slotId, src) ?: false
         if (result) scheduleFrame(forceUpdate = true)
         return result
     }
 
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        val result = dlPlayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
-        if (result) scheduleFrame(forceUpdate = true)
-        return result
-    }
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, path)")
+    )
+    fun setImageSlotPath(slotId: String, path: String): Boolean =
+        setImageSlotSrc(slotId, path)
+
+    @Deprecated(
+        "Image slot sources are resolved from a single field.",
+        ReplaceWith("setImageSlotSrc(slotId, dataUrl)")
+    )
+    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean =
+        setImageSlotSrc(slotId, dataUrl)
 
     fun clearSlots(): Boolean {
         val result = dlPlayer?.clearSlots() ?: false

@@ -140,10 +140,8 @@ static jint nativeSetVectorSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                                 jfloat x, jfloat y);
 static jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr,
                                   jstring slotId, jfloat x, jfloat y);
-static jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr,
-                                   jstring slotId, jstring path);
-static jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr,
-                                      jstring slotId, jstring dataUrl);
+static jint nativeSetImageSlotSrc(JNIEnv *env, jclass, jlong ptr,
+                                  jstring slotId, jstring src);
 static jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId);
 
 // Viewport
@@ -434,28 +432,28 @@ jint nativeSetFrame(JNIEnv *env, jclass, jlong ptr, jfloat frame) {
 
 jboolean nativeIsLoaded(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  return dotlottie_is_loaded(player) ? JNI_TRUE : JNI_FALSE;
+  // Idle is the only status in which no animation is loaded: loading resets the
+  // player to Idle and only leaves it (for Stopped) once the load succeeds.
+  return dotlottie_status(player) != dotlottieStatus::Idle ? JNI_TRUE
+                                                           : JNI_FALSE;
 }
 
 jboolean nativeIsPlaying(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  return dotlottie_get_playback_status(player) == dotlottiePlaybackStatus::Playing
-             ? JNI_TRUE
-             : JNI_FALSE;
+  return dotlottie_status(player) == dotlottieStatus::Playing ? JNI_TRUE
+                                                              : JNI_FALSE;
 }
 
 jboolean nativeIsPaused(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  return dotlottie_get_playback_status(player) == dotlottiePlaybackStatus::Paused
-             ? JNI_TRUE
-             : JNI_FALSE;
+  return dotlottie_status(player) == dotlottieStatus::Paused ? JNI_TRUE
+                                                             : JNI_FALSE;
 }
 
 jboolean nativeIsStopped(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  return dotlottie_get_playback_status(player) == dotlottiePlaybackStatus::Stopped
-             ? JNI_TRUE
-             : JNI_FALSE;
+  return dotlottie_status(player) == dotlottieStatus::Stopped ? JNI_TRUE
+                                                              : JNI_FALSE;
 }
 
 jboolean nativeIsComplete(JNIEnv *env, jclass, jlong ptr) {
@@ -913,25 +911,16 @@ jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   return static_cast<jint>(result);
 }
 
-jint nativeSetImageSlotPath(JNIEnv *env, jclass, jlong ptr, jstring slotId,
-                            jstring path) {
+// `src` accepts a `data:` URI, an `http(s)://` URL, or the name of a file in
+// the package `i/` folder; the player picks the right resolution strategy.
+jint nativeSetImageSlotSrc(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                           jstring src) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
   const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
-  const char *cPath = env->GetStringUTFChars(path, nullptr);
-  auto result = dotlottie_set_image_slot_path(player, cSlotId, cPath);
+  const char *cSrc = env->GetStringUTFChars(src, nullptr);
+  auto result = dotlottie_set_image_slot_src(player, cSlotId, cSrc);
   env->ReleaseStringUTFChars(slotId, cSlotId);
-  env->ReleaseStringUTFChars(path, cPath);
-  return static_cast<jint>(result);
-}
-
-jint nativeSetImageSlotDataUrl(JNIEnv *env, jclass, jlong ptr, jstring slotId,
-                               jstring dataUrl) {
-  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
-  const char *cDataUrl = env->GetStringUTFChars(dataUrl, nullptr);
-  auto result = dotlottie_set_image_slot_data_url(player, cSlotId, cDataUrl);
-  env->ReleaseStringUTFChars(slotId, cSlotId);
-  env->ReleaseStringUTFChars(dataUrl, cDataUrl);
+  env->ReleaseStringUTFChars(src, cSrc);
   return static_cast<jint>(result);
 }
 
@@ -1669,12 +1658,9 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeSetVectorSlot},
     {"nativeSetPositionSlot", "(JLjava/lang/String;FF)I",
      (void *)nativeSetPositionSlot},
-    {"nativeSetImageSlotPath",
+    {"nativeSetImageSlotSrc",
      "(JLjava/lang/String;Ljava/lang/String;)I",
-     (void *)nativeSetImageSlotPath},
-    {"nativeSetImageSlotDataUrl",
-     "(JLjava/lang/String;Ljava/lang/String;)I",
-     (void *)nativeSetImageSlotDataUrl},
+     (void *)nativeSetImageSlotSrc},
     {"nativeGetSlotStr", "(JLjava/lang/String;)Ljava/lang/String;",
      (void *)nativeGetSlotStr},
 
