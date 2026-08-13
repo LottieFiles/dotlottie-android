@@ -300,13 +300,8 @@ class DotLottiePlayer {
         return result == 0
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        val result = JNI.nativeSetImageSlotPath(nativePtr, slotId, path)
-        return result == 0
-    }
-
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        val result = JNI.nativeSetImageSlotDataUrl(nativePtr, slotId, dataUrl)
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        val result = JNI.nativeSetImageSlotSrc(nativePtr, slotId, src)
         return result == 0
     }
 

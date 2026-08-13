@@ -295,10 +295,7 @@ object DotLottiePlayer {
     external fun nativeSetPositionSlot(ptr: Long, slotId: String, x: Float, y: Float): Int
 
     @JvmStatic
-    external fun nativeSetImageSlotPath(ptr: Long, slotId: String, path: String): Int
-
-    @JvmStatic
-    external fun nativeSetImageSlotDataUrl(ptr: Long, slotId: String, dataUrl: String): Int
+    external fun nativeSetImageSlotSrc(ptr: Long, slotId: String, src: String): Int
 
     @JvmStatic
     external fun nativeGetSlotStr(ptr: Long, slotId: String): String

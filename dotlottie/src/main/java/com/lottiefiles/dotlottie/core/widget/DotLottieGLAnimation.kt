@@ -799,12 +799,8 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         return dlPlayer?.setPositionSlot(slotId, position) ?: false
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        return dlPlayer?.setImageSlotPath(slotId, path) ?: false
-    }
-
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        return dlPlayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        return dlPlayer?.setImageSlotSrc(slotId, src) ?: false
     }
 
     fun clearSlots(): Boolean {

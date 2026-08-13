@@ -376,6 +376,7 @@ class DotLottieDrawable(
     override fun stop() {
         dlPlayer?.stop()
         choreographer.removeFrameCallback(frameCallback)
+        scheduleFrame(forceUpdate = true)
         invalidateSelf()
     }
 
@@ -466,14 +467,8 @@ class DotLottieDrawable(
         return result
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        val result = dlPlayer?.setImageSlotPath(slotId, path) ?: false
-        if (result) scheduleFrame(forceUpdate = true)
-        return result
-    }
-
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        val result = dlPlayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        val result = dlPlayer?.setImageSlotSrc(slotId, src) ?: false
         if (result) scheduleFrame(forceUpdate = true)
         return result
     }
@@ -511,6 +506,7 @@ class DotLottieDrawable(
     fun pause() {
         dlPlayer?.pause()
         choreographer.removeFrameCallback(frameCallback)
+        scheduleFrame(forceUpdate = true)
     }
 
     fun stateMachineStart(

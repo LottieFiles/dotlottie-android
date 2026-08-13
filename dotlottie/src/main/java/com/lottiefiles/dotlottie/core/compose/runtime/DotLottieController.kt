@@ -427,12 +427,8 @@ class DotLottieController {
         return dlplayer?.setPositionSlot(slotId, position) ?: false
     }
 
-    fun setImageSlotPath(slotId: String, path: String): Boolean {
-        return dlplayer?.setImageSlotPath(slotId, path) ?: false
-    }
-
-    fun setImageSlotDataUrl(slotId: String, dataUrl: String): Boolean {
-        return dlplayer?.setImageSlotDataUrl(slotId, dataUrl) ?: false
+    fun setImageSlotSrc(slotId: String, src: String): Boolean {
+        return dlplayer?.setImageSlotSrc(slotId, src) ?: false
     }
 
     fun clearSlots(): Boolean {

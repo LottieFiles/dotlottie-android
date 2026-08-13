@@ -63,7 +63,7 @@ abstract class BuildDotLottieRsTask : DefaultTask() {
             add("make/android.mk")
             addAll(makeTargets)
             add("android-package")
-            add("ANDROID_DEFAULT_FEATURES=tvg,tvg-sw,c_api")
+            add("ANDROID_DEFAULT_FEATURES=tvg,tvg-cpu,tvg-gl,c_api")
             add("ANDROID_FEATURES=$featuresArg")
             add("ANDROID_NDK_HOME=$ndkHome")
             add("API_LEVEL=${apiLevel.get()}")
