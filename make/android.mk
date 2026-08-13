@@ -90,7 +90,6 @@ ANDROID_CXX_armv7 = $(ANDROID_TOOLCHAIN)/bin/armv7a-linux-androideabi$(API_LEVEL
 
 # Get version information
 CRATE_VERSION = $(shell grep -m 1 'version =' $(DOTLOTTIE_RS_ROOT)/Cargo.toml | grep -o '[0-9][0-9.]*')
-# Stamp the dotlottie-rs commit, not this repository's HEAD
 COMMIT_HASH := $(shell git -C $(DOTLOTTIE_RS_ROOT) rev-parse --short HEAD)
 
 # ============================================================================

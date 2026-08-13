@@ -432,8 +432,6 @@ jint nativeSetFrame(JNIEnv *env, jclass, jlong ptr, jfloat frame) {
 
 jboolean nativeIsLoaded(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
-  // Idle is the only status in which no animation is loaded: loading resets the
-  // player to Idle and only leaves it (for Stopped) once the load succeeds.
   return dotlottie_status(player) != dotlottieStatus::Idle ? JNI_TRUE
                                                            : JNI_FALSE;
 }
@@ -911,8 +909,6 @@ jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   return static_cast<jint>(result);
 }
 
-// `src` accepts a `data:` URI, an `http(s)://` URL, or the name of a file in
-// the package `i/` folder; the player picks the right resolution strategy.
 jint nativeSetImageSlotSrc(JNIEnv *env, jclass, jlong ptr, jstring slotId,
                            jstring src) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);

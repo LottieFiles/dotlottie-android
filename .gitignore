@@ -4,5 +4,4 @@
 .DS_Store
 local.properties
 /tmp
-# Staging output of `make -f make/android.mk` before it is copied into jniLibs/
 /release
