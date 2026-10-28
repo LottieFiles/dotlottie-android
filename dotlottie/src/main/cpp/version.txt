@@ -1,2 +1,2 @@
-dlplayer-version=0.1.58-3bb9d23
+dlplayer-version=0.1.60-03cb06ac
 api-type=c-api

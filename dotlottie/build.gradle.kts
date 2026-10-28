@@ -29,6 +29,7 @@ dotlottieRust {
          "tvg-otf",              // OpenType font support
          "tvg-lottie-expressions", // Lottie expression evaluation
          "tvg-threads",          // multi-threaded rendering
+         "audio",                // audio layers in .lottie files (rodio/oboe)
      )
 
     // ─── Optional: build only specific CPU architectures ──────────────────────
@@ -40,7 +41,7 @@ dotlottieRust {
 }
 
 group = "com.lottiefiles"
-version = "0.16.0"
+version = "0.17.0"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
@@ -56,7 +57,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
-                arguments += listOf("-DANDROID_STL=c++_shared")
+                arguments += listOf("-DANDROID_STL=c++_static")
             }
         }
 
@@ -76,12 +77,6 @@ android {
     sourceSets {
         getByName("main") {
             jniLibs.srcDirs("src/main/jniLibs")
-        }
-    }
-
-    packaging {
-        jniLibs {
-            pickFirsts += listOf("**/libc++_shared.so")
         }
     }
 

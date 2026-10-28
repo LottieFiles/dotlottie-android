@@ -217,6 +217,12 @@ object DotLottiePlayer {
     external fun nativeGetSpeed(ptr: Long): Float
 
     @JvmStatic
+    external fun nativeSetAudioVolume(ptr: Long, volume: Float): Int
+
+    @JvmStatic
+    external fun nativeGetAudioVolume(ptr: Long): Float
+
+    @JvmStatic
     external fun nativeGetLoop(ptr: Long): Boolean
 
     @JvmStatic

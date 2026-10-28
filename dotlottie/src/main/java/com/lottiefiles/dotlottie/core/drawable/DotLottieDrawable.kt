@@ -417,6 +417,13 @@ class DotLottieDrawable(
         scheduleFrame(forceUpdate = true)
     }
 
+    fun setAudioVolume(volume: Float) {
+        dlPlayer?.setAudioVolume(volume)
+    }
+
+    val audioVolume: Float
+        get() = dlPlayer?.audioVolume() ?: 1f
+
     fun setThemeData(themeData: String) {
         dlPlayer?.setThemeData(themeData)
     }

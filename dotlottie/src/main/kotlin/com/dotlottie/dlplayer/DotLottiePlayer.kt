@@ -210,6 +210,21 @@ class DotLottiePlayer {
         return (nativeBufferWidth.toLong() * nativeBufferHeight.toLong())
     }
 
+    // ==================== Audio ====================
+
+    /**
+     * Sets the global volume multiplier for audio layers in the loaded animation.
+     * The native player clamps [volume] to 0f..1f.
+     */
+    fun setAudioVolume(volume: Float): Boolean {
+        val result = JNI.nativeSetAudioVolume(nativePtr, volume)
+        return result == 0
+    }
+
+    fun audioVolume(): Float {
+        return JNI.nativeGetAudioVolume(nativePtr)
+    }
+
     // ==================== Theme ====================
 
     fun setTheme(themeId: String): Boolean {

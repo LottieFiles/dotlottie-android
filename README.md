@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://android-arsenal.com/api?level=21"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
   <a href="https://jitpack.io/#LottieFiles/dotlottie-android"><img alt="API" src="https://jitpack.io/v/LottieFiles/dotlottie-android.svg"/></a>
-  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.58"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.58-blue"/></a>
+  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.60"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.60-blue"/></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
 </p>
 <br />
@@ -321,6 +321,20 @@ dotLottieAnimationView.loadTheme("theme_id")
 dotLottieAnimationView.loadThemeData(themeJsonData)
 ```
 
+## Audio Support
+
+Animations with embedded audio layers play their sound automatically. Volume can be adjusted on any
+player, view, or controller:
+
+```kotlin
+dotLottieAnimationView.setAudioVolume(0.5f) // 0f (muted) to 1f (full), default 1f
+```
+
+The views and composables hand the application `Context` to the native audio backend for you. If you
+drive `com.dotlottie.dlplayer.DotLottiePlayer` directly without a view, call
+`com.lottiefiles.dotlottie.core.jni.DotLottiePlayer.ensureAndroidInitialized(context)` once before
+loading an animation that contains audio.
+
 ## API Reference
 
 #### Playback Control
@@ -333,6 +347,7 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `setPlayMode(Mode)`: Sets playback direction (e.g., `Forward`, `Reverse`).
 - `setSegment(Float, Float)`: Sets a specific frame segment to play.
 - `setMarker(String)`: Plays the animation between a named marker.
+- `setAudioVolume(Float)`: Sets the volume multiplier for audio layers (`0f` to `1f`, default `1f`).
 
 #### Animation State & Properties
 
@@ -344,6 +359,7 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 - `currentFrame`: The current frame number.
 - `duration`: The total animation duration in seconds.
 - `speed`: The current animation speed.
+- `audioVolume`: The current audio volume multiplier.
 - `loop`: `true` if looping is enabled.
 - `loopCount`: The number of times the animation has looped.
 

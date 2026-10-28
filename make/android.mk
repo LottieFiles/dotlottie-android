@@ -24,16 +24,33 @@ DOTLOTTIE_RS_ROOT ?= deps/dotlottie-rs/dotlottie-rs
 MIN_NDK_VERSION = 28
 
 # Default Rust features for Android builds
-ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-otf,tvg-lottie-expressions,tvg-threads
+ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-otf,tvg-lottie-expressions,tvg-threads,audio
 
 ifdef FEATURES
 	ANDROID_FEATURES = $(FEATURES)
 endif
 
+# Hardening flags for the C/C++ compiled by cargo build scripts (ThorVG, oboe).
+# cargo invokes the NDK clang directly, bypassing ndk-build/CMake, which are
+# where the NDK normally injects -fstack-protector-strong. The cc crate appends
+# CFLAGS/CXXFLAGS to every compile, so set them here. Rust code itself has no
+# stack protector on stable rustc.
+ANDROID_HARDENING_FLAGS ?= -fstack-protector-strong
+
+# Link libc++ statically so libc++_shared.so does not have to be shipped.
+# The NDK's prebuilt libc++_shared.so has no stack protector and fails
+# security scanners (#69). Static libc++ is safe here: only a C API crosses
+# the library boundary, ThorVG is built with -fno-exceptions -fno-rtti, and
+# the cdylib's version script keeps libc++ symbols out of the export table.
+# CXXSTDLIB="" stops both the cc crate and the dotlottie-rs build script from
+# adding -lc++ (a linker script for -lc++_shared); the archives are then
+# appended explicitly via RUSTFLAGS so they come after every object that
+# references them.
+ANDROID_CXX_LINK_ARGS ?= -C link-arg=-lc++_static -C link-arg=-lc++abi
+
 # Release and packaging variables
 RELEASE_DIR ?= release
 ANDROID_RELEASE_DIR ?= $(RELEASE_DIR)/android
-LIBCPP_SHARED_LIB ?= libc++_shared.so
 
 # Detect host tag for NDK
 
@@ -76,12 +93,6 @@ ANDROID_ABI_x86_64 = x86_64
 ANDROID_ABI_x86 = x86
 ANDROID_ABI_armv7 = armeabi-v7a
 
-# Android libcpp path mapping
-LIBCPP_PATH_aarch64 = aarch64-linux-android
-LIBCPP_PATH_x86_64 = x86_64-linux-android
-LIBCPP_PATH_x86 = i686-linux-android
-LIBCPP_PATH_armv7 = arm-linux-androideabi
-
 # Android compiler mapping
 ANDROID_CXX_aarch64 = $(ANDROID_TOOLCHAIN)/bin/aarch64-linux-android$(API_LEVEL)-clang++
 ANDROID_CXX_x86_64 = $(ANDROID_TOOLCHAIN)/bin/x86_64-linux-android$(API_LEVEL)-clang++
@@ -106,7 +117,7 @@ android-check-ndk:
 		exit 1; \
 	fi
 	@if [ -f "$(ANDROID_NDK_HOME)/source.properties" ]; then \
-		NDK_VERSION=$$(grep "Pkg.Revision" "$(ANDROID_NDK_HOME)/source.properties" | sed 's/.*= *\([0-9]\+\).*/\1/' | head -1); \
+		NDK_VERSION=$$(grep "Pkg.Revision" "$(ANDROID_NDK_HOME)/source.properties" | sed 's/.*= *\([0-9][0-9]*\).*/\1/' | head -1); \
 		if [ "$$NDK_VERSION" -lt $(MIN_NDK_VERSION) ]; then \
 			echo "Error: Android NDK r$(MIN_NDK_VERSION) or higher is required. Found NDK r$$NDK_VERSION"; \
 			echo "Please upgrade your Android NDK to r$(MIN_NDK_VERSION) or later."; \
@@ -162,6 +173,10 @@ android-aarch64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXSTDLIB="" \
+	CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="$(ANDROID_CXX_LINK_ARGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -172,10 +187,7 @@ android-aarch64: android-check-ndk
 	@mkdir -p $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_aarch64)
 	@cp $(DOTLOTTIE_RS_ROOT)/target/$(RUST_TARGET_aarch64)/release/$(ANDROID_LIB_NAME) \
 		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_aarch64)/libdotlottie_player.so
-	@cp $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/$(HOST_TAG)/sysroot/usr/lib/$(LIBCPP_PATH_aarch64)/$(LIBCPP_SHARED_LIB) \
-		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_aarch64)/
 	@if command -v $(ANDROID_STRIP) >/dev/null 2>&1; then \
-		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_aarch64)/$(LIBCPP_SHARED_LIB); \
 		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_aarch64)/libdotlottie_player.so; \
 	fi
 	@echo "✓ Android aarch64 build complete"
@@ -192,6 +204,10 @@ android-x86_64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXSTDLIB="" \
+	CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS="$(ANDROID_CXX_LINK_ARGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -202,10 +218,7 @@ android-x86_64: android-check-ndk
 	@mkdir -p $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86_64)
 	@cp $(DOTLOTTIE_RS_ROOT)/target/$(RUST_TARGET_x86_64)/release/$(ANDROID_LIB_NAME) \
 		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86_64)/libdotlottie_player.so
-	@cp $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/$(HOST_TAG)/sysroot/usr/lib/$(LIBCPP_PATH_x86_64)/$(LIBCPP_SHARED_LIB) \
-		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86_64)/
 	@if command -v $(ANDROID_STRIP) >/dev/null 2>&1; then \
-		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86_64)/$(LIBCPP_SHARED_LIB); \
 		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86_64)/libdotlottie_player.so; \
 	fi
 	@echo "✓ Android x86_64 build complete"
@@ -222,6 +235,10 @@ android-x86: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXSTDLIB="" \
+	CARGO_TARGET_I686_LINUX_ANDROID_RUSTFLAGS="$(ANDROID_CXX_LINK_ARGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -232,10 +249,7 @@ android-x86: android-check-ndk
 	@mkdir -p $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86)
 	@cp $(DOTLOTTIE_RS_ROOT)/target/$(RUST_TARGET_x86)/release/$(ANDROID_LIB_NAME) \
 		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86)/libdotlottie_player.so
-	@cp $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/$(HOST_TAG)/sysroot/usr/lib/$(LIBCPP_PATH_x86)/$(LIBCPP_SHARED_LIB) \
-		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86)/
 	@if command -v $(ANDROID_STRIP) >/dev/null 2>&1; then \
-		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86)/$(LIBCPP_SHARED_LIB); \
 		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_x86)/libdotlottie_player.so; \
 	fi
 	@echo "✓ Android x86 build complete"
@@ -252,6 +266,10 @@ android-armv7: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXSTDLIB="" \
+	CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_RUSTFLAGS="$(ANDROID_CXX_LINK_ARGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -262,10 +280,7 @@ android-armv7: android-check-ndk
 	@mkdir -p $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_armv7)
 	@cp $(DOTLOTTIE_RS_ROOT)/target/$(RUST_TARGET_armv7)/release/$(ANDROID_LIB_NAME) \
 		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_armv7)/libdotlottie_player.so
-	@cp $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/$(HOST_TAG)/sysroot/usr/lib/$(LIBCPP_PATH_armv7)/$(LIBCPP_SHARED_LIB) \
-		$(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_armv7)/
 	@if command -v $(ANDROID_STRIP) >/dev/null 2>&1; then \
-		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_armv7)/$(LIBCPP_SHARED_LIB); \
 		$(ANDROID_STRIP) --strip-unneeded $(ANDROID_RELEASE_DIR)/jniLibs/$(ANDROID_ABI_armv7)/libdotlottie_player.so; \
 	fi
 	@echo "✓ Android ARMv7 build complete"

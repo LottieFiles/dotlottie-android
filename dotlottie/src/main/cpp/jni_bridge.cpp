@@ -103,6 +103,9 @@ static jint nativeSetLayout(JNIEnv *env, jclass, jlong ptr, jint fit,
 // Config getters
 static jint nativeGetMode(JNIEnv *env, jclass, jlong ptr);
 static jfloat nativeGetSpeed(JNIEnv *env, jclass, jlong ptr);
+static jint nativeSetAudioVolume(JNIEnv *env, jclass, jlong ptr,
+                                 jfloat volume);
+static jfloat nativeGetAudioVolume(JNIEnv *env, jclass, jlong ptr);
 static jboolean nativeGetLoop(JNIEnv *env, jclass, jlong ptr);
 static jint nativeGetLoopCount(JNIEnv *env, jclass, jlong ptr);
 static jboolean nativeGetAutoplay(JNIEnv *env, jclass, jlong ptr);
@@ -628,6 +631,20 @@ jint nativeGetMode(JNIEnv *env, jclass, jlong ptr) {
 jfloat nativeGetSpeed(JNIEnv *env, jclass, jlong ptr) {
   auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
   return dotlottie_get_speed(player);
+}
+
+// ==================== Audio ====================
+
+jint nativeSetAudioVolume(JNIEnv *env, jclass, jlong ptr, jfloat volume) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_set_audio_volume(player, volume));
+}
+
+jfloat nativeGetAudioVolume(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  float volume = 1.0f;
+  dotlottie_get_audio_volume(player, &volume);
+  return volume;
 }
 
 jboolean nativeGetLoop(JNIEnv *env, jclass, jlong ptr) {
@@ -1614,6 +1631,8 @@ static JNINativeMethod playerMethods[] = {
     // Config getters
     {"nativeGetMode", "(J)I", (void *)nativeGetMode},
     {"nativeGetSpeed", "(J)F", (void *)nativeGetSpeed},
+    {"nativeSetAudioVolume", "(JF)I", (void *)nativeSetAudioVolume},
+    {"nativeGetAudioVolume", "(J)F", (void *)nativeGetAudioVolume},
     {"nativeGetLoop", "(J)Z", (void *)nativeGetLoop},
     {"nativeGetLoopCount", "(J)I", (void *)nativeGetLoopCount},
     {"nativeGetAutoplay", "(J)Z", (void *)nativeGetAutoplay},
