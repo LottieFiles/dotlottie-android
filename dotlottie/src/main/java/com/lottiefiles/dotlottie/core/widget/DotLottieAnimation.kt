@@ -214,6 +214,13 @@ class DotLottieAnimation @JvmOverloads constructor(
         mLottieDrawable?.setTheme(themeId)
     }
 
+    fun setAudioVolume(volume: Float) {
+        mLottieDrawable?.setAudioVolume(volume)
+    }
+
+    val audioVolume: Float
+        get() = mLottieDrawable?.audioVolume ?: 1f
+
     fun setThemeData(themeData: String) {
         mLottieDrawable?.setThemeData(themeData)
     }

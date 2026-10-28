@@ -391,6 +391,13 @@ class DotLottieController {
         dlplayer?.setTheme(themeId)
     }
 
+    fun setAudioVolume(volume: Float) {
+        dlplayer?.setAudioVolume(volume)
+    }
+
+    val audioVolume: Float
+        get() = dlplayer?.audioVolume() ?: 1f
+
     fun setThemeData(themeData: String) {
         dlplayer?.setThemeData(themeData)
     }

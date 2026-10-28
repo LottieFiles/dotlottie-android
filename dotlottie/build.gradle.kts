@@ -29,6 +29,7 @@ dotlottieRust {
          "tvg-otf",              // OpenType font support
          "tvg-lottie-expressions", // Lottie expression evaluation
          "tvg-threads",          // multi-threaded rendering
+         "audio",                // audio layers in .lottie files (rodio/oboe)
      )
 
     // ─── Optional: build only specific CPU architectures ──────────────────────

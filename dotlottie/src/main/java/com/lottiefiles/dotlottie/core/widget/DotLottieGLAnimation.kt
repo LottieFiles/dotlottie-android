@@ -715,6 +715,15 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         }
     }
 
+    fun setAudioVolume(volume: Float) {
+        sharedGl.handler.post {
+            dlPlayer?.setAudioVolume(volume)
+        }
+    }
+
+    val audioVolume: Float
+        get() = dlPlayer?.audioVolume() ?: 1f
+
     fun setThemeData(themeData: String) {
         sharedGl.handler.post { dlPlayer?.setThemeData(themeData) }
     }

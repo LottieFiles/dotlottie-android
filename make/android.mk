@@ -24,7 +24,7 @@ DOTLOTTIE_RS_ROOT ?= deps/dotlottie-rs/dotlottie-rs
 MIN_NDK_VERSION = 28
 
 # Default Rust features for Android builds
-ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-otf,tvg-lottie-expressions,tvg-threads
+ANDROID_FEATURES ?= tvg-webp,tvg-png,tvg-jpg,tvg-ttf,tvg-otf,tvg-lottie-expressions,tvg-threads,audio
 
 ifdef FEATURES
 	ANDROID_FEATURES = $(FEATURES)
