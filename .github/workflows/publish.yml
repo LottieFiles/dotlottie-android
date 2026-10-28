@@ -21,6 +21,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The legacy "tools" package (the action's default) is no longer published.
+          packages: platform-tools
 
       - name: Install NDK and CMake
         run: sdkmanager "ndk;29.0.14206865" "cmake;3.22.1"
