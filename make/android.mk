@@ -106,7 +106,7 @@ android-check-ndk:
 		exit 1; \
 	fi
 	@if [ -f "$(ANDROID_NDK_HOME)/source.properties" ]; then \
-		NDK_VERSION=$$(grep "Pkg.Revision" "$(ANDROID_NDK_HOME)/source.properties" | sed 's/.*= *\([0-9]\+\).*/\1/' | head -1); \
+		NDK_VERSION=$$(grep "Pkg.Revision" "$(ANDROID_NDK_HOME)/source.properties" | sed 's/.*= *\([0-9][0-9]*\).*/\1/' | head -1); \
 		if [ "$$NDK_VERSION" -lt $(MIN_NDK_VERSION) ]; then \
 			echo "Error: Android NDK r$(MIN_NDK_VERSION) or higher is required. Found NDK r$$NDK_VERSION"; \
 			echo "Please upgrade your Android NDK to r$(MIN_NDK_VERSION) or later."; \

@@ -14,7 +14,7 @@
 <p align="center">
   <a href="https://android-arsenal.com/api?level=21"><img alt="API" src="https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat"/></a>
   <a href="https://jitpack.io/#LottieFiles/dotlottie-android"><img alt="API" src="https://jitpack.io/v/LottieFiles/dotlottie-android.svg"/></a>
-  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.58"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.58-blue"/></a>
+  <a href="https://github.com/LottieFiles/dotlottie-rs/releases/tag/v0.1.60"><img alt="API" src="https://img.shields.io/badge/dotlottie--rs-0.1.60-blue"/></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
 </p>
 <br />
