@@ -57,7 +57,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
-                arguments += listOf("-DANDROID_STL=c++_shared")
+                arguments += listOf("-DANDROID_STL=c++_static")
             }
         }
 
@@ -77,12 +77,6 @@ android {
     sourceSets {
         getByName("main") {
             jniLibs.srcDirs("src/main/jniLibs")
-        }
-    }
-
-    packaging {
-        jniLibs {
-            pickFirsts += listOf("**/libc++_shared.so")
         }
     }
 
