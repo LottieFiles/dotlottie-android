@@ -30,6 +30,13 @@ ifdef FEATURES
 	ANDROID_FEATURES = $(FEATURES)
 endif
 
+# Hardening flags for the C/C++ compiled by cargo build scripts (ThorVG, oboe).
+# cargo invokes the NDK clang directly, bypassing ndk-build/CMake, which are
+# where the NDK normally injects -fstack-protector-strong. The cc crate appends
+# CFLAGS/CXXFLAGS to every compile, so set them here. Rust code itself has no
+# stack protector on stable rustc.
+ANDROID_HARDENING_FLAGS ?= -fstack-protector-strong
+
 # Release and packaging variables
 RELEASE_DIR ?= release
 ANDROID_RELEASE_DIR ?= $(RELEASE_DIR)/android
@@ -162,6 +169,8 @@ android-aarch64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -192,6 +201,8 @@ android-x86_64: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -222,6 +233,8 @@ android-x86: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
@@ -252,6 +265,8 @@ android-armv7: android-check-ndk
 	AR="$(ANDROID_AR)" \
 	RANLIB="$(ANDROID_RANLIB)" \
 	BINDGEN_EXTRA_CLANG_ARGS="-isysroot $(ANDROID_TOOLCHAIN)/sysroot" \
+	CFLAGS="$(ANDROID_HARDENING_FLAGS)" \
+	CXXFLAGS="$(ANDROID_HARDENING_FLAGS)" \
 	cargo rustc \
 		--manifest-path $(DOTLOTTIE_RS_ROOT)/Cargo.toml \
 		--crate-type cdylib \
