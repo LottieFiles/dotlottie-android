@@ -85,6 +85,20 @@ class PlayerParityInstrumentedTest {
     }
 
     @Test
+    fun changingTheConfigKeepsSlotOverrides() {
+        loadBezierAnimation()
+        assertTrue(player.setSlot("shape_color", """{"a":0,"k":[0,1,0]}"""))
+        val overridden = player.getSlot("shape_color")
+
+        val config = player.config()
+        config.loopCount = 3u
+        player.setConfig(config)
+
+        assertEquals(3u, player.config().loopCount)
+        assertEquals(overridden, player.getSlot("shape_color"))
+    }
+
+    @Test
     fun bezierPathSlot() {
         loadBezierAnimation()
         val square = listOf(PointF(-80f, -80f), PointF(80f, -80f), PointF(80f, 80f), PointF(-80f, 80f))

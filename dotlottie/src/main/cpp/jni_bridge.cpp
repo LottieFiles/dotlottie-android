@@ -11,6 +11,7 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 
 #define LOG_TAG "DotLottieJNI"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
@@ -316,16 +317,33 @@ static void applyConfigToPlayer(JNIEnv *env,
   layout.align[1] = alignY;
   dotlottie_set_layout(player, layout);
 
+  // Setting or resetting a theme discards slot overrides and theme data, so
+  // only touch it when the requested theme differs from the active one.
+  std::string requestedTheme;
   if (themeId != nullptr) {
     const char *cThemeId = env->GetStringUTFChars(themeId, nullptr);
-    if (strlen(cThemeId) > 0) {
-      dotlottie_set_theme(player, cThemeId);
-    } else {
-      dotlottie_reset_theme(player);
-    }
+    requestedTheme = cThemeId;
     env->ReleaseStringUTFChars(themeId, cThemeId);
-  } else {
-    dotlottie_reset_theme(player);
+  }
+  std::string activeTheme;
+  uintptr_t themeSize = 0;
+  if (dotlottie_get_theme_id(player, nullptr, &themeSize) ==
+          dotlottieDotLottieResult::Success &&
+      themeSize > 1) {
+    activeTheme.resize(themeSize);
+    if (dotlottie_get_theme_id(player, &activeTheme[0], &themeSize) ==
+        dotlottieDotLottieResult::Success) {
+      activeTheme.resize(themeSize - 1);
+    } else {
+      activeTheme.clear();
+    }
+  }
+  if (requestedTheme != activeTheme) {
+    if (requestedTheme.empty()) {
+      dotlottie_reset_theme(player);
+    } else {
+      dotlottie_set_theme(player, requestedTheme.c_str());
+    }
   }
 }
 
