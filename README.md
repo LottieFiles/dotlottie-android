@@ -323,8 +323,9 @@ dotLottieAnimationView.loadThemeData(themeJsonData)
 
 ## Audio Support
 
-Animations with embedded audio layers play their sound automatically. Volume can be adjusted on any
-player, view, or controller:
+Animations with embedded audio layers (MP3, WAV, FLAC, OGG and M4A) play their sound automatically.
+Playback needs Android 8.0 (API 26) or newer at runtime; on older devices the animation plays silently.
+Volume can be adjusted on any player, view, or controller:
 
 ```kotlin
 dotLottieAnimationView.setAudioVolume(0.5f) // 0f (muted) to 1f (full), default 1f
@@ -488,6 +489,11 @@ dotlottieRust {
         "tvg-ttf",                // TrueType font support
         "tvg-lottie-expressions", // Lottie expression evaluation
         "tvg-threads",            // multi-threaded rendering
+        "audio",                  // audio layers (MP3)
+        "audio-wav",              // WAV audio decoding
+        "audio-flac",             // FLAC audio decoding
+        "audio-ogg",              // OGG Vorbis audio decoding
+        "audio-m4a",              // M4A/AAC audio decoding
     )
 
     // Build only specific CPU architectures (default: all four).

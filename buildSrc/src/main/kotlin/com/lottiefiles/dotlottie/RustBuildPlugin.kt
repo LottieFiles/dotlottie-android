@@ -24,7 +24,11 @@ class RustBuildPlugin : Plugin<Project> {
                 "tvg-otf",
                 "tvg-lottie-expressions",
                 "tvg-threads",
-                "audio"
+                "audio",
+                "audio-wav",
+                "audio-flac",
+                "audio-ogg",
+                "audio-m4a"
             )
         )
         extension.abis.convention(listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))

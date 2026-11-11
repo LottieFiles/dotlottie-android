@@ -30,6 +30,10 @@ dotlottieRust {
          "tvg-lottie-expressions", // Lottie expression evaluation
          "tvg-threads",          // multi-threaded rendering
          "audio",                // audio layers in .lottie files (rodio/oboe)
+         "audio-wav",            // WAV audio decoding
+         "audio-flac",           // FLAC audio decoding
+         "audio-ogg",            // OGG Vorbis audio decoding
+         "audio-m4a",            // M4A/AAC audio decoding
      )
 
     // ─── Optional: build only specific CPU architectures ──────────────────────
@@ -41,7 +45,7 @@ dotlottieRust {
 }
 
 group = "com.lottiefiles"
-version = "0.17.0"
+version = "0.18.0"
 
 android {
     namespace = "com.lottiefiles.dotlottie.core"
