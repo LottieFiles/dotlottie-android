@@ -1,5 +1,7 @@
 package com.lottiefiles.sample
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.PointF
 import android.util.Base64
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -7,6 +9,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.dotlottie.dlplayer.AssetResolver
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.createDefaultConfig
+import com.lottiefiles.dotlottie.core.drawable.DotLottieDrawable
+import com.lottiefiles.dotlottie.core.util.DotLottieContent
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -138,6 +142,33 @@ class PlayerParityInstrumentedTest {
         assertEquals(5f, player.stateMachineGetNumericInput("rating"))
         assertTrue(player.stateMachineResetInput("rating"))
         assertEquals(3f, player.stateMachineGetNumericInput("rating"))
+    }
+
+    @Test
+    fun drawableLoopCountReachesThePlayer() {
+        val content = DotLottieContent.Json(String(readTestAsset("bezier_path.json")))
+        var configured: UInt? = null
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val drawable = DotLottieDrawable(
+                animationData = content,
+                width = SIZE,
+                height = SIZE,
+                dotLottieEventListener = mutableListOf(),
+                config = createDefaultConfig()
+            )
+            // The player is created lazily on the first draw.
+            drawable.draw(Canvas(Bitmap.createBitmap(SIZE, SIZE, Bitmap.Config.ARGB_8888)))
+
+            drawable.loopCount = 3u
+
+            // The drawable only exposes the number of completed loops, so read the player's config.
+            val field = DotLottieDrawable::class.java.getDeclaredField("dlPlayer").apply { isAccessible = true }
+            configured = (field.get(drawable) as DotLottiePlayer).config().loopCount
+            drawable.release()
+        }
+
+        assertEquals(3u, configured)
     }
 
     @Test
