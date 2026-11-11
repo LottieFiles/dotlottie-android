@@ -81,8 +81,17 @@ class DotLottieDrawable(
     var duration: Float = 0.0f
         get() = dlPlayer?.duration() ?: 0f
 
+    // Reads the number of completed loops; writes how many times to loop (0 loops forever).
     var loopCount: UInt = 0u
         get() = dlPlayer?.loopCount() ?: 0u
+        set(value) {
+            dlPlayer?.let {
+                val config = it.config()
+                config.loopCount = value
+                it.setConfig(config)
+            }
+            field = value
+        }
 
     val segment: Pair<Float, Float>?
         get() {
