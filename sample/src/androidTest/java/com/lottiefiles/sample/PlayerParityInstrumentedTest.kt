@@ -128,6 +128,8 @@ class PlayerParityInstrumentedTest {
 
         val id = player.manifest().stateMachines!!.first().id
         assertEquals("star-rating", id)
+        // The manifest gives this animation no name; it must not come back as the string "null".
+        assertNull(player.manifest().animations.first().name)
         assertTrue(JSONObject(player.getStateMachine(id)!!).has("states"))
         assertNull(player.getStateMachine("missing"))
 

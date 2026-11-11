@@ -473,6 +473,10 @@ class DotLottiePlayer {
 
     // ==================== Manifest & Markers ====================
 
+    // JSONObject.optString returns the string "null" for a JSON null.
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else optString(key)
+
     fun manifest(): Manifest {
         val jsonStr = JNI.nativeManifest(nativePtr) ?: return Manifest(
             activeAnimationId = null, animations = emptyList(), author = null,
@@ -493,10 +497,10 @@ class DotLottiePlayer {
                     } else null
                     Manifest.Animation(
                         id = anim.optString("id", ""),
-                        name = anim.optString("name", null),
+                        name = anim.optStringOrNull("name"),
                         themes = animThemes,
-                        initialTheme = anim.optString("initialTheme", null),
-                        background = anim.optString("background", null)
+                        initialTheme = anim.optStringOrNull("initialTheme"),
+                        background = anim.optStringOrNull("background")
                     )
                 }
             } else emptyList()
@@ -507,7 +511,7 @@ class DotLottiePlayer {
                     val theme = themesJson.getJSONObject(i)
                     Manifest.Theme(
                         id = theme.optString("id", ""),
-                        name = theme.optString("name", null)
+                        name = theme.optStringOrNull("name")
                     )
                 }
             } else null
@@ -518,7 +522,7 @@ class DotLottiePlayer {
                     val sm = stateMachinesJson.getJSONObject(i)
                     Manifest.StateMachine(
                         id = sm.optString("id", ""),
-                        name = sm.optString("name", null)
+                        name = sm.optStringOrNull("name")
                     )
                 }
             } else null
@@ -526,23 +530,23 @@ class DotLottiePlayer {
             val initialJson = json.optJSONObject("initial")
             val initial = if (initialJson != null) {
                 ManifestInitial(
-                    animation = initialJson.optString("animation", null),
-                    stateMachine = initialJson.optString("stateMachine", null)
+                    animation = initialJson.optStringOrNull("animation"),
+                    stateMachine = initialJson.optStringOrNull("stateMachine")
                 )
             } else null
 
             Manifest(
-                activeAnimationId = json.optString("activeAnimationId", null),
+                activeAnimationId = json.optStringOrNull("activeAnimationId"),
                 animations = animations,
-                author = json.optString("author", null),
-                description = json.optString("description", null),
-                generator = json.optString("generator", null),
+                author = json.optStringOrNull("author"),
+                description = json.optStringOrNull("description"),
+                generator = json.optStringOrNull("generator"),
                 initial = initial,
-                keywords = json.optString("keywords", null),
-                revision = json.optString("revision", null)?.toUIntOrNull(),
+                keywords = json.optStringOrNull("keywords"),
+                revision = json.optStringOrNull("revision")?.toUIntOrNull(),
                 themes = themes,
                 stateMachines = stateMachines,
-                version = json.optString("version", null),
+                version = json.optStringOrNull("version"),
                 customData = null
             )
         } catch (e: Exception) {
