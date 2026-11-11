@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.core.graphics.createBitmap
+import com.dotlottie.dlplayer.AssetResolver
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
@@ -69,6 +70,7 @@ fun DotLottieAnimation(
     eventListeners: List<DotLottieEventListener> = emptyList(),
     threads: UInt? = null,
     loopCount: UInt = 0u,
+    assetResolver: AssetResolver? = null,
 ) {
     // Ignores rendering in Android Studio design preview.
     if (LocalInspectionMode.current) {
@@ -92,7 +94,7 @@ fun DotLottieAnimation(
             DotLottiePlayer.withThreads(dlConfig, threads)
         } else {
             DotLottiePlayer(dlConfig)
-        }
+        }.also { player -> assetResolver?.let(player::setAssetResolver) }
     }
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var drawVersion by remember { mutableIntStateOf(0) }

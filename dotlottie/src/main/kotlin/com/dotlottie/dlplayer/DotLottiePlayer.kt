@@ -22,6 +22,10 @@ class DotLottiePlayer {
     private var nativeBufferWidth: Int = 0
     private var nativeBufferHeight: Int = 0
 
+    // Native contexts of every resolver installed on this player. The player can still call a
+    // replaced resolver until its next load, so they are only released in destroy().
+    private val assetResolverHandles = mutableListOf<Long>()
+
     // Vsync timestamp of the previous tick — used to compute dt between frames.
     // Zero means "no prior tick" (player just created / state machine just started).
     private var lastPlayerFrameTimeNanos: Long = 0
@@ -79,6 +83,16 @@ class DotLottiePlayer {
     fun loadDotlottieData(data: ByteArray): Boolean {
         val result = JNI.nativeLoadDotLottieData(nativePtr, data)
         return result == 0
+    }
+
+    /**
+     * Sets the resolver for assets the player cannot load itself (remote URLs, external paths).
+     * Takes effect on the next load. Pass null to clear it.
+     */
+    fun setAssetResolver(resolver: AssetResolver?): Boolean {
+        val handle = JNI.nativeSetAssetResolver(nativePtr, resolver)
+        if (handle != 0L) assetResolverHandles.add(handle)
+        return resolver == null || handle != 0L
     }
 
     // ==================== Playback Control ====================
@@ -320,6 +334,65 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    /**
+     * Replaces the geometry of a path tagged with [slotId]. Tangents are relative to the vertex
+     * at the same index; null means zero tangents (straight segments).
+     */
+    fun setBezierPathSlot(
+        slotId: String,
+        vertices: List<PointF>,
+        closed: Boolean,
+        inTangents: List<PointF>? = null,
+        outTangents: List<PointF>? = null
+    ): Boolean {
+        fun flatten(points: List<PointF>) =
+            FloatArray(points.size * 2) { i -> if (i % 2 == 0) points[i / 2].x else points[i / 2].y }
+
+        val result = JNI.nativeSetBezierPathSlot(
+            nativePtr,
+            slotId,
+            flatten(vertices),
+            inTangents?.let(::flatten),
+            outTangents?.let(::flatten),
+            closed
+        )
+        return result == 0
+    }
+
+    /** Sets a single slot from its Lottie JSON value, e.g. `{"a":0,"k":[1,0,0,1]}`. */
+    fun setSlot(slotId: String, json: String): Boolean {
+        return JNI.nativeSetSlotStr(nativePtr, slotId, json) == 0
+    }
+
+    fun getSlotIds(): List<String> {
+        return JNI.nativeGetSlotIds(nativePtr)?.filterNotNull() ?: emptyList()
+    }
+
+    /** Returns the slot type (e.g. "color", "scalar", "bezier_path"), or null if it does not exist. */
+    fun getSlotType(slotId: String): String? {
+        return JNI.nativeGetSlotType(nativePtr, slotId)
+    }
+
+    /** Returns the slot's current value as JSON, or null if it does not exist. */
+    fun getSlot(slotId: String): String? {
+        return JNI.nativeGetSlotStr(nativePtr, slotId).ifEmpty { null }
+    }
+
+    /** Returns every slot's current value as a JSON object keyed by slot ID. */
+    fun getSlots(): String {
+        return JNI.nativeGetSlotsStr(nativePtr)
+    }
+
+    /** Restores a slot to the value from the animation. */
+    fun resetSlot(slotId: String): Boolean {
+        return JNI.nativeResetSlot(nativePtr, slotId) == 0
+    }
+
+    /** Restores every slot to the value from the animation. */
+    fun resetSlots(): Boolean {
+        return JNI.nativeResetSlots(nativePtr) == 0
+    }
+
     // ==================== Viewport ====================
 
     fun setViewport(x: Int, y: Int, w: Int, h: Int): Boolean {
@@ -400,6 +473,10 @@ class DotLottiePlayer {
 
     // ==================== Manifest & Markers ====================
 
+    // JSONObject.optString returns the string "null" for a JSON null.
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else optString(key)
+
     fun manifest(): Manifest {
         val jsonStr = JNI.nativeManifest(nativePtr) ?: return Manifest(
             activeAnimationId = null, animations = emptyList(), author = null,
@@ -420,10 +497,10 @@ class DotLottiePlayer {
                     } else null
                     Manifest.Animation(
                         id = anim.optString("id", ""),
-                        name = anim.optString("name", null),
+                        name = anim.optStringOrNull("name"),
                         themes = animThemes,
-                        initialTheme = anim.optString("initialTheme", null),
-                        background = anim.optString("background", null)
+                        initialTheme = anim.optStringOrNull("initialTheme"),
+                        background = anim.optStringOrNull("background")
                     )
                 }
             } else emptyList()
@@ -434,7 +511,7 @@ class DotLottiePlayer {
                     val theme = themesJson.getJSONObject(i)
                     Manifest.Theme(
                         id = theme.optString("id", ""),
-                        name = theme.optString("name", null)
+                        name = theme.optStringOrNull("name")
                     )
                 }
             } else null
@@ -445,7 +522,7 @@ class DotLottiePlayer {
                     val sm = stateMachinesJson.getJSONObject(i)
                     Manifest.StateMachine(
                         id = sm.optString("id", ""),
-                        name = sm.optString("name", null)
+                        name = sm.optStringOrNull("name")
                     )
                 }
             } else null
@@ -453,23 +530,23 @@ class DotLottiePlayer {
             val initialJson = json.optJSONObject("initial")
             val initial = if (initialJson != null) {
                 ManifestInitial(
-                    animation = initialJson.optString("animation", null),
-                    stateMachine = initialJson.optString("stateMachine", null)
+                    animation = initialJson.optStringOrNull("animation"),
+                    stateMachine = initialJson.optStringOrNull("stateMachine")
                 )
             } else null
 
             Manifest(
-                activeAnimationId = json.optString("activeAnimationId", null),
+                activeAnimationId = json.optStringOrNull("activeAnimationId"),
                 animations = animations,
-                author = json.optString("author", null),
-                description = json.optString("description", null),
-                generator = json.optString("generator", null),
+                author = json.optStringOrNull("author"),
+                description = json.optStringOrNull("description"),
+                generator = json.optStringOrNull("generator"),
                 initial = initial,
-                keywords = json.optString("keywords", null),
-                revision = json.optString("revision", null)?.toUIntOrNull(),
+                keywords = json.optStringOrNull("keywords"),
+                revision = json.optStringOrNull("revision")?.toUIntOrNull(),
                 themes = themes,
                 stateMachines = stateMachines,
-                version = json.optString("version", null),
+                version = json.optStringOrNull("version"),
                 customData = null
             )
         } catch (e: Exception) {
@@ -509,6 +586,11 @@ class DotLottiePlayer {
         releaseStateMachine()
         stateMachinePtr = JNI.nativeStateMachineLoadData(nativePtr, data)
         return stateMachinePtr != 0L
+    }
+
+    /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
+    fun getStateMachine(stateMachineId: String): String? {
+        return JNI.nativeGetStateMachine(nativePtr, stateMachineId)
     }
 
     fun releaseStateMachine() {
@@ -611,6 +693,32 @@ class DotLottiePlayer {
         return JNI.nativeStateMachineStatus(stateMachinePtr)
     }
 
+    /**
+     * Forces the state machine into [state], skipping transitions and guards. With [immediate],
+     * the state's pipeline runs right away instead of on the next tick or input change.
+     */
+    fun stateMachineOverrideCurrentState(state: String, immediate: Boolean = false): Boolean {
+        if (stateMachinePtr == 0L) return false
+        return JNI.nativeStateMachineOverrideCurrentState(stateMachinePtr, state, immediate) == 0
+    }
+
+    /** Puts an input back to the initial value from the state machine definition. */
+    fun stateMachineResetInput(key: String): Boolean {
+        if (stateMachinePtr == 0L) return false
+        return JNI.nativeStateMachineResetInput(stateMachinePtr, key) == 0
+    }
+
+    /** Returns every input name mapped to its type: "Numeric", "Boolean", "String" or "Event". */
+    fun stateMachineGetInputs(): Map<String, String> {
+        if (stateMachinePtr == 0L) return emptyMap()
+        val flat = JNI.nativeStateMachineGetInputs(stateMachinePtr) ?: return emptyMap()
+        return (0 until flat.size / 2).mapNotNull { i ->
+            val name = flat[i * 2] ?: return@mapNotNull null
+            val type = flat[i * 2 + 1] ?: return@mapNotNull null
+            name to type
+        }.toMap()
+    }
+
     fun stateMachineFireEvent(eventName: String): Boolean {
         if (stateMachinePtr == 0L) return false
         val result = JNI.nativeStateMachineFireEvent(stateMachinePtr, eventName)
@@ -676,6 +784,8 @@ class DotLottiePlayer {
             JNI.nativeDestroy(nativePtr)
             nativePtr = 0
         }
+        assetResolverHandles.forEach(JNI::nativeReleaseAssetResolver)
+        assetResolverHandles.clear()
     }
 
     companion object {

@@ -820,6 +820,54 @@ class DotLottieGLAnimation @JvmOverloads constructor(
         return dlPlayer?.clearSlot(slotId) ?: false
     }
 
+    /**
+     * Replaces the geometry of a path tagged with [slotId]. Tangents are relative to the vertex
+     * at the same index; null means zero tangents (straight segments).
+     */
+    fun setBezierPathSlot(
+        slotId: String,
+        vertices: List<PointF>,
+        closed: Boolean,
+        inTangents: List<PointF>? = null,
+        outTangents: List<PointF>? = null
+    ): Boolean {
+        return dlPlayer?.setBezierPathSlot(slotId, vertices, closed, inTangents, outTangents) ?: false
+    }
+
+    /** Sets a single slot from its Lottie JSON value, e.g. `{"a":0,"k":[1,0,0,1]}`. */
+    fun setSlot(slotId: String, json: String): Boolean {
+        return dlPlayer?.setSlot(slotId, json) ?: false
+    }
+
+    fun getSlotIds(): List<String> {
+        return dlPlayer?.getSlotIds() ?: emptyList()
+    }
+
+    /** Returns the slot type (e.g. "color", "scalar", "bezier_path"), or null if it does not exist. */
+    fun getSlotType(slotId: String): String? {
+        return dlPlayer?.getSlotType(slotId)
+    }
+
+    /** Returns the slot's current value as JSON, or null if it does not exist. */
+    fun getSlot(slotId: String): String? {
+        return dlPlayer?.getSlot(slotId)
+    }
+
+    /** Returns every slot's current value as a JSON object keyed by slot ID. */
+    fun getSlots(): String {
+        return dlPlayer?.getSlots() ?: "{}"
+    }
+
+    /** Restores a slot to the value from the animation. */
+    fun resetSlot(slotId: String): Boolean {
+        return dlPlayer?.resetSlot(slotId) ?: false
+    }
+
+    /** Restores every slot to the value from the animation. */
+    fun resetSlots(): Boolean {
+        return dlPlayer?.resetSlots() ?: false
+    }
+
     // ==================== Event Listeners ====================
 
     fun addEventListener(listener: DotLottieEventListener) {
@@ -942,6 +990,34 @@ class DotLottieGLAnimation @JvmOverloads constructor(
 
     fun stateMachineCurrentState(): String? {
         return dlPlayer?.stateMachineCurrentState()
+    }
+
+    /** Returns the state machine status, e.g. "Running" or "Stopped". */
+    fun stateMachineStatus(): String? {
+        return dlPlayer?.stateMachineStatus()
+    }
+
+    /**
+     * Forces the state machine into [state], skipping transitions and guards. With [immediate],
+     * the state's pipeline runs right away instead of on the next tick or input change.
+     */
+    fun stateMachineOverrideCurrentState(state: String, immediate: Boolean = false): Boolean {
+        return dlPlayer?.stateMachineOverrideCurrentState(state, immediate) ?: false
+    }
+
+    /** Puts an input back to the initial value from the state machine definition. */
+    fun stateMachineResetInput(key: String): Boolean {
+        return dlPlayer?.stateMachineResetInput(key) ?: false
+    }
+
+    /** Returns every input name mapped to its type: "Numeric", "Boolean", "String" or "Event". */
+    fun stateMachineGetInputs(): Map<String, String> {
+        return dlPlayer?.stateMachineGetInputs() ?: emptyMap()
+    }
+
+    /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
+    fun getStateMachine(stateMachineId: String): String? {
+        return dlPlayer?.getStateMachine(stateMachineId)
     }
 
     // ==================== Touch Events ====================

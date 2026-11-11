@@ -1,5 +1,6 @@
 package com.lottiefiles.dotlottie.core.model
 
+import com.dotlottie.dlplayer.AssetResolver
 import com.dotlottie.dlplayer.Fit
 import com.dotlottie.dlplayer.Layout
 import com.dotlottie.dlplayer.Mode
@@ -22,7 +23,8 @@ private constructor(
     val themeId: String = "",
     val stateMachineId: String = "",
     val animationId: String = "",
-    val threads: UInt? = null
+    val threads: UInt? = null,
+    val assetResolver: AssetResolver? = null
 ) {
 
     class Builder {
@@ -40,6 +42,7 @@ private constructor(
         private var threads: UInt? = null
         private var stateMachineId: String = ""
         private var loopCount: UInt = 0u
+        private var assetResolver: AssetResolver? = null
 
         fun autoplay(autoplay: Boolean) = apply { this.autoplay = autoplay }
 
@@ -77,6 +80,9 @@ private constructor(
 
         fun loopCount(loopCount: UInt) = apply { this.loopCount = loopCount }
 
+        /** Supplies bytes for assets the player cannot load itself (remote URLs, external paths). */
+        fun assetResolver(assetResolver: AssetResolver?) = apply { this.assetResolver = assetResolver }
+
         fun build(): Config {
             require(source != null) { "`source` must be provided" }
 
@@ -92,7 +98,8 @@ private constructor(
                 themeId = this.themeId,
                 stateMachineId = this.stateMachineId,
                 threads = this.threads,
-                loopCount = this.loopCount
+                loopCount = this.loopCount,
+                assetResolver = this.assetResolver
                 //                backgroundColor = this.backgroundColor
             )
         }

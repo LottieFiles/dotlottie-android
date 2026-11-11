@@ -151,3 +151,14 @@ data class ManifestInitial(
     val animation: String?,
     val stateMachine: String?
 )
+
+/**
+ * Supplies bytes for assets the player cannot resolve itself, such as images referenced by a
+ * remote URL or an external path.
+ *
+ * [resolve] is called synchronously while an animation loads or renders, on the thread doing
+ * that work, so it must not block on slow I/O. Return the asset bytes, or null to skip it.
+ */
+fun interface AssetResolver {
+    fun resolve(src: String): ByteArray?
+}

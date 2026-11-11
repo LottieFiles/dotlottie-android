@@ -13,6 +13,7 @@ import android.view.Choreographer
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
 import com.lottiefiles.dotlottie.core.util.DotLottieEventListener
+import com.dotlottie.dlplayer.AssetResolver
 import com.dotlottie.dlplayer.DotLottiePlayer
 import com.dotlottie.dlplayer.Config
 import com.dotlottie.dlplayer.Event
@@ -47,7 +48,8 @@ class DotLottieDrawable(
     private var height: Int = 0,
     private val dotLottieEventListener: MutableList<DotLottieEventListener>,
     private var config: Config,
-    private val threads: UInt? = null
+    private val threads: UInt? = null,
+    private val assetResolver: AssetResolver? = null
 ) : Drawable(), Animatable {
 
     private var bitmapBuffer: Bitmap? = null
@@ -79,8 +81,17 @@ class DotLottieDrawable(
     var duration: Float = 0.0f
         get() = dlPlayer?.duration() ?: 0f
 
+    // Reads the number of completed loops; writes how many times to loop (0 loops forever).
     var loopCount: UInt = 0u
         get() = dlPlayer?.loopCount() ?: 0u
+        set(value) {
+            dlPlayer?.let {
+                val config = it.config()
+                config.loopCount = value
+                it.setConfig(config)
+            }
+            field = value
+        }
 
     val segment: Pair<Float, Float>?
         get() {
@@ -260,6 +271,7 @@ class DotLottieDrawable(
             } else {
                 DotLottiePlayer(config)
             }
+            assetResolver?.let { dlPlayer?.setAssetResolver(it) }
             setupBufferAndLoad()
 
             // Load and start state machine if configured
@@ -492,6 +504,63 @@ class DotLottieDrawable(
         return result
     }
 
+    /**
+     * Replaces the geometry of a path tagged with [slotId]. Tangents are relative to the vertex
+     * at the same index; null means zero tangents (straight segments).
+     */
+    fun setBezierPathSlot(
+        slotId: String,
+        vertices: List<PointF>,
+        closed: Boolean,
+        inTangents: List<PointF>? = null,
+        outTangents: List<PointF>? = null
+    ): Boolean {
+        val result =
+            dlPlayer?.setBezierPathSlot(slotId, vertices, closed, inTangents, outTangents) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    /** Sets a single slot from its Lottie JSON value, e.g. `{"a":0,"k":[1,0,0,1]}`. */
+    fun setSlot(slotId: String, json: String): Boolean {
+        val result = dlPlayer?.setSlot(slotId, json) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    fun getSlotIds(): List<String> {
+        return dlPlayer?.getSlotIds() ?: emptyList()
+    }
+
+    /** Returns the slot type (e.g. "color", "scalar", "bezier_path"), or null if it does not exist. */
+    fun getSlotType(slotId: String): String? {
+        return dlPlayer?.getSlotType(slotId)
+    }
+
+    /** Returns the slot's current value as JSON, or null if it does not exist. */
+    fun getSlot(slotId: String): String? {
+        return dlPlayer?.getSlot(slotId)
+    }
+
+    /** Returns every slot's current value as a JSON object keyed by slot ID. */
+    fun getSlots(): String {
+        return dlPlayer?.getSlots() ?: "{}"
+    }
+
+    /** Restores a slot to the value from the animation. */
+    fun resetSlot(slotId: String): Boolean {
+        val result = dlPlayer?.resetSlot(slotId) ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
+    /** Restores every slot to the value from the animation. */
+    fun resetSlots(): Boolean {
+        val result = dlPlayer?.resetSlots() ?: false
+        if (result) scheduleFrame(forceUpdate = true)
+        return result
+    }
+
     fun manifest(): Manifest? {
         return dlPlayer?.manifest()
     }
@@ -610,6 +679,34 @@ class DotLottieDrawable(
 
     fun stateMachineCurrentState(): String? {
         return dlPlayer?.stateMachineCurrentState()
+    }
+
+    /** Returns the state machine status, e.g. "Running" or "Stopped". */
+    fun stateMachineStatus(): String? {
+        return dlPlayer?.stateMachineStatus()
+    }
+
+    /**
+     * Forces the state machine into [state], skipping transitions and guards. With [immediate],
+     * the state's pipeline runs right away instead of on the next tick or input change.
+     */
+    fun stateMachineOverrideCurrentState(state: String, immediate: Boolean = false): Boolean {
+        return dlPlayer?.stateMachineOverrideCurrentState(state, immediate) ?: false
+    }
+
+    /** Puts an input back to the initial value from the state machine definition. */
+    fun stateMachineResetInput(key: String): Boolean {
+        return dlPlayer?.stateMachineResetInput(key) ?: false
+    }
+
+    /** Returns every input name mapped to its type: "Numeric", "Boolean", "String" or "Event". */
+    fun stateMachineGetInputs(): Map<String, String> {
+        return dlPlayer?.stateMachineGetInputs() ?: emptyMap()
+    }
+
+    /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
+    fun getStateMachine(stateMachineId: String): String? {
+        return dlPlayer?.getStateMachine(stateMachineId)
     }
 
     fun stateMachineFireEvent(event: String) {
