@@ -380,6 +380,20 @@ loading an animation that contains audio.
 - `loadTheme(String)`: Loads a theme from the .lottie file by its ID.
 - `loadThemeData(String)`: Loads a theme from theme JSON data.
 
+#### Slots
+
+- `getSlotIds()`: Lists the slot IDs in the loaded animation.
+- `getSlotType(String)`: Returns a slot's type, such as `"color"`, `"scalar"` or `"bezier_path"`.
+- `getSlot(String)` / `getSlots()`: Returns one slot, or all slots, as Lottie JSON.
+- `setSlot(String, String)`: Sets one slot from its Lottie JSON value.
+- `setBezierPathSlot(String, List<PointF>, Boolean, List<PointF>?, List<PointF>?)`: Replaces the geometry of a path slot. Tangents are optional.
+- `resetSlot(String)` / `resetSlots()`: Restores slots to the values from the animation.
+- `clearSlot(String)` / `clearSlots()`: Removes slot overrides.
+
+#### External Assets
+
+- `assetResolver(AssetResolver?)` (Config.Builder) and the `assetResolver` parameter of the `DotLottieAnimation` composable: supplies the bytes for assets the player cannot load itself, such as images referenced by a remote URL. It runs synchronously while the animation loads or renders, so return bytes you already have.
+
 #### State Machine
 
 - `stateMachineLoad(String)`: Loads a state machine by its ID.
@@ -393,6 +407,8 @@ loading an animation that contains audio.
 - `stateMachineGetStringInput(String)`: Gets a string input value.
 - `stateMachineGetBooleanInput(String)`: Gets a boolean input value.
 - `stateMachineCurrentState()`: Returns the current state machine state.
+- `stateMachineStatus()`: Returns the state machine status (`"Running"`, `"Tweening"` or `"Stopped"`).
+- `getStateMachine(String)`: Returns the definition of a state machine in the loaded .lottie.
 - `addStateMachineEventListener(StateMachineEventListener)`: Adds a listener for state machine events.
 
 #### Events

@@ -146,6 +146,23 @@ static jint nativeSetPositionSlot(JNIEnv *env, jclass, jlong ptr,
 static jint nativeSetImageSlotSrc(JNIEnv *env, jclass, jlong ptr,
                                   jstring slotId, jstring src);
 static jstring nativeGetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId);
+static jobjectArray nativeGetSlotIds(JNIEnv *env, jclass, jlong ptr);
+static jstring nativeGetSlotType(JNIEnv *env, jclass, jlong ptr,
+                                 jstring slotId);
+static jstring nativeGetSlotsStr(JNIEnv *env, jclass, jlong ptr);
+static jint nativeSetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                             jstring json);
+static jint nativeResetSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId);
+static jint nativeResetSlots(JNIEnv *env, jclass, jlong ptr);
+static jint nativeSetBezierPathSlot(JNIEnv *env, jclass, jlong ptr,
+                                    jstring slotId, jfloatArray vertices,
+                                    jfloatArray inTangents,
+                                    jfloatArray outTangents, jboolean closed);
+
+// Asset resolver
+static jlong nativeSetAssetResolver(JNIEnv *env, jclass, jlong ptr,
+                                    jobject resolver);
+static void nativeReleaseAssetResolver(JNIEnv *env, jclass, jlong handle);
 
 // Viewport
 static jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y,
@@ -937,6 +954,244 @@ jint nativeSetImageSlotSrc(JNIEnv *env, jclass, jlong ptr, jstring slotId,
   return static_cast<jint>(result);
 }
 
+jobjectArray nativeGetSlotIds(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  jclass stringClass = env->FindClass("java/lang/String");
+  uint32_t count = 0;
+  if (dotlottie_get_slot_ids_count(player, &count) !=
+      dotlottieDotLottieResult::Success) {
+    count = 0;
+  }
+  jobjectArray ids =
+      env->NewObjectArray(static_cast<jsize>(count), stringClass, nullptr);
+  if (!ids) {
+    return nullptr;
+  }
+  for (uint32_t i = 0; i < count; i++) {
+    uintptr_t size = 0;
+    if (dotlottie_get_slot_id(player, i, nullptr, &size) !=
+            dotlottieDotLottieResult::Success ||
+        size == 0) {
+      continue;
+    }
+    char *buf = (char *)malloc(size);
+    if (!buf) {
+      continue;
+    }
+    if (dotlottie_get_slot_id(player, i, buf, &size) ==
+        dotlottieDotLottieResult::Success) {
+      jstring id = env->NewStringUTF(buf);
+      env->SetObjectArrayElement(ids, static_cast<jsize>(i), id);
+      env->DeleteLocalRef(id);
+    }
+    free(buf);
+  }
+  return ids;
+}
+
+// Returns the slot type name, or null when the slot does not exist.
+jstring nativeGetSlotType(JNIEnv *env, jclass, jlong ptr, jstring slotId) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  jstring result = nullptr;
+  uintptr_t size = 0;
+  auto res = dotlottie_get_slot_type(player, cSlotId, nullptr, &size);
+  if (res == dotlottieDotLottieResult::Success && size > 1) {
+    char *buf = (char *)malloc(size);
+    if (buf) {
+      if (dotlottie_get_slot_type(player, cSlotId, buf, &size) ==
+          dotlottieDotLottieResult::Success) {
+        result = env->NewStringUTF(buf);
+      }
+      free(buf);
+    }
+  }
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return result;
+}
+
+jstring nativeGetSlotsStr(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  uintptr_t size = 0;
+  auto res = dotlottie_get_slots_str(player, nullptr, &size);
+  if (res != dotlottieDotLottieResult::Success || size == 0) {
+    return env->NewStringUTF("{}");
+  }
+  char *buf = (char *)malloc(size);
+  if (!buf) {
+    return env->NewStringUTF("{}");
+  }
+  jstring result = nullptr;
+  if (dotlottie_get_slots_str(player, buf, &size) ==
+      dotlottieDotLottieResult::Success) {
+    result = env->NewStringUTF(buf);
+  } else {
+    result = env->NewStringUTF("{}");
+  }
+  free(buf);
+  return result;
+}
+
+jint nativeSetSlotStr(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                      jstring json) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  const char *cJson = env->GetStringUTFChars(json, nullptr);
+  auto result = dotlottie_set_slot_str(player, cSlotId, cJson);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  env->ReleaseStringUTFChars(json, cJson);
+  return static_cast<jint>(result);
+}
+
+jint nativeResetSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  auto result = dotlottie_reset_slot(player, cSlotId);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return static_cast<jint>(result);
+}
+
+jint nativeResetSlots(JNIEnv *env, jclass, jlong ptr) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  return static_cast<jint>(dotlottie_reset_slots(player));
+}
+
+// vertices / inTangents / outTangents are interleaved [x0, y0, x1, y1, ...].
+// A null tangent array means zero tangents (straight segments).
+jint nativeSetBezierPathSlot(JNIEnv *env, jclass, jlong ptr, jstring slotId,
+                             jfloatArray vertices, jfloatArray inTangents,
+                             jfloatArray outTangents, jboolean closed) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  const jsize len = env->GetArrayLength(vertices);
+  const auto invalid =
+      static_cast<jint>(dotlottieDotLottieResult::InvalidParameter);
+  if (len == 0 || len % 2 != 0 ||
+      (inTangents && env->GetArrayLength(inTangents) != len) ||
+      (outTangents && env->GetArrayLength(outTangents) != len)) {
+    return invalid;
+  }
+  const char *cSlotId = env->GetStringUTFChars(slotId, nullptr);
+  jfloat *cVertices = env->GetFloatArrayElements(vertices, nullptr);
+  jfloat *cIn =
+      inTangents ? env->GetFloatArrayElements(inTangents, nullptr) : nullptr;
+  jfloat *cOut =
+      outTangents ? env->GetFloatArrayElements(outTangents, nullptr) : nullptr;
+  auto result = dotlottie_set_bezier_path_slot(
+      player, cSlotId, cVertices, cIn, cOut, static_cast<uintptr_t>(len / 2),
+      closed == JNI_TRUE);
+  if (cOut) env->ReleaseFloatArrayElements(outTangents, cOut, JNI_ABORT);
+  if (cIn) env->ReleaseFloatArrayElements(inTangents, cIn, JNI_ABORT);
+  env->ReleaseFloatArrayElements(vertices, cVertices, JNI_ABORT);
+  env->ReleaseStringUTFChars(slotId, cSlotId);
+  return static_cast<jint>(result);
+}
+
+// ==================== Asset Resolver ====================
+
+struct AssetResolverContext {
+  JavaVM *vm;
+  jobject resolver;  // global ref to a com.dotlottie.dlplayer.AssetResolver
+  jmethodID resolve; // ByteArray? resolve(String)
+};
+
+// Called by the player, on whichever thread loads or renders, for an asset it
+// cannot resolve itself. Hands back a malloc'd copy that the finalizer frees.
+static bool assetResolverTrampoline(const char *src, const uint8_t **outData,
+                                    uintptr_t *outSize, void *userData) {
+  auto *ctx = static_cast<AssetResolverContext *>(userData);
+  JNIEnv *env = nullptr;
+  bool attached = false;
+  jint status = ctx->vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+  if (status == JNI_EDETACHED) {
+    if (ctx->vm->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+      return false;
+    }
+    attached = true;
+  } else if (status != JNI_OK) {
+    return false;
+  }
+
+  bool resolved = false;
+  jstring jSrc = env->NewStringUTF(src);
+  if (jSrc) {
+    auto bytes = static_cast<jbyteArray>(
+        env->CallObjectMethod(ctx->resolver, ctx->resolve, jSrc));
+    if (env->ExceptionCheck()) {
+      LOGE("AssetResolver threw while resolving \"%s\"", src);
+      env->ExceptionDescribe();
+      env->ExceptionClear();
+    } else if (bytes) {
+      jsize len = env->GetArrayLength(bytes);
+      auto *buf = len > 0 ? static_cast<uint8_t *>(malloc(len)) : nullptr;
+      if (buf) {
+        env->GetByteArrayRegion(bytes, 0, len, reinterpret_cast<jbyte *>(buf));
+        *outData = buf;
+        *outSize = static_cast<uintptr_t>(len);
+        resolved = true;
+      }
+      env->DeleteLocalRef(bytes);
+    }
+    env->DeleteLocalRef(jSrc);
+  } else if (env->ExceptionCheck()) {
+    env->ExceptionClear();
+  }
+
+  if (attached) {
+    ctx->vm->DetachCurrentThread();
+  }
+  return resolved;
+}
+
+static void assetResolverFinalizer(const uint8_t *data, uintptr_t, void *) {
+  free(const_cast<uint8_t *>(data));
+}
+
+// Installs `resolver` (or clears it when null) and returns a handle to its
+// native context, 0 when cleared or on failure. The player may keep calling a
+// replaced resolver until the next load, so the handle must only be passed to
+// nativeReleaseAssetResolver after the player is destroyed.
+jlong nativeSetAssetResolver(JNIEnv *env, jclass, jlong ptr, jobject resolver) {
+  auto *player = reinterpret_cast<dotlottiePlayer *>(ptr);
+  if (resolver == nullptr) {
+    dotlottie_set_asset_resolver(player, nullptr, nullptr, nullptr);
+    return 0;
+  }
+  JavaVM *vm = nullptr;
+  if (env->GetJavaVM(&vm) != JNI_OK || vm == nullptr) {
+    LOGE("nativeSetAssetResolver: GetJavaVM failed");
+    return 0;
+  }
+  jclass resolverClass = env->GetObjectClass(resolver);
+  jmethodID resolve =
+      env->GetMethodID(resolverClass, "resolve", "(Ljava/lang/String;)[B");
+  env->DeleteLocalRef(resolverClass);
+  if (resolve == nullptr) {
+    env->ExceptionClear();
+    LOGE("nativeSetAssetResolver: resolve(String) not found");
+    return 0;
+  }
+  jobject globalResolver = env->NewGlobalRef(resolver);
+  if (globalResolver == nullptr) {
+    return 0;
+  }
+  auto *ctx = new AssetResolverContext{vm, globalResolver, resolve};
+  auto result = dotlottie_set_asset_resolver(player, assetResolverTrampoline,
+                                             assetResolverFinalizer, ctx);
+  if (result != dotlottieDotLottieResult::Success) {
+    env->DeleteGlobalRef(globalResolver);
+    delete ctx;
+    return 0;
+  }
+  return reinterpret_cast<jlong>(ctx);
+}
+
+void nativeReleaseAssetResolver(JNIEnv *env, jclass, jlong handle) {
+  auto *ctx = reinterpret_cast<AssetResolverContext *>(handle);
+  if (ctx == nullptr) return;
+  env->DeleteGlobalRef(ctx->resolver);
+  delete ctx;
+}
+
 // ==================== Viewport ====================
 
 jint nativeSetViewport(JNIEnv *env, jclass, jlong ptr, jint x, jint y, jint w,
@@ -1678,6 +1933,21 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeSetImageSlotSrc},
     {"nativeGetSlotStr", "(JLjava/lang/String;)Ljava/lang/String;",
      (void *)nativeGetSlotStr},
+    {"nativeGetSlotIds", "(J)[Ljava/lang/String;", (void *)nativeGetSlotIds},
+    {"nativeGetSlotType", "(JLjava/lang/String;)Ljava/lang/String;",
+     (void *)nativeGetSlotType},
+    {"nativeGetSlotsStr", "(J)Ljava/lang/String;", (void *)nativeGetSlotsStr},
+    {"nativeSetSlotStr", "(JLjava/lang/String;Ljava/lang/String;)I",
+     (void *)nativeSetSlotStr},
+    {"nativeResetSlot", "(JLjava/lang/String;)I", (void *)nativeResetSlot},
+    {"nativeResetSlots", "(J)I", (void *)nativeResetSlots},
+    {"nativeSetBezierPathSlot", "(JLjava/lang/String;[F[F[FZ)I",
+     (void *)nativeSetBezierPathSlot},
+
+    // Asset resolver
+    {"nativeSetAssetResolver", "(JLjava/lang/Object;)J",
+     (void *)nativeSetAssetResolver},
+    {"nativeReleaseAssetResolver", "(J)V", (void *)nativeReleaseAssetResolver},
 
     // Viewport
     {"nativeSetViewport", "(JIIII)I", (void *)nativeSetViewport},

@@ -22,6 +22,10 @@ class DotLottiePlayer {
     private var nativeBufferWidth: Int = 0
     private var nativeBufferHeight: Int = 0
 
+    // Native contexts of every resolver installed on this player. The player can still call a
+    // replaced resolver until its next load, so they are only released in destroy().
+    private val assetResolverHandles = mutableListOf<Long>()
+
     // Vsync timestamp of the previous tick — used to compute dt between frames.
     // Zero means "no prior tick" (player just created / state machine just started).
     private var lastPlayerFrameTimeNanos: Long = 0
@@ -79,6 +83,16 @@ class DotLottiePlayer {
     fun loadDotlottieData(data: ByteArray): Boolean {
         val result = JNI.nativeLoadDotLottieData(nativePtr, data)
         return result == 0
+    }
+
+    /**
+     * Sets the resolver for assets the player cannot load itself (remote URLs, external paths).
+     * Takes effect on the next load. Pass null to clear it.
+     */
+    fun setAssetResolver(resolver: AssetResolver?): Boolean {
+        val handle = JNI.nativeSetAssetResolver(nativePtr, resolver)
+        if (handle != 0L) assetResolverHandles.add(handle)
+        return resolver == null || handle != 0L
     }
 
     // ==================== Playback Control ====================
@@ -320,6 +334,65 @@ class DotLottiePlayer {
         return result == 0
     }
 
+    /**
+     * Replaces the geometry of a path tagged with [slotId]. Tangents are relative to the vertex
+     * at the same index; null means zero tangents (straight segments).
+     */
+    fun setBezierPathSlot(
+        slotId: String,
+        vertices: List<PointF>,
+        closed: Boolean,
+        inTangents: List<PointF>? = null,
+        outTangents: List<PointF>? = null
+    ): Boolean {
+        fun flatten(points: List<PointF>) =
+            FloatArray(points.size * 2) { i -> if (i % 2 == 0) points[i / 2].x else points[i / 2].y }
+
+        val result = JNI.nativeSetBezierPathSlot(
+            nativePtr,
+            slotId,
+            flatten(vertices),
+            inTangents?.let(::flatten),
+            outTangents?.let(::flatten),
+            closed
+        )
+        return result == 0
+    }
+
+    /** Sets a single slot from its Lottie JSON value, e.g. `{"a":0,"k":[1,0,0,1]}`. */
+    fun setSlot(slotId: String, json: String): Boolean {
+        return JNI.nativeSetSlotStr(nativePtr, slotId, json) == 0
+    }
+
+    fun getSlotIds(): List<String> {
+        return JNI.nativeGetSlotIds(nativePtr)?.filterNotNull() ?: emptyList()
+    }
+
+    /** Returns the slot type (e.g. "color", "scalar", "bezier_path"), or null if it does not exist. */
+    fun getSlotType(slotId: String): String? {
+        return JNI.nativeGetSlotType(nativePtr, slotId)
+    }
+
+    /** Returns the slot's current value as JSON, or null if it does not exist. */
+    fun getSlot(slotId: String): String? {
+        return JNI.nativeGetSlotStr(nativePtr, slotId).ifEmpty { null }
+    }
+
+    /** Returns every slot's current value as a JSON object keyed by slot ID. */
+    fun getSlots(): String {
+        return JNI.nativeGetSlotsStr(nativePtr)
+    }
+
+    /** Restores a slot to the value from the animation. */
+    fun resetSlot(slotId: String): Boolean {
+        return JNI.nativeResetSlot(nativePtr, slotId) == 0
+    }
+
+    /** Restores every slot to the value from the animation. */
+    fun resetSlots(): Boolean {
+        return JNI.nativeResetSlots(nativePtr) == 0
+    }
+
     // ==================== Viewport ====================
 
     fun setViewport(x: Int, y: Int, w: Int, h: Int): Boolean {
@@ -511,6 +584,11 @@ class DotLottiePlayer {
         return stateMachinePtr != 0L
     }
 
+    /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
+    fun getStateMachine(stateMachineId: String): String? {
+        return JNI.nativeGetStateMachine(nativePtr, stateMachineId)
+    }
+
     fun releaseStateMachine() {
         if (stateMachinePtr != 0L) {
             JNI.nativeStateMachineRelease(stateMachinePtr)
@@ -676,6 +754,8 @@ class DotLottiePlayer {
             JNI.nativeDestroy(nativePtr)
             nativePtr = 0
         }
+        assetResolverHandles.forEach(JNI::nativeReleaseAssetResolver)
+        assetResolverHandles.clear()
     }
 
     companion object {

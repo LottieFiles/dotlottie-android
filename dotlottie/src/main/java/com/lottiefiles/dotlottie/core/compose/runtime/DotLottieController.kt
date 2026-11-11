@@ -256,6 +256,16 @@ class DotLottieController {
         return dlplayer?.stateMachineCurrentState()
     }
 
+    /** Returns the state machine status, e.g. "Running" or "Stopped". */
+    fun stateMachineStatus(): String? {
+        return dlplayer?.stateMachineStatus()
+    }
+
+    /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
+    fun getStateMachine(stateMachineId: String): String? {
+        return dlplayer?.getStateMachine(stateMachineId)
+    }
+
     fun stateMachineAddEventListener(listener: StateMachineEventListener) {
         stateMachineListeners.add(listener)
     }
@@ -444,6 +454,54 @@ class DotLottieController {
 
     fun clearSlot(slotId: String): Boolean {
         return dlplayer?.clearSlot(slotId) ?: false
+    }
+
+    /**
+     * Replaces the geometry of a path tagged with [slotId]. Tangents are relative to the vertex
+     * at the same index; null means zero tangents (straight segments).
+     */
+    fun setBezierPathSlot(
+        slotId: String,
+        vertices: List<PointF>,
+        closed: Boolean,
+        inTangents: List<PointF>? = null,
+        outTangents: List<PointF>? = null
+    ): Boolean {
+        return dlplayer?.setBezierPathSlot(slotId, vertices, closed, inTangents, outTangents) ?: false
+    }
+
+    /** Sets a single slot from its Lottie JSON value, e.g. `{"a":0,"k":[1,0,0,1]}`. */
+    fun setSlot(slotId: String, json: String): Boolean {
+        return dlplayer?.setSlot(slotId, json) ?: false
+    }
+
+    fun getSlotIds(): List<String> {
+        return dlplayer?.getSlotIds() ?: emptyList()
+    }
+
+    /** Returns the slot type (e.g. "color", "scalar", "bezier_path"), or null if it does not exist. */
+    fun getSlotType(slotId: String): String? {
+        return dlplayer?.getSlotType(slotId)
+    }
+
+    /** Returns the slot's current value as JSON, or null if it does not exist. */
+    fun getSlot(slotId: String): String? {
+        return dlplayer?.getSlot(slotId)
+    }
+
+    /** Returns every slot's current value as a JSON object keyed by slot ID. */
+    fun getSlots(): String {
+        return dlplayer?.getSlots() ?: "{}"
+    }
+
+    /** Restores a slot to the value from the animation. */
+    fun resetSlot(slotId: String): Boolean {
+        return dlplayer?.resetSlot(slotId) ?: false
+    }
+
+    /** Restores every slot to the value from the animation. */
+    fun resetSlots(): Boolean {
+        return dlplayer?.resetSlots() ?: false
     }
 
     fun setPlayMode(mode: Mode) {

@@ -306,6 +306,51 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeGetSlotStr(ptr: Long, slotId: String): String
 
+    @JvmStatic
+    external fun nativeGetSlotIds(ptr: Long): Array<String?>?
+
+    /** Returns the slot type name, or null when the slot does not exist. */
+    @JvmStatic
+    external fun nativeGetSlotType(ptr: Long, slotId: String): String?
+
+    @JvmStatic
+    external fun nativeGetSlotsStr(ptr: Long): String
+
+    @JvmStatic
+    external fun nativeSetSlotStr(ptr: Long, slotId: String, json: String): Int
+
+    @JvmStatic
+    external fun nativeResetSlot(ptr: Long, slotId: String): Int
+
+    @JvmStatic
+    external fun nativeResetSlots(ptr: Long): Int
+
+    /**
+     * Arrays are interleaved `[x0, y0, x1, y1, ...]`. A null tangent array means zero tangents.
+     */
+    @JvmStatic
+    external fun nativeSetBezierPathSlot(
+        ptr: Long,
+        slotId: String,
+        vertices: FloatArray,
+        inTangents: FloatArray?,
+        outTangents: FloatArray?,
+        closed: Boolean
+    ): Int
+
+    // ==================== Asset Resolver ====================
+
+    /**
+     * Installs [resolver] (an object with `resolve(String): ByteArray?`), or clears it when null.
+     * Returns a native handle (0 when cleared or on failure) that must only be passed to
+     * [nativeReleaseAssetResolver] after the player is destroyed.
+     */
+    @JvmStatic
+    external fun nativeSetAssetResolver(ptr: Long, resolver: Any?): Long
+
+    @JvmStatic
+    external fun nativeReleaseAssetResolver(handle: Long)
+
     // ==================== Viewport ====================
 
     @JvmStatic
