@@ -119,6 +119,28 @@ class PlayerParityInstrumentedTest {
     }
 
     @Test
+    fun stateMachineOverrideResetAndInputs() {
+        loadBezierAnimation()
+        assertTrue(player.loadStateMachineData(STATE_MACHINE))
+        assertTrue(player.stateMachineStart())
+
+        assertEquals(
+            mapOf("rating" to "Numeric", "on" to "Boolean", "label" to "String", "tap" to "Event"),
+            player.stateMachineGetInputs().filterKeys { !it.startsWith("@") }
+        )
+
+        assertEquals("first", player.stateMachineCurrentState())
+        assertTrue(player.stateMachineOverrideCurrentState("second", immediate = true))
+        assertEquals("second", player.stateMachineCurrentState())
+        assertFalse(player.stateMachineOverrideCurrentState("missing", immediate = true))
+
+        assertTrue(player.stateMachineSetNumericInput("rating", 5f))
+        assertEquals(5f, player.stateMachineGetNumericInput("rating"))
+        assertTrue(player.stateMachineResetInput("rating"))
+        assertEquals(3f, player.stateMachineGetNumericInput("rating"))
+    }
+
+    @Test
     fun assetResolverSuppliesExternalImages() {
         val requested = mutableListOf<String>()
         val redPng = Base64.decode(RED_PNG, Base64.DEFAULT)
@@ -160,6 +182,23 @@ class PlayerParityInstrumentedTest {
 
     private companion object {
         const val SIZE = 128
+
+        const val STATE_MACHINE = """
+            {
+              "initial": "first",
+              "states": [
+                {"name": "first", "type": "PlaybackState", "animation": "", "transitions": []},
+                {"name": "second", "type": "PlaybackState", "animation": "", "transitions": []}
+              ],
+              "inputs": [
+                {"type": "Numeric", "name": "rating", "value": 3.0},
+                {"type": "Boolean", "name": "on", "value": false},
+                {"type": "String", "name": "label", "value": "hello"},
+                {"type": "Event", "name": "tap"}
+              ],
+              "interactions": []
+            }
+        """
 
         // 8x8 solid red PNG, the same asset the dotlottie-rs resolver tests use.
         const val RED_PNG =

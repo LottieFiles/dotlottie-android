@@ -209,6 +209,13 @@ static jstring nativeStateMachinePollInternalEvent(JNIEnv *env, jclass,
                                                    jlong smPtr);
 static jstring nativeGetStateMachine(JNIEnv *env, jclass, jlong playerPtr,
                                      jstring id);
+static jint nativeStateMachineOverrideCurrentState(JNIEnv *env, jclass,
+                                                   jlong smPtr, jstring state,
+                                                   jboolean immediate);
+static jint nativeStateMachineResetInput(JNIEnv *env, jclass, jlong smPtr,
+                                         jstring key);
+static jobjectArray nativeStateMachineGetInputs(JNIEnv *env, jclass,
+                                                jlong smPtr);
 
 // Bitmap pixel access
 static jlong nativeLockBitmapPixels(JNIEnv *env, jclass, jobject bitmap);
@@ -1777,6 +1784,64 @@ void nativeDestroyFboResources(JNIEnv *env, jclass, jint fboId, jint textureId,
 
 void nativeGlFinish(JNIEnv *env, jclass) { glFinish(); }
 
+jint nativeStateMachineOverrideCurrentState(JNIEnv *env, jclass, jlong smPtr,
+                                            jstring state, jboolean immediate) {
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
+  const char *cState = env->GetStringUTFChars(state, nullptr);
+  auto result = dotlottie_state_machine_override_current_state(
+      sm, cState, immediate == JNI_TRUE);
+  env->ReleaseStringUTFChars(state, cState);
+  return static_cast<jint>(result);
+}
+
+jint nativeStateMachineResetInput(JNIEnv *env, jclass, jlong smPtr,
+                                  jstring key) {
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
+  const char *cKey = env->GetStringUTFChars(key, nullptr);
+  auto result = dotlottie_state_machine_reset_input(sm, cKey);
+  env->ReleaseStringUTFChars(key, cKey);
+  return static_cast<jint>(result);
+}
+
+// Returns a flat String[] { name0, type0, name1, type1, ... }.
+jobjectArray nativeStateMachineGetInputs(JNIEnv *env, jclass, jlong smPtr) {
+  auto *sm = reinterpret_cast<dotlottieDotLottieStateMachine *>(smPtr);
+  jclass stringClass = env->FindClass("java/lang/String");
+  uint32_t count = 0;
+  if (dotlottie_state_machine_get_inputs_count(sm, &count) !=
+      dotlottieDotLottieResult::Success) {
+    count = 0;
+  }
+  jobjectArray inputs =
+      env->NewObjectArray(static_cast<jsize>(count) * 2, stringClass, nullptr);
+  if (!inputs) {
+    return nullptr;
+  }
+  for (uint32_t i = 0; i < count; i++) {
+    for (int field = 0; field < 2; field++) {
+      auto read = field == 0 ? dotlottie_state_machine_get_input_name
+                             : dotlottie_state_machine_get_input_type;
+      uintptr_t size = 0;
+      if (read(sm, i, nullptr, &size) != dotlottieDotLottieResult::Success ||
+          size == 0) {
+        continue;
+      }
+      char *buf = (char *)malloc(size);
+      if (!buf) {
+        continue;
+      }
+      if (read(sm, i, buf, &size) == dotlottieDotLottieResult::Success) {
+        jstring value = env->NewStringUTF(buf);
+        env->SetObjectArrayElement(inputs, static_cast<jsize>(i) * 2 + field,
+                                   value);
+        env->DeleteLocalRef(value);
+      }
+      free(buf);
+    }
+  }
+  return inputs;
+}
+
 // ==================== Android Init ====================
 
 // Hands the JavaVM + Application Context to the Rust runtime.
@@ -1996,6 +2061,12 @@ static JNINativeMethod playerMethods[] = {
      (void *)nativeStateMachinePollInternalEvent},
     {"nativeGetStateMachine", "(JLjava/lang/String;)Ljava/lang/String;",
      (void *)nativeGetStateMachine},
+    {"nativeStateMachineOverrideCurrentState", "(JLjava/lang/String;Z)I",
+     (void *)nativeStateMachineOverrideCurrentState},
+    {"nativeStateMachineResetInput", "(JLjava/lang/String;)I",
+     (void *)nativeStateMachineResetInput},
+    {"nativeStateMachineGetInputs", "(J)[Ljava/lang/String;",
+     (void *)nativeStateMachineGetInputs},
 
     // HardwareBuffer FBO
     {"nativeCreateFboFromHardwareBuffer",

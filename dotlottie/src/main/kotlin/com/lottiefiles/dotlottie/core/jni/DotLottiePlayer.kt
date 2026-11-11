@@ -430,6 +430,16 @@ object DotLottiePlayer {
     @JvmStatic
     external fun nativeGetStateMachine(playerPtr: Long, id: String): String?
 
+    @JvmStatic
+    external fun nativeStateMachineOverrideCurrentState(smPtr: Long, state: String, immediate: Boolean): Int
+
+    @JvmStatic
+    external fun nativeStateMachineResetInput(smPtr: Long, key: String): Int
+
+    /** Returns a flat array of `name, type` pairs. */
+    @JvmStatic
+    external fun nativeStateMachineGetInputs(smPtr: Long): Array<String?>?
+
     // ==================== HardwareBuffer FBO ====================
 
     @JvmStatic

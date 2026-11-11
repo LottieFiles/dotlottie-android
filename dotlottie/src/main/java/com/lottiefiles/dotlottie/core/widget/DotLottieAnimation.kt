@@ -752,6 +752,24 @@ class DotLottieAnimation @JvmOverloads constructor(
         return mLottieDrawable?.stateMachineStatus()
     }
 
+    /**
+     * Forces the state machine into [state], skipping transitions and guards. With [immediate],
+     * the state's pipeline runs right away instead of on the next tick or input change.
+     */
+    fun stateMachineOverrideCurrentState(state: String, immediate: Boolean = false): Boolean {
+        return mLottieDrawable?.stateMachineOverrideCurrentState(state, immediate) ?: false
+    }
+
+    /** Puts an input back to the initial value from the state machine definition. */
+    fun stateMachineResetInput(key: String): Boolean {
+        return mLottieDrawable?.stateMachineResetInput(key) ?: false
+    }
+
+    /** Returns every input name mapped to its type: "Numeric", "Boolean", "String" or "Event". */
+    fun stateMachineGetInputs(): Map<String, String> {
+        return mLottieDrawable?.stateMachineGetInputs() ?: emptyMap()
+    }
+
     /** Returns the definition of a state machine in the loaded .lottie, or null if not found. */
     fun getStateMachine(stateMachineId: String): String? {
         return mLottieDrawable?.getStateMachine(stateMachineId)

@@ -689,6 +689,32 @@ class DotLottiePlayer {
         return JNI.nativeStateMachineStatus(stateMachinePtr)
     }
 
+    /**
+     * Forces the state machine into [state], skipping transitions and guards. With [immediate],
+     * the state's pipeline runs right away instead of on the next tick or input change.
+     */
+    fun stateMachineOverrideCurrentState(state: String, immediate: Boolean = false): Boolean {
+        if (stateMachinePtr == 0L) return false
+        return JNI.nativeStateMachineOverrideCurrentState(stateMachinePtr, state, immediate) == 0
+    }
+
+    /** Puts an input back to the initial value from the state machine definition. */
+    fun stateMachineResetInput(key: String): Boolean {
+        if (stateMachinePtr == 0L) return false
+        return JNI.nativeStateMachineResetInput(stateMachinePtr, key) == 0
+    }
+
+    /** Returns every input name mapped to its type: "Numeric", "Boolean", "String" or "Event". */
+    fun stateMachineGetInputs(): Map<String, String> {
+        if (stateMachinePtr == 0L) return emptyMap()
+        val flat = JNI.nativeStateMachineGetInputs(stateMachinePtr) ?: return emptyMap()
+        return (0 until flat.size / 2).mapNotNull { i ->
+            val name = flat[i * 2] ?: return@mapNotNull null
+            val type = flat[i * 2 + 1] ?: return@mapNotNull null
+            name to type
+        }.toMap()
+    }
+
     fun stateMachineFireEvent(eventName: String): Boolean {
         if (stateMachinePtr == 0L) return false
         val result = JNI.nativeStateMachineFireEvent(stateMachinePtr, eventName)

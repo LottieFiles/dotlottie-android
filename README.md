@@ -409,6 +409,9 @@ loading an animation that contains audio.
 - `stateMachineCurrentState()`: Returns the current state machine state.
 - `stateMachineStatus()`: Returns the state machine status (`"Running"`, `"Tweening"` or `"Stopped"`).
 - `getStateMachine(String)`: Returns the definition of a state machine in the loaded .lottie.
+- `stateMachineGetInputs()`: Returns every input name mapped to its type.
+- `stateMachineResetInput(String)`: Puts an input back to its initial value.
+- `stateMachineOverrideCurrentState(String, Boolean)`: Forces the state machine into a state, skipping transitions and guards.
 - `addStateMachineEventListener(StateMachineEventListener)`: Adds a listener for state machine events.
 
 #### Events
