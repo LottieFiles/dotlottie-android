@@ -47,6 +47,7 @@ class DotLottieDrawable(
     private var width: Int = 0,
     private var height: Int = 0,
     private val dotLottieEventListener: MutableList<DotLottieEventListener>,
+    private val stateMachineEventListener: MutableList<StateMachineEventListener>,
     private var config: Config,
     private val threads: UInt? = null,
     private val assetResolver: AssetResolver? = null
@@ -132,7 +133,7 @@ class DotLottieDrawable(
             pollAndDispatchAllEvents(
                 player = player,
                 eventListeners = dotLottieEventListener,
-                stateMachineListeners = stateMachineListeners,
+                stateMachineListeners = stateMachineEventListener,
                 onOpenUrl = onOpenUrlCallback,
             )
 

@@ -79,6 +79,8 @@ class DotLottieAnimation @JvmOverloads constructor(
 
     private val mDotLottieEventListener = mutableListOf<DotLottieEventListener>()
 
+    private val mStateMachineEventListener = mutableListOf<StateMachineEventListener>()
+
     private lateinit var attributes: DotLottieAttributes
 
     // Touch tracking for state machine interactions
@@ -449,6 +451,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                     width = width,
                     animationData = content,
                     dotLottieEventListener = mDotLottieEventListener.toMutableList(),
+                    stateMachineEventListener = mStateMachineEventListener.toMutableList(),
                     config = DLConfig(
                         autoplay = config.autoplay,
                         loopAnimation = config.loop,
@@ -508,6 +511,7 @@ class DotLottieAnimation @JvmOverloads constructor(
                         width = width,
                         height = height,
                         dotLottieEventListener = mDotLottieEventListener,
+                        stateMachineEventListener = mStateMachineEventListener,
                         config = DLConfig(
                             autoplay = attributes.autoplay,
                             loopAnimation = attributes.loop,
@@ -704,10 +708,13 @@ class DotLottieAnimation @JvmOverloads constructor(
     }
 
     fun addStateMachineEventListener(listener: StateMachineEventListener) {
+        if (!mStateMachineEventListener.contains(listener))
+            mStateMachineEventListener.add(listener)
         mLottieDrawable?.stateMachineAddEventListener(listener)
     }
 
     fun removeStateMachineEventListener(listener: StateMachineEventListener) {
+        mStateMachineEventListener.remove(listener)
         mLottieDrawable?.stateMachineRemoveEventListener(listener)
     }
 
