@@ -35,6 +35,7 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
         fun onPlayerEvent(event: DotLottiePlayerEvent)
         fun onStateMachineEvent(event: StateMachinePlayerEvent)
         fun onStateMachineInternalEvent(message: String)
+        fun onLoadError(error: Throwable)
     }
 
     @Volatile
@@ -119,6 +120,12 @@ internal class GlHardwareRenderer : SharedGlThread.RenderClient {
 
     fun loadContent(content: DotLottieContent) {
         sharedGl.handler.post {
+            val initError = sharedGl.initError
+            if (initError != null) {
+                Log.e(TAG, "loadContent: ${initError.message}")
+                mainHandler.post { frameCallback?.onLoadError(initError) }
+                return@post
+            }
             val player = dlPlayer ?: run {
                 Log.e(TAG, "loadContent: player is null")
                 return@post

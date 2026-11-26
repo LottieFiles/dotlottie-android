@@ -513,7 +513,11 @@ class DotLottieGLAnimation @JvmOverloads constructor(
             runCatching {
                 val content = DotLottieUtils.getContent(context, source)
                 sharedGl.handler.post {
-                    if (surfaceReady && dlPlayer != null) {
+                    val initError = sharedGl.initError
+                    if (initError != null) {
+                        // No surface will ever be created, so pending content would never load.
+                        post { eventListeners.forEach { it.onLoadError(initError) } }
+                    } else if (surfaceReady && dlPlayer != null) {
                         loadContentOnGlThread(content)
                     } else {
                         pendingContent = content

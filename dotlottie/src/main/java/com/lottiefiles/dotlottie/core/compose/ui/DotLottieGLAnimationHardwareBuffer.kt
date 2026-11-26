@@ -108,6 +108,10 @@ internal fun DotLottieGLAnimationHardwareBuffer(
                     message, rController.onOpenUrlCallback
                 )
             }
+
+            override fun onLoadError(error: Throwable) {
+                rController.eventListeners.forEach { it.onLoadError(error) }
+            }
         })
         true // return non-null for remember
     }

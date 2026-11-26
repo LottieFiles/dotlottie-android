@@ -28,6 +28,13 @@ internal class SharedGlThread private constructor() {
     private var eglConfig: EGLConfig? = null
     private var eglPbuffer: EGLSurface = EGL14.EGL_NO_SURFACE
 
+    /**
+     * Why EGL setup failed, or null when display, config, context and pbuffer are all valid.
+     * Set once by [initEgl]; read it on the GL thread only (tasks posted to [handler] run after it).
+     */
+    var initError: IllegalStateException? = null
+        private set
+
     private val clients = mutableListOf<RenderClient>()
     private var choreographerRunning = false
     private var choreographer: Choreographer? = null
@@ -51,6 +58,8 @@ internal class SharedGlThread private constructor() {
     }
 
     fun createWindowSurface(surfaceTexture: SurfaceTexture): EGLSurface {
+        // EGL14 throws on a null config instead of returning EGL_NO_SURFACE.
+        if (initError != null) return EGL14.EGL_NO_SURFACE
         val surfaceAttribs = intArrayOf(EGL14.EGL_NONE)
         val surface = EGL14.eglCreateWindowSurface(
             eglDisplay, eglConfig, surfaceTexture, surfaceAttribs, 0
@@ -68,6 +77,8 @@ internal class SharedGlThread private constructor() {
     }
 
     fun makeCurrent(surface: EGLSurface): Boolean {
+        // Without a context, eglMakeCurrent(NO_SURFACE, NO_CONTEXT) would "succeed" by unbinding.
+        if (initError != null) return false
         return EGL14.eglMakeCurrent(eglDisplay, surface, surface, eglContext)
     }
 
@@ -140,15 +151,20 @@ internal class SharedGlThread private constructor() {
         choreographer?.removeFrameCallback(frameCallback)
     }
 
+    private fun failInit(message: String) {
+        Log.e(TAG, message)
+        initError = IllegalStateException("EGL initialization failed: $message")
+    }
+
     private fun initEgl() {
         eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         if (eglDisplay == EGL14.EGL_NO_DISPLAY) {
-            Log.e(TAG, "eglGetDisplay failed")
+            failInit("eglGetDisplay failed")
             return
         }
         val version = IntArray(2)
         if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
-            Log.e(TAG, "eglInitialize failed")
+            failInit("eglInitialize failed")
             return
         }
 
@@ -166,7 +182,7 @@ internal class SharedGlThread private constructor() {
         val numConfigs = IntArray(1)
         EGL14.eglChooseConfig(eglDisplay, configAttribs, 0, configs, 0, 1, numConfigs, 0)
         if (numConfigs[0] == 0 || configs[0] == null) {
-            Log.e(TAG, "eglChooseConfig failed")
+            failInit("eglChooseConfig failed")
             return
         }
         eglConfig = configs[0]
@@ -176,14 +192,14 @@ internal class SharedGlThread private constructor() {
             eglDisplay, eglConfig, EGL14.EGL_NO_CONTEXT, contextAttribs, 0
         )
         if (eglContext == EGL14.EGL_NO_CONTEXT) {
-            Log.e(TAG, "eglCreateContext failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
+            failInit("eglCreateContext failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
             return
         }
 
         val pbufferAttribs = intArrayOf(EGL14.EGL_WIDTH, 1, EGL14.EGL_HEIGHT, 1, EGL14.EGL_NONE)
         eglPbuffer = EGL14.eglCreatePbufferSurface(eglDisplay, eglConfig, pbufferAttribs, 0)
         if (eglPbuffer == EGL14.EGL_NO_SURFACE) {
-            Log.e(TAG, "eglCreatePbufferSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
+            failInit("eglCreatePbufferSurface failed: 0x${Integer.toHexString(EGL14.eglGetError())}")
             return
         }
         makeCurrent(eglPbuffer)
