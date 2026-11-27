@@ -20,6 +20,13 @@ API_LEVEL ?= 21
 # Path to the Rust workspace inside the submodule
 DOTLOTTIE_RS_ROOT ?= deps/dotlottie-rs/dotlottie-rs
 
+# Release profile for the engine build.
+export CARGO_PROFILE_RELEASE_OPT_LEVEL ?= 2
+export CARGO_PROFILE_RELEASE_LTO ?= fat
+export CARGO_PROFILE_RELEASE_CODEGEN_UNITS ?= 1
+export CARGO_PROFILE_RELEASE_PANIC ?= abort
+export CARGO_PROFILE_RELEASE_STRIP ?= symbols
+
 # Minimum required NDK version
 MIN_NDK_VERSION = 28
 
